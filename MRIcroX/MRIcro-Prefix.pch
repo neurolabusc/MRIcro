@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'MRIcroX' target in the 'MRIcroX' project
+//
+
+#ifdef __OBJC__
+    #import <Cocoa/Cocoa.h>
+#endif

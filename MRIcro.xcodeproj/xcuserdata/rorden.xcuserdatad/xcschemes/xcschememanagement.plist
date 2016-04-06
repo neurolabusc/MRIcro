@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>SchemeUserState</key>
+	<dict>
+		<key>MRIcro.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>MRIcroPro.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>MRIcroX.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>4F12CE0E1A195A0000408A12</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4F12CE351A195BF300408A12</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4F12CE5B1A195DB000408A12</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>4F9A58911609E769008ECBE2</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+	</dict>
+</dict>
+</plist>
