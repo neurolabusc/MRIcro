@@ -1218,6 +1218,12 @@ unsigned char * nii_readImg(NSString * imgname, struct nifti_1_header *nhdr, lon
         }
     }
     long long skipBytes = nhdr->vox_offset+(skipVol * vox3D * (nhdr->bitpix / 8));     //skip initial volumes
+    if (loadVol < 1) { //adjust number of voxels loaded based on file size
+        long long imgsz3D = nhdr->dim[1] * nhdr->dim[2] * nhdr->dim[3] * (nhdr->bitpix / 8);
+        loadVol =  trunc(16777216.0 * 4) /imgsz3D ;
+        if (loadVol > 32) loadVol = 32;
+        if (loadVol < 1) loadVol = 1;
+    }
     if  ((loadVol+skipVol) > nVol) //read remaining volumes
         loadVol = nVol - skipVol;
     if (loadVol < 1) return NULL;

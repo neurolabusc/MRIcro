@@ -11,12 +11,12 @@ extern "C" {
 #endif
 
 #ifdef myEnableJasper
-    #define kDCMvers "22Mar2016j" //JASPER for JPEG2000
+    #define kDCMvers "4Apr2016j" //JASPER for JPEG2000
 #else
 	#ifdef myDisableOpenJPEG
-    #define kDCMvers "22Mar2016" //no decompressor
+    #define kDCMvers "4Apr2016" //no decompressor
 	#else
-    #define kDCMvers "22Mar2016o" //OPENJPEG for JPEG2000
+    #define kDCMvers "4Apr2016o" //OPENJPEG for JPEG2000
     #endif
 #endif
 
@@ -43,6 +43,7 @@ static const int kCompress50 = 3; //obsolete JPEG lossy
     struct TDTI4D {
         struct TDTI S[kMaxDTI4D];
     };
+
     struct TCSAdata {
         float dtiV[4], sliceNormV[4], bandwidthPerPixelPhaseEncode, sliceMeasurementDuration;
         int numDti, multiBandFactor, sliceOrder, slice_start, slice_end, mosaicSlices,protocolSliceNumber1,phaseEncodingDirectionPositive;
@@ -60,6 +61,7 @@ static const int kCompress50 = 3; //obsolete JPEG lossy
         char  patientID[kDICOMStr], patientOrient[kDICOMStr], patientName[kDICOMStr],protocolName[kDICOMStr],scanningSequence[kDICOMStr], birthDate[kDICOMStr], gender[kDICOMStr], age[kDICOMStr],  studyDate[kDICOMStr],studyTime[kDICOMStr], imageComments[kDICOMStr];
         struct TCSAdata CSA;
     };
+
     size_t nii_ImgBytes(struct nifti_1_header hdr);
     struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, struct TDTI4D *dti4D);
     struct TDICOMdata readDICOM(char * fname);
@@ -69,6 +71,7 @@ static const int kCompress50 = 3; //obsolete JPEG lossy
     void changeExt (char *file_name, const char* ext);
     struct TDICOMdata  nii_readParRec (char * parname, int isVerbose, struct TDTI4D *dti4D);
     unsigned char * nii_planar2rgb(unsigned char* bImg, struct nifti_1_header *hdr, int isPlanar);
+	int isDICOMfile(const char * fname); //0=not DICOM, 1=DICOM, 2=NOTSURE(not part 10 compliant)
 
     int headerDcm2Nii2(struct TDICOMdata d, struct TDICOMdata d2, struct nifti_1_header *h);
     //unsigned char * nii_loadImgX(char* imgname, struct nifti_1_header *hdr, struct TDICOMdata dcm, bool iVaries);

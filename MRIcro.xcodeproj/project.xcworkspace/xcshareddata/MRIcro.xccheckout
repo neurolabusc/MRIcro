@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>A3DAEA23-4C58-4770-B1C3-CBDECF40DAD9</string>
+	<key>IDESourceControlProjectName</key>
+	<string>MRIcro</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>E53296E8320F8B83F3BEC446244478D04792F8AE</key>
+		<string>https://github.com/neurolabusc/MRIcro.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>MRIcro.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>E53296E8320F8B83F3BEC446244478D04792F8AE</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/neurolabusc/MRIcro.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>E53296E8320F8B83F3BEC446244478D04792F8AE</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>E53296E8320F8B83F3BEC446244478D04792F8AE</string>
+			<key>IDESourceControlWCCName</key>
+			<string>MRIcro</string>
+		</dict>
+	</array>
+</dict>
+</plist>

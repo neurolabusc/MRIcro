@@ -416,8 +416,12 @@ NSData * ungz(NSData* data, NSInteger DecompBytes)
     if ([data length] == 0) return data;
     unsigned full_length = (unsigned)[data length];
     unsigned half_length = (unsigned)[data length] / 2;
-    if (half_length > DecompBytes) half_length = (unsigned)DecompBytes;
-    NSMutableData *decompressed = [NSMutableData dataWithLength: full_length + half_length];
+    NSMutableData *decompressed;
+    if (half_length > DecompBytes) {
+        half_length = (unsigned)DecompBytes;
+        decompressed = [NSMutableData dataWithLength: half_length];
+    } else
+        decompressed = [NSMutableData dataWithLength: full_length + half_length];
     BOOL done = NO;
     int status;
     z_stream strm;
@@ -435,6 +439,7 @@ NSData * ungz(NSData* data, NSInteger DecompBytes)
         strm.next_out =  (Bytef *)[decompressed mutableBytes] + (uInt)strm.total_out;
         strm.avail_out = (uInt)[decompressed length] - (uInt)strm.total_out;
         // Inflate another chunk.
+        //NSLog(@"x--- %lu %d %d", strm.total_out, (uInt)[decompressed length], (uInt)strm.total_out);
         status = inflate (&strm, Z_SYNC_FLUSH);
         if (status == Z_STREAM_END) done = YES;
         if (strm.total_out >= DecompBytes) done = YES;
@@ -711,6 +716,13 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
     }
     int nVol = (int) (nim->nvox/(nim->dim[1]*nim->dim[2]*nim->dim[3]));
     nim->rawvols = nVol;
+    if (loadVol < 1) { //adjust number of voxels loaded based on file size
+        long long imgsz3D = nim->dim[1] * nim->dim[2] * nim->dim[3] * nim->nbyper;
+        //loadVol =  trunc(imgsz3D / 16777216.0);
+        loadVol =  trunc(16777216.0 * 4) /imgsz3D ;
+        if (loadVol > 32) loadVol = 32;
+        if (loadVol < 1) loadVol = 1;
+    }
     if  ((loadVol+skipVol) > nVol) //read remaining volumes
         loadVol = nVol - skipVol;
     if (loadVol < 1) return -nVol;

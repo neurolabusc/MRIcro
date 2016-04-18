@@ -3537,7 +3537,9 @@ void closeOverlays (NII_PREFS* prefs)
     char fname[ [file_name length]+1];
     [file_name getCString:fname maxLength:sizeof(fname)/sizeof(*fname) encoding:NSUTF8StringEncoding];
     int maxVols = INT_MAX;
-    if (prefs->loadFewVolumes) maxVols = 32;
+    //if (prefs->loadFewVolumes) maxVols = 32;
+    if (prefs->loadFewVolumes) maxVols = -1;
+    
     if (isOverlay) maxVols = 1;
     void *buffer = FslReadAllVolumes(fslio,fname,maxVols);
     if (buffer == NULL) {
@@ -3547,8 +3549,12 @@ void closeOverlays (NII_PREFS* prefs)
     }
     if ((prefs->dicomWarn) && (fslio->niftiptr->isDICOM))
         [self notifyDICOMwarning];
-    if (fslio->niftiptr->rawvols > maxVols)
-        [self notifyNotAllVolumesLoaded: maxVols RawVols: fslio->niftiptr->rawvols];
+    //if (fslio->niftiptr->rawvols > maxVols)
+    //    [self notifyNotAllVolumesLoaded: maxVols RawVols: fslio->niftiptr->rawvols];
+    if ((maxVols < 1) && (fslio->niftiptr->rawvols > fslio->niftiptr->dim[4]))
+        [self notifyNotAllVolumesLoaded: fslio->niftiptr->dim[4] RawVols: fslio->niftiptr->rawvols];
+    
+    
     nii_setup(fslio, prefs);
     NSString* theFileName = [[file_name lastPathComponent] stringByDeletingPathExtension];
     if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
