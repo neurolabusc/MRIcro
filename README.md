@@ -1,6 +1,8 @@
 ## About
 
-MRIcro is a 3D viewer and volume renderer for medical images. It is designed for NIfTI format images (popular with neuroimaging scientists) but can typically view images in many popular 3D raster formats including BioRad PIC, DICOM, NRRD, MGZ/MGH, AFNI BRIK, ITK MHA format images.
+MRIcro is a 3D viewer and volume renderer for medical images. It is designed for NIfTI format images (popular with neuroimaging scientists) but can typically view images in many popular 3D raster formats including BioRad PIC, DICOM, NRRD, MGZ/MGH, AFNI BRIK, ITK MHA format images. For details and compiled versions visit the [project home page](http://www.mccauslandcenter.sc.edu/crnl/mricro).
+
+![alt tag](https://github.com/neurolabusc/MRIcro/blob/master/mricro.jpg)
 
 ## Versions
 
@@ -13,4 +15,4 @@ MRIcro is a 3D viewer and volume renderer for medical images. It is designed for
 
 ### Pre-Compiled Versions
 
- Visit the [https://itunes.apple.com/us/app/mricro/id942363246?mt=12 Mac App Store]
+ Visit the [https://itunes.apple.com/us/app/mricro/id942363246?mt=12 Mac App Store] for the stable version. Or visit the the [project home page](http://www.mccauslandcenter.sc.edu/crnl/mricro) for the latest release (which integrates [dcm2niix](https://www.nitrc.org/plugins/mwiki/index.php/dcm2nii:MainPage)).
