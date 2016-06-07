@@ -321,7 +321,7 @@
 		4F9A58891609E769008ECBE2 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0640;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = "University of South Carolina";
 				TargetAttributes = {
 					4F12CE5B1A195DB000408A12 = {
@@ -512,6 +512,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				OTHER_LDFLAGS = /usr/local/lib/libopenjp2.a;
+				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
@@ -550,6 +551,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = /usr/local/lib/libopenjp2.a;
+				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
@@ -567,6 +569,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -648,6 +651,7 @@
 					"$(PROJECT_DIR)/MRIcroX",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_BUNDLE_IDENTIFIER = mricro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
@@ -685,6 +689,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = mricro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;

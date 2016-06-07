@@ -6,8 +6,10 @@ MRIcro is a 3D viewer and volume renderer for medical images. It is designed for
 
 ## Versions
 
-6-Apr-2016
- - 1.8.2 (build 18) Initial GitHub release
+6-April-2016
+ - 1.8.2 (build 182) Initial GitHub release
+6-June-2016
+ - 1.8.6 (build 186) Updated to XCode 7.3, updated dcm2niix
 
 ### Compiling the Source Code
 

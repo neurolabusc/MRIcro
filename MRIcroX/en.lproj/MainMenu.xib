@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7706" systemVersion="14E46" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7706"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="10117"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -281,7 +281,7 @@
             <value key="minSize" type="size" width="177" height="350"/>
             <value key="maxSize" type="size" width="177" height="350"/>
             <view key="contentView" id="7g4-n1-yvc">
-                <rect key="frame" x="0.0" y="5" width="177" height="350"/>
+                <rect key="frame" x="0.0" y="0.0" width="177" height="350"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button toolTip="Show colored cube on rendering to identify left and right side." id="Syh-Ul-eaV">
@@ -426,15 +426,15 @@
         </window>
         <window title="dcm2nii" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="Qke-lH-ESB" customClass="dcm2niiWindow">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="109" y="132" width="807" height="329"/>
+            <rect key="contentRect" x="109" y="132" width="807" height="340"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1280" height="778"/>
             <value key="minSize" type="size" width="740" height="330"/>
             <view key="contentView" id="1eg-3w-mRB">
-                <rect key="frame" x="0.0" y="0.0" width="807" height="329"/>
+                <rect key="frame" x="0.0" y="0.0" width="807" height="340"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button toolTip="If checked FSL-style .nii.gz images will be created. If unchecked, uncompressed .nii images will be generated." id="kxQ-Ly-LUN">
-                        <rect key="frame" x="99" y="304" width="89" height="18"/>
+                        <rect key="frame" x="99" y="315" width="89" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Compress" bezelStyle="regularSquare" imagePosition="right" state="on" inset="2" id="ejt-GS-4Q5">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -445,7 +445,7 @@
                         </connections>
                     </button>
                     <button toolTip="If checked FSL-style .nii.gz images will be created. If unchecked, uncompressed .nii images will be generated." id="TBc-pi-2q2">
-                        <rect key="frame" x="192" y="304" width="79" height="18"/>
+                        <rect key="frame" x="192" y="315" width="79" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Verbose" bezelStyle="regularSquare" imagePosition="right" state="on" inset="2" id="US6-gv-mt8">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -456,7 +456,7 @@
                         </connections>
                     </button>
                     <button toolTip="Location where NIfTI files will be saved." verticalHuggingPriority="750" id="vC7-wd-gtT">
-                        <rect key="frame" x="615" y="296" width="193" height="32"/>
+                        <rect key="frame" x="615" y="307" width="193" height="32"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="cio-gr-6zs">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -467,7 +467,7 @@
                         </connections>
                     </button>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="k2S-WR-CHw">
-                        <rect key="frame" x="525" y="304" width="90" height="17"/>
+                        <rect key="frame" x="525" y="315" width="90" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Output folder" id="ayw-Kk-aT9">
                             <font key="font" metaFont="system"/>
@@ -476,7 +476,7 @@
                         </textFieldCell>
                     </textField>
                     <textField verticalHuggingPriority="750" id="449-vA-rRp">
-                        <rect key="frame" x="376" y="302" width="149" height="22"/>
+                        <rect key="frame" x="376" y="313" width="149" height="22"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <string key="toolTip">Name of NIfTI images (%c= comments, %f folder name, %i ID of patient, %m manufacturer name, %n name of patient, %p protocol name, %q sequence, %s series, %t time)</string>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="ltP-PA-vJX">
@@ -489,20 +489,20 @@
                         </connections>
                     </textField>
                     <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" id="mrb-1Q-H4f">
-                        <rect key="frame" x="-1" y="-1" width="808" height="300"/>
+                        <rect key="frame" x="-1" y="-1" width="808" height="311"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <clipView key="contentView" id="KuG-cN-ZPH">
-                            <rect key="frame" x="1" y="1" width="723" height="298"/>
+                            <rect key="frame" x="1" y="1" width="791" height="309"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textView editable="NO" importsGraphics="NO" richText="NO" findStyle="panel" continuousSpellChecking="YES" allowsUndo="YES" usesRuler="YES" usesFontPanel="YES" verticallyResizable="YES" quoteSubstitution="YES" dashSubstitution="YES" spellingCorrection="YES" smartInsertDelete="YES" id="zug-ay-gyA">
-                                    <rect key="frame" x="0.0" y="0.0" width="791" height="298"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="791" height="309"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                    <size key="minSize" width="791" height="298"/>
+                                    <size key="minSize" width="791" height="309"/>
                                     <size key="maxSize" width="808" height="10000000"/>
                                     <color key="insertionPointColor" white="0.0" alpha="1" colorSpace="calibratedWhite"/>
-                                    <size key="minSize" width="791" height="298"/>
+                                    <size key="minSize" width="791" height="309"/>
                                     <size key="maxSize" width="808" height="10000000"/>
                                     <connections>
                                         <outlet property="delegate" destination="-2" id="1fe-FK-zEv"/>
@@ -516,12 +516,12 @@
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                         <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="I97-O8-rax">
-                            <rect key="frame" x="724" y="1" width="15" height="298"/>
+                            <rect key="frame" x="792" y="1" width="15" height="309"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                     </scrollView>
                     <button verticalHuggingPriority="750" id="3MO-DC-QrQ">
-                        <rect key="frame" x="-1" y="296" width="100" height="32"/>
+                        <rect key="frame" x="-1" y="307" width="100" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Select Files" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="UUf-At-RGe">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -532,7 +532,7 @@
                         </buttonCell>
                     </button>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" id="Rte-YH-Etz">
-                        <rect key="frame" x="287" y="306" width="90" height="17"/>
+                        <rect key="frame" x="287" y="317" width="90" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Output name" id="EAr-U1-k2E">
                             <font key="font" metaFont="system"/>

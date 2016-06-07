@@ -811,6 +811,7 @@
     optsTemp = opts; //conversion may change values like the outdir (if not specified)
     strcpy(optsTemp.indir, [fname cStringUsingEncoding:NSUTF8StringEncoding]); //2015 folder with umlaut
     //strcpy(optsTemp.indir, [fname cStringUsingEncoding:1]);
+    optsTemp.isCrop = true; //2016: crop 3D images
     clock_t start = clock();
     nii_loadDir (&(optsTemp));
     printf("required %fms\n", ((double)(clock()-start))/1000);

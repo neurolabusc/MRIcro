@@ -377,7 +377,9 @@ NSArray * niiFileTypes () {
         NSArray *copiedObjects = [NSArray arrayWithObject:imag];
         [pasteboard writeObjects:copiedObjects];
     } else {
-        NSData *data = [repz representationUsingType: NSPNGFileType properties: nil];
+        //http://stackoverflow.com/questions/34557563/null-passed-to-a-callee-that-requires-a-non-null-argument
+        NSData *data = [repz representationUsingType: NSPNGFileType properties: @{}];
+        //NSData *data = [repz representationUsingType: NSPNGFileType properties: nil];
         [data writeToFile: file_name atomically: NO];
     }
     //[gNiiImg setScreenWidHt: w Height: h]; //return to base resolution
