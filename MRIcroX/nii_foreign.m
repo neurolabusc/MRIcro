@@ -1032,6 +1032,10 @@ int nii_readmgh(NSString * fname, struct nifti_1_header *nhdr, long * gzBytes, b
         NSLog(@"Error: first value in a MGH header should be 1 and data type should be in the range 1..4.");
         return EXIT_FAILURE;
     }
+    if ((mgh.width > 32767) || (mgh.height > 32767) || (mgh.depth > 32767) || (mgh.nframes > 32767)) {
+        NSLog(@"Error: only able to read MGH images with less than 32768 rows/columns/slices/frames.");
+        return EXIT_FAILURE;
+    }
     if (mgh.type == 0)
         nhdr->datatype = DT_UINT8; // 2
     else if (mgh.type == 4)
@@ -1804,10 +1808,11 @@ unsigned char * nii_readMat(NSString * fname, struct nifti_1_header *nhdr)
         }
         //NSUInteger indx = indexOfCaseInsensitiveString ( tagnamelist, modality);
         tagModality = (NSString *)[tagnamelist objectAtIndex: 0];
-        if (specialKeys)
+        if (specialKeys) {
             tagModality = promptModality(tagnamelist);
-        tagModality = (NSString *)[tagnamelist objectAtIndex: indexOfCaseInsensitiveString ( tagnamelist, tagModality)]; //get spelling right...
-        [[NSUserDefaults standardUserDefaults] setObject:tagModality  forKey:@"matlabModality"];
+            tagModality = (NSString *)[tagnamelist objectAtIndex: indexOfCaseInsensitiveString ( tagnamelist, tagModality)]; //get spelling right...
+            [[NSUserDefaults standardUserDefaults] setObject:tagModality  forKey:@"matlabModality"];
+        }
         img = readMat(fname, tagModality, &nx, &ny, &nz, &dataType, tagnamelist, mat);
         if (img == NULL) //never happens: we exit if list.count < 1, and indexOfCaseInsensitiveString will select first item
             return NULL;

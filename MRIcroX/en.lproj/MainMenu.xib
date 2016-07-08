@@ -300,7 +300,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="3D better render" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="35U-DZ-EKM">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" metaFont="system"/>
+                            <font key="font" size="13" name=".AppleSystemUIFont"/>
                         </buttonCell>
                         <connections>
                             <action selector="prefChange:" target="494" id="kq6-hL-GB7"/>

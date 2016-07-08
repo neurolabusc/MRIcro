@@ -733,8 +733,12 @@
     char niiFilename[1024];
     nii_createDummyFilename(niiFilename, opts);
     [self.theTextView setString: [NSString stringWithFormat:@"%s\nVersion %s (%lu-bit)\n", niiFilename,kDCMvers, sizeof(size_t)*8 ]];
-     
     [self.theTextView setNeedsDisplay:YES];
+    //[[self theTextView] setFont:[NSFont boldSystemFontOfSize:6.0]];
+    //[[self theTextView] setFont:[NSFont systemFontOfSize:0.0]];
+    //[[self theTextView] setFont:[NSFont fontWithName:@"DoesNotExist" size:11]];
+    //NSFont *oldFont = self.theTextView.font;
+    //NSLog(@"%@",oldFont.familyName);
 #endif
 }
 
@@ -754,6 +758,7 @@
     else
         [_folderButton setTitle:outdir];
     [self showExampleFilename];
+
 #endif
 }
 

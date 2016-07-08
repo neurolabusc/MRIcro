@@ -354,8 +354,26 @@ void nii_SaveBIDS(char pathoutname[], struct TDICOMdata d, struct TDCMopts opts,
     //printf("Saving DTI %s\n",txtname);
     FILE *fp = fopen(txtname, "w");
     fprintf(fp, "{\n");
-	fprintf(fp, "\t\"EchoTime\": %g,\n", d.TE / 1000.0 );
-    fprintf(fp, "\t\"RepetitionTime\": %g,\n", d.TR / 1000.0 );
+	switch (d.manufacturer) {
+				case kMANUFACTURER_SIEMENS:
+						fprintf(fp, "\t\"Manufacturer\": \"Siemens\",\n" );
+						break;
+				case kMANUFACTURER_GE:
+						fprintf(fp, "\t\"Manufacturer\": \"GE\",\n" );
+						break;
+				case kMANUFACTURER_PHILIPS:
+						fprintf(fp, "\t\"Manufacturer\": \"Philips\",\n" );
+						break;
+				case kMANUFACTURER_TOSHIBA:
+						fprintf(fp, "\t\"Manufacturer\": \"Toshiba\",\n" );
+						break;
+	};
+	fprintf(fp, "\t\"ManufacturersModelName\": \"%s\",\n", d.manufacturersModelName );
+	//if conditionals: the following values are required for DICOM MRI, but not available for CT
+	if (d.fieldStrength > 0.0) fprintf(fp, "\t\"MagneticFieldStrength\": %g,\n", d.fieldStrength );
+	if (d.flipAngle > 0.0) fprintf(fp, "\t\"FlipAngle\": %g,\n", d.flipAngle );
+	if (d.TE > 0.0) fprintf(fp, "\t\"EchoTime\": %g,\n", d.TE / 1000.0 );
+    if (d.TR > 0.0) fprintf(fp, "\t\"RepetitionTime\": %g,\n", d.TR / 1000.0 );
     if ((d.CSA.bandwidthPerPixelPhaseEncode > 0.0) &&  (h->dim[2] > 0) && (h->dim[1] > 0)) {
 		float dwellTime = 0;
 		if (d.phaseEncodingRC =='C')
@@ -1558,37 +1576,64 @@ int isSameFloatDouble (double a, double b) {
     return (fabs (a - b) <= 0.0001);
 }
 
-bool isSameSet (struct TDICOMdata d1, struct TDICOMdata d2, bool isForceStackSameSeries) {
+struct TWarnings { //generate a warning only once per set
+        bool bitDepthVaries, dateTimeVaries, echoVaries, coilVaries, nameVaries, orientVaries;
+};
+
+TWarnings setWarnings() {
+	TWarnings r;
+	r.bitDepthVaries = false;
+	r.dateTimeVaries = false;
+	r.echoVaries = false;
+	r.coilVaries = false;
+	r.nameVaries = false;
+	r.orientVaries = false;
+	return r;
+}
+
+bool isSameSet (struct TDICOMdata d1, struct TDICOMdata d2, bool isForceStackSameSeries,struct TWarnings* warnings) {
     //returns true if d1 and d2 should be stacked together as a signle output
     if (!d1.isValid) return false;
     if (!d2.isValid) return false;
     if  (d1.seriesNum != d2.seriesNum) return false;
-    if ( (d1.bitsAllocated != d2.bitsAllocated) || (d1.xyzDim[1] != d2.xyzDim[1]) || (d1.xyzDim[2] != d2.xyzDim[2]) || (d1.xyzDim[3] != d2.xyzDim[3]) ) {
-        printf("slices not stacked: dimensions or bit-depth varies\n");
+    if ((d1.bitsAllocated != d2.bitsAllocated) || (d1.xyzDim[1] != d2.xyzDim[1]) || (d1.xyzDim[2] != d2.xyzDim[2]) || (d1.xyzDim[3] != d2.xyzDim[3]) ) {
+        if (!warnings->bitDepthVaries)
+        	printf("slices not stacked: dimensions or bit-depth varies\n");
+        warnings->bitDepthVaries = true;
         return false;
     }
     if (isForceStackSameSeries) return true; //we will stack these images, even if they differ in the following attributes
-    if (!isSameFloatDouble(d1.dateTime, d2.dateTime) ){ //beware, some vendors incorrectly store Image Time (0008,0033) as Study Time (0008,0030).
-     printf("slices not stacked: Study Data/Time (0008,0020 / 0008,0030) varies %12.12f ~= %12.12f\n", d1.dateTime, d2.dateTime);
-     return false;
+    if (!isSameFloatDouble(d1.dateTime, d2.dateTime)) { //beware, some vendors incorrectly store Image Time (0008,0033) as Study Time (0008,0030).
+    	if (!warnings->dateTimeVaries)
+    		printf("slices not stacked: Study Data/Time (0008,0020 / 0008,0030) varies %12.12f ~= %12.12f\n", d1.dateTime, d2.dateTime);
+    	warnings->dateTimeVaries = true;
+    	return false;
     }
     if ((d1.TE != d2.TE) || (d1.echoNum != d2.echoNum)) {
-        printf("slices not stacked: echo varies (TE %g, %g; echo %d, %d)\n", d1.TE, d2.TE,d1.echoNum, d2.echoNum );
+        if (!warnings->echoVaries)
+        	printf("slices not stacked: echo varies (TE %g, %g; echo %d, %d)\n", d1.TE, d2.TE,d1.echoNum, d2.echoNum );
+        warnings->echoVaries = true;
         return false;
     }
     if (d1.coilNum != d2.coilNum) {
-        printf("slices not stacked: coil varies\n");
+        if (!warnings->coilVaries)
+        	printf("slices not stacked: coil varies\n");
+        warnings->coilVaries = true;
         return false;
     }
-    if (strcmp(d1.protocolName, d2.protocolName) != 0) {
-        printf("slices not stacked: protocol name varies\n");
+    if ((strcmp(d1.protocolName, d2.protocolName) != 0)) {
+        if ((!warnings->nameVaries))
+        	printf("slices not stacked: protocol name varies\n");
+        warnings->nameVaries = true;
         return false;
     }
-    if (!isSameFloatGE(d1.orient[1], d2.orient[1]) || !isSameFloatGE(d1.orient[2], d2.orient[2]) ||  !isSameFloatGE(d1.orient[3], d2.orient[3]) ||
-        !isSameFloatGE(d1.orient[4], d2.orient[4]) || !isSameFloatGE(d1.orient[5], d2.orient[5]) ||  !isSameFloatGE(d1.orient[6], d2.orient[6]) ) {
-        printf("slices not stacked: orientation varies (localizer?) [%g %g %g %g %g %g] != [%g %g %g %g %g %g]\n",
+    if ((!isSameFloatGE(d1.orient[1], d2.orient[1]) || !isSameFloatGE(d1.orient[2], d2.orient[2]) ||  !isSameFloatGE(d1.orient[3], d2.orient[3]) ||
+    		!isSameFloatGE(d1.orient[4], d2.orient[4]) || !isSameFloatGE(d1.orient[5], d2.orient[5]) ||  !isSameFloatGE(d1.orient[6], d2.orient[6]) ) ) {
+        if (!warnings->orientVaries)
+        	printf("slices not stacked: orientation varies (localizer?) [%g %g %g %g %g %g] != [%g %g %g %g %g %g]\n",
                d1.orient[1], d1.orient[2], d1.orient[3],d1.orient[4], d1.orient[5], d1.orient[6],
                d2.orient[1], d2.orient[2], d2.orient[3],d2.orient[4], d2.orient[5], d2.orient[6]);
+        warnings->orientVaries = true;
         return false;
     }
     return true;
@@ -2012,8 +2057,9 @@ int nii_loadDir (struct TDCMopts* opts) {
     for (int i = 0; i < nDcm; i++ ) {
 		if ((dcmList[i].converted2NII == 0) && (dcmList[i].isValid)) {
 			int nConvert = 0;
+			struct TWarnings warnings = setWarnings();
 			for (int j = i; j < nDcm; j++)
-				if (isSameSet(dcmList[i], dcmList[j], opts->isForceStackSameSeries))
+				if (isSameSet(dcmList[i], dcmList[j], opts->isForceStackSameSeries, &warnings) )
 					nConvert++;
 			if (nConvert < 1) nConvert = 1; //prevents compiler warning for next line: never executed since j=i always causes nConvert ++
 
@@ -2023,8 +2069,9 @@ int nii_loadDir (struct TDCMopts* opts) {
 			struct TDCMsort dcmSort[nConvert];
 #endif
 			nConvert = 0;
+			//warnings = setWarnings();
 			for (int j = i; j < nDcm; j++)
-				if (isSameSet(dcmList[i], dcmList[j], opts->isForceStackSameSeries)) {
+				if (isSameSet(dcmList[i], dcmList[j], opts->isForceStackSameSeries, &warnings)) {
 					dcmSort[nConvert].indx = j;
 					dcmSort[nConvert].img = ((uint64_t)dcmList[j].seriesNum << 32) + dcmList[j].imageNum;
 					dcmList[j].converted2NII = 1;
@@ -2253,6 +2300,8 @@ void readIniFile (struct TDCMopts *opts, const char * argv[]) {
         //printf(">%s<->'%s'\n",Setting,Value);
         if ( strcmp(Setting,"isGZ") == 0 )
             opts->isGz = atoi(Value);
+        else if ( strcmp(Setting,"isBIDS") == 0 )
+            opts->isCreateBIDS = atoi(Value);
         else if ( strcmp(Setting,"filename") == 0 )
             strcpy(opts->filename,Value);
     }
@@ -2265,6 +2314,7 @@ void saveIniFile (struct TDCMopts opts) {
     //printf("%s\n",localfilename);
     if (fp == NULL) return;
     fprintf(fp, "isGZ=%d\n", opts.isGz);
+    fprintf(fp, "isBIDS=%d\n", opts.isCreateBIDS);
     fprintf(fp, "filename=%s\n", opts.filename);
     fclose(fp);
 } //saveIniFile()
