@@ -61,7 +61,6 @@
 #else
     notification.informativeText = @"For improved display convert DICOM images to NIfTI (solution: use the free dcm2nii tool)" ;
 #endif
-    
     notification.soundName = NULL;
     [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
     [NSTimer scheduledTimerWithTimeInterval: 4.0  target:self selector: @selector(closePopup) userInfo:self repeats:NO];
@@ -75,6 +74,7 @@
     else
         return FALSE;
 }
+
 
 double getVoxelIntensity(long long vox, FSLIO* fslio) {
     if ((vox < 0) || (vox >= fslio->niftiptr->nvox)) return 0.0;
@@ -281,6 +281,28 @@ void frac2mm (float frac[4], NII_PREFS* prefs, bool sliceCenter)
     return graph;
 }
 
+//int ret = convertBufferToScaled(&outbuf[0], fslio->niftiptr->data, (long)(fslio->niftiptr->nvox), slope, inter, fslio->niftiptr->datatype);
+//nii_unify_datatype
+int xx(FSLIO* fslio) {
+    
+
+        if (fslio->niftiptr->scl_slope == 0) { //nonsense value - fix the header!
+            fslio->niftiptr->scl_slope = 1.0;
+            fslio->niftiptr->scl_inter = 0.0;
+        }
+    //fslio->niftiptr->
+    size_t len = fslio->niftiptr->nvox;
+    void *inbuf = fslio->niftiptr->data;
+
+    int ret = 0;
+    if (NIFTI_TYPE_UINT8)
+        for (int i=0; i<len; i++)
+            if (((THIS_UINT8 *)(inbuf)+i) != 0)
+                ret += 1;
+    
+    return ret;
+    
+}
 int  convertBufferToScaled(SCALED_IMGDATA *outbuf, void *inbuf, long len, float slope, float inter, int nifti_datatype ) {
 //adapted from fslio.c "convertBufferToScaledDouble" library that was placed in the public domain
     long i;

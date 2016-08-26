@@ -963,7 +963,12 @@ NSArray * niiFileTypes () {
     else
         slicecode = @"";
     ret = [ret stringByAppendingString: slicecode];
-     /*= @"Your String"
+    
+    
+   /* NSString * vx;
+    vx = @"\nbeta!!!!!!\n";
+    ret = [ret stringByAppendingString: vx];
+     = @"Your String"
     NIFTI_SLICE_SEQ_INC  == sequential increasing
     NIFTI_SLICE_SEQ_DEC  == sequential decreasing
     NIFTI_SLICE_ALT_INC  == alternating increasing
