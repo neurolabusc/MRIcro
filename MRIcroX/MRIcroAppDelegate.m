@@ -549,6 +549,9 @@
     //[[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:[[NSApplication sharedApplication] delegate]] ;
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
     //[self imgLoad ];
+    //NSString *niiFile = @"/Users/rorden/Downloads/comp/fubar/25943524";
+    //NSString *niiFile = @"/Users/rorden/Downloads/comp/fubar/outC";
+    //[ self processFile: niiFile];
     //NSString *niiFile = @"/Users/rorden/Desktop/c/t1-head_lzw.tiff";
     //[ self processFile: niiFile];
     /*NSMutableArray * list = [[NSMutableArray alloc] init];

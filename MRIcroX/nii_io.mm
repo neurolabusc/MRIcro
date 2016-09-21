@@ -695,7 +695,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             
         }
         if (d.isValid) {
-            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone);
+            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0);
             gzBytes = K_gzBytes_skipRead;
             OK = EXIT_SUCCESS;
         } else

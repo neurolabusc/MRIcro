@@ -134,11 +134,16 @@ void mm2frac (int Xmm, int Ymm, int Zmm, NII_PREFS* prefs)
     if ((prefs->voxelDim[1] < 1) || (prefs->voxelDim[2] < 1) || (prefs->voxelDim[3] < 1) ) return;
     mat44 R = prefs->sto_ijk;
     for (int i = 0; i < 3; i++) {
-        //prefs->sliceFrac[i+1] = round( (R.m[i][0]*Xmm)+(R.m[i][1]*Ymm)+ (R.m[i][2]*Zmm)+R.m[i][3] )/prefs->voxelDim[i+1];
-        prefs->sliceFrac[i+1] = ( (R.m[i][0]*Xmm)+(R.m[i][1]*Ymm)+ (R.m[i][2]*Zmm)+R.m[i][3] )/prefs->voxelDim[i+1];
+        //-1 as zero based: frac=0.5
+        prefs->sliceFrac[i+1] = ( (R.m[i][0]*Xmm)+(R.m[i][1]*Ymm)+ (R.m[i][2]*Zmm)+R.m[i][3] )/(prefs->voxelDim[i+1]-1);
         
         if ((prefs->sliceFrac[i+1] < 0) || (prefs->sliceFrac[i+1]> 1)) prefs->sliceFrac[i+1] = 0.5;
     }
+    #ifdef MY_DEBUG //from nii_io.h
+    NSLog(@"mm2frac mm->frac %d %d %d -> %g %g %g mm",
+          Xmm, Ymm, Zmm,
+          prefs->sliceFrac[1], prefs->sliceFrac[2], prefs->sliceFrac[3]);
+    #endif
     //next for 2D images, otherwise interpolation can make them appear washed out
     if (prefs->voxelDim[1] == 1) prefs->sliceFrac[1] = 0.5;
     if (prefs->voxelDim[2] == 1) prefs->sliceFrac[2] = 0.5;
@@ -163,14 +168,21 @@ void frac2mm (float frac[4], NII_PREFS* prefs, bool sliceCenter)
         }
     }
     float Vox[4];
-    for (int j = 1; j < 4; j++) {
-        Vox[j] = frac[j]*prefs->voxelDim[j];//convert fraction to voxels
+    for (int j = 1; j < 4; j++) { //convert fraction to voxels
+        //-1 as frac=0.5 voxelDim=9 is voxel 4 in zero-indexcoordinates
+        Vox[j] = frac[j]*(prefs->voxelDim[j]-1.0);
         prefs->sliceFrac[j] = frac[j];
     }
     mat44 R = prefs->sto_xyz;
     for (int i = 0; i < 3; i++) {
         prefs->mm[i+1] = round( (R.m[i][0]*Vox[1])+(R.m[i][1]*Vox[2])+ (R.m[i][2]*Vox[3])+R.m[i][3] );
     }
+    #ifdef MY_DEBUG //from nii_io.h
+    NSLog(@"frac2mm frac->vox->mm %g %g %g -> %g %g %g -> %g %g %g mm",
+          prefs->sliceFrac[1], prefs->sliceFrac[2], prefs->sliceFrac[3],
+          Vox[1], Vox[2], Vox[3],
+          prefs->mm[1], prefs->mm[2], prefs->mm[3]);
+    #endif
 }
 
 -(bool) changeXYZvoxel: (int) x Y: (int) y Z: (int) z {

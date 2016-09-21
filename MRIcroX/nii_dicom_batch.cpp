@@ -1346,7 +1346,7 @@ int saveDcm2Nii(int nConvert, struct TDCMsort dcmSort[],struct TDICOMdata dcmLis
     uint64_t indx0 = dcmSort[0].indx;
     bool saveAs3D = dcmList[indx].isHasPhase;
     struct nifti_1_header hdr0;
-    unsigned char * img = nii_loadImgXL(nameList->str[indx], &hdr0,dcmList[indx], iVaries, opts.compressFlag);
+    unsigned char * img = nii_loadImgXL(nameList->str[indx], &hdr0,dcmList[indx], iVaries, opts.compressFlag, opts.isVerbose);
     if ( (dcmList[indx0].compressionScheme != kCompressNone) && (opts.compressFlag != kCompressNone))
         printf("Image Decompression is new: please validate conversions\n");
     if (opts.isVerbose)
@@ -1446,7 +1446,7 @@ int saveDcm2Nii(int nConvert, struct TDCMsort dcmSort[],struct TDICOMdata dcmLis
         for (int i = 1; i < nConvert; i++) { //stack additional images
             indx = dcmSort[i].indx;
             //if (headerDcm2Nii(dcmList[indx], &hdrI) == EXIT_FAILURE) return EXIT_FAILURE;
-            img = nii_loadImgXL(nameList->str[indx], &hdrI, dcmList[indx],iVaries, opts.compressFlag);
+            img = nii_loadImgXL(nameList->str[indx], &hdrI, dcmList[indx],iVaries, opts.compressFlag, opts.isVerbose);
             if (img == NULL) return EXIT_FAILURE;
             if ((hdr0.dim[1] != hdrI.dim[1]) || (hdr0.dim[2] != hdrI.dim[2]) || (hdr0.bitpix != hdrI.bitpix)) {
                     #ifdef myUseCOut
