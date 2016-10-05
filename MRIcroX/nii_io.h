@@ -12,6 +12,7 @@
 #ifndef MRIpro_nii_io_h
 #define MRIpro_nii_io_h
 
+
 //#undef MY_DEBUG  //use "define" for verbose comments or "undef" for silent mode
 //#define MY_DEBUG  //use "define" for verbose comments or "undef" for silent mode
 #define MY_GLFONTS

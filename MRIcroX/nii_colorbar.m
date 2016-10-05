@@ -614,6 +614,7 @@ void drawColorBarText(float lMin, float lMax, TUnitRect lU, float lBorder, NII_P
     //next: compute increment
     lRange = fabs(lMax - lMin);
     if (lRange < 0.000001) return;
+    if ((lRange > DBL_MAX) || (lRange == INFINITY)) return; //avoid infinite loop for while lStepSize 
     //lStepSize = (lRange / NTICK);
     lStepSize = nicenum(lRange, NTICK);
     lStepSize = (lStepSize / NTICK);

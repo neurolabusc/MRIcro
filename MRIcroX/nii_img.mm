@@ -2008,13 +2008,15 @@ void fix_sform (FSLIO* fslio)
     fslio->niftiptr->sto_ijk = m_toijk;
 }
 
-void nii_setOrthoFSL (FSLIO* f)
-{
+void nii_setOrthoFSL (FSLIO* f){
+    
     if (f->niftiptr->sform_code == NIFTI_XFORM_UNKNOWN) {
         return;
     }
-    if (isMat44Canonical( f->niftiptr->sto_xyz))
+    if (isMat44Canonical( f->niftiptr->sto_xyz)) {
+        //NSLog( @" already canonical");
         return;
+    }
     //copy fsl header to nifti header
     struct nifti_1_header h;
     for (int i = 0; i < 8; i++) h.dim[i] = f->niftiptr->dim[i];
@@ -2548,6 +2550,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
             }
             
     }
+
     if (prefs->numDtiV >= prefs->currentVolume) {
         CGFloat color[4] = {0.9, 0.9,0.1,0.9};
         CGFloat v[3] = {prefs->dtiV[prefs->currentVolume-1][0],prefs->dtiV[prefs->currentVolume-1][1],prefs->dtiV[prefs->currentVolume-1][2]};
@@ -2559,6 +2562,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
         if (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) drawColorBarTex(prefs, glStringTex, stanStringAttrib);
         [self drawVolumeLabelTex];
     }
+    
     if (prefs->showOrient)
         [self drawOrientLabelTex];
     //glDisable (GL_TEXTURE_3D);
@@ -2958,6 +2962,7 @@ double  defuzzz(double x) {
         #endif
         //printf("recalcGL required %fms\n", ((double)(clock()-start))/1000);
     }
+    
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2],1.0);
     glClear(GL_COLOR_BUFFER_BIT);
     #ifdef NII_IMG_RENDER
@@ -3587,8 +3592,6 @@ void closeOverlays (NII_PREFS* prefs)
     //    [self notifyNotAllVolumesLoaded: maxVols RawVols: fslio->niftiptr->rawvols];
     if ((maxVols < 1) && (fslio->niftiptr->rawvols > fslio->niftiptr->dim[4]))
         [self notifyNotAllVolumesLoaded: fslio->niftiptr->dim[4] RawVols: fslio->niftiptr->rawvols];
-    
-    
     nii_setup(fslio, prefs);
     NSString* theFileName = [[file_name lastPathComponent] stringByDeletingPathExtension];
     if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
@@ -3599,7 +3602,6 @@ void closeOverlays (NII_PREFS* prefs)
     if ( (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->iname_offset >400)
         && ( (fslio->niftiptr->iname_offset % 16) == 0))
         readLabels (file_name, 352, round(fslio->niftiptr->iname_offset-352), labelArray);
-    
     //prefs->nii_prefs_fname = theFileName;//[[file_name lastPathComponent] stringByDeletingPathExtension];//666 file_name;
     prefs->busyGL = FALSE;
     return EXIT_SUCCESS;
