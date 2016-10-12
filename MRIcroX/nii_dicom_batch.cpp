@@ -98,6 +98,15 @@ void dropFilenameFromPath(char *path) { //
     }
 }
 
+void dropTrailingFileSep(char *path) { //
+   size_t len = strlen(path) - 1;
+   if (len <= 0) return;
+   if (path[len] == '/')
+   	path[len] = '\0';
+   else if (path[len] == '\\')
+   	path[len] = '\0';
+}
+
 
 void getFileName( char *pathParent, const char *path) //if path is c:\d1\d2 then filename is 'd2'
 {
@@ -336,26 +345,44 @@ void nii_SaveBIDS(char pathoutname[], struct TDICOMdata d, struct TDCMopts opts,
 //  https://www.ietf.org/rfc/rfc4627.txt
 	if (!opts.isCreateBIDS) return;
 	char txtname[2048] = {""};
-    strcpy (txtname,pathoutname);
-    strcat (txtname,".json");
-    //printf("Saving DTI %s\n",txtname);
-    FILE *fp = fopen(txtname, "w");
-    fprintf(fp, "{\n");
+	strcpy (txtname,pathoutname);
+	strcat (txtname,".json");
+	//printf("Saving DTI %s\n",txtname);
+	FILE *fp = fopen(txtname, "w");
+	fprintf(fp, "{\n");
 	switch (d.manufacturer) {
-				case kMANUFACTURER_SIEMENS:
-						fprintf(fp, "\t\"Manufacturer\": \"Siemens\",\n" );
-						break;
-				case kMANUFACTURER_GE:
-						fprintf(fp, "\t\"Manufacturer\": \"GE\",\n" );
-						break;
-				case kMANUFACTURER_PHILIPS:
-						fprintf(fp, "\t\"Manufacturer\": \"Philips\",\n" );
-						break;
-				case kMANUFACTURER_TOSHIBA:
-						fprintf(fp, "\t\"Manufacturer\": \"Toshiba\",\n" );
-						break;
+		case kMANUFACTURER_SIEMENS:
+			fprintf(fp, "\t\"Manufacturer\": \"Siemens\",\n" );
+			break;
+		case kMANUFACTURER_GE:
+			fprintf(fp, "\t\"Manufacturer\": \"GE\",\n" );
+			break;
+		case kMANUFACTURER_PHILIPS:
+			fprintf(fp, "\t\"Manufacturer\": \"Philips\",\n" );
+			break;
+		case kMANUFACTURER_TOSHIBA:
+			fprintf(fp, "\t\"Manufacturer\": \"Toshiba\",\n" );
+			break;
 	};
 	fprintf(fp, "\t\"ManufacturersModelName\": \"%s\",\n", d.manufacturersModelName );
+	if (strlen(d.imageType) > 0) {
+		fprintf(fp, "\t\"ImageType\": [\"");
+		bool isSep = false;
+		for (int i = 0; i < strlen(d.imageType); i++) {
+			if (d.imageType[i] != '_') {
+				if (isSep)
+		  			fprintf(fp, "\", \"");
+				isSep = false;
+				fprintf(fp, "%c", d.imageType[i]);
+			} else
+				isSep = true;
+		}
+		fprintf(fp, "\"],\n");
+	}
+	//Chris Gorgolewski: BIDS standard specifies ISO8601 date-time format (Example: 2016-07-06T12:49:15.679688)
+	//Lines below directly save DICOM values
+	// if (d.acquisitionTime > 0.0) fprintf(fp, "\t\"AcquisitionTime\": %f,\n", d.acquisitionTime );
+	// if (d.acquisitionDate > 0.0) fprintf(fp, "\t\"AcquisitionDate\": %8.0f,\n", d.acquisitionDate );
 	//if conditionals: the following values are required for DICOM MRI, but not available for CT
 	if (d.fieldStrength > 0.0) fprintf(fp, "\t\"MagneticFieldStrength\": %g,\n", d.fieldStrength );
 	if (d.flipAngle > 0.0) fprintf(fp, "\t\"FlipAngle\": %g,\n", d.flipAngle );
@@ -724,7 +751,8 @@ int nii_createFilename(struct TDICOMdata dcm, char * niiFilename, struct TDCMopt
             if ((f >= '0') && (f <= '9')) {
                 if ((pos<strlen(inname)) && (toupper(inname[pos+1]) == 'S')) {
                     char zeroPad[12] = {""};
-                    sprintf(zeroPad,"%%0%dd",atoi(&f));
+                    //sprintf(zeroPad,"%%0%dd",atoi(&f));
+                    sprintf(zeroPad,"%%0%dd",f - '0');
                     sprintf(newstr, zeroPad, dcm.seriesNum);
                     strcat (outname,newstr);
                     pos++; // e.g. %3f requires extra increment: skip both number and following character
@@ -738,6 +766,14 @@ int nii_createFilename(struct TDICOMdata dcm, char * niiFilename, struct TDCMopt
                 sprintf(newstr, "%0.0f", dcm.dateTime);
                 strcat (outname,newstr);
             }
+			if (f == 'U') {
+				#ifdef mySegmentByAcq
+				sprintf(newstr, "%d", dcm.acquNum);
+				strcat (outname,newstr);
+				#else
+    			printf("Warning: ignoring '%%f' in output filename (recompile to segment by acquisition)\n");
+    			#endif
+			}
             if (f == 'Z')
                 strcat (outname,dcm.sequenceName);
             start = pos + 1;
@@ -997,7 +1033,7 @@ void nii_check16bitUnsigned(unsigned char *img, struct nifti_1_header *hdr){
             max16 = img16[i];
     //printf("max16= %d vox=%d %fms\n",max16, nVox, ((double)(clock()-start))/1000);
     if (max16 > 32767)
-        printf("Note: images use rare 16-bit UNSIGNED integer. Older tools may require 32-bit conversion\n");
+        printf("Note: rare 16-bit UNSIGNED integer image. Older tools may require 32-bit conversion\n");
     else
         hdr->datatype = DT_INT16;
 } //nii_check16bitUnsigned()
@@ -1570,11 +1606,12 @@ int isSameFloatDouble (double a, double b) {
 }
 
 struct TWarnings { //generate a warning only once per set
-        bool bitDepthVaries, dateTimeVaries, echoVaries, coilVaries, nameVaries, orientVaries;
+        bool acqNumVaries, bitDepthVaries, dateTimeVaries, echoVaries, coilVaries, nameVaries, orientVaries;
 };
 
 TWarnings setWarnings() {
 	TWarnings r;
+	r.acqNumVaries = false;
 	r.bitDepthVaries = false;
 	r.dateTimeVaries = false;
 	r.echoVaries = false;
@@ -1588,8 +1625,17 @@ bool isSameSet (struct TDICOMdata d1, struct TDICOMdata d2, bool isForceStackSam
     //returns true if d1 and d2 should be stacked together as a single output
     if (!d1.isValid) return false;
     if (!d2.isValid) return false;
-    if  (d1.seriesNum != d2.seriesNum) return false;
-    if ((d1.bitsAllocated != d2.bitsAllocated) || (d1.xyzDim[1] != d2.xyzDim[1]) || (d1.xyzDim[2] != d2.xyzDim[2]) || (d1.xyzDim[3] != d2.xyzDim[3]) ) {
+	if (d1.seriesNum != d2.seriesNum) return false;
+	#ifdef mySegmentByAcq
+    if (d1.acquNum != d2.acquNum) return false;
+    #else
+    if (d1.acquNum != d2.acquNum) {
+        if (!warnings->acqNumVaries)
+        	printf("slices stacked despite varying acquisition numbers (if this is not desired please recompile)\n");
+        warnings->acqNumVaries = true;
+    }
+    #endif
+	if ((d1.bitsAllocated != d2.bitsAllocated) || (d1.xyzDim[1] != d2.xyzDim[1]) || (d1.xyzDim[2] != d2.xyzDim[2]) || (d1.xyzDim[3] != d2.xyzDim[3]) ) {
         if (!warnings->bitDepthVaries)
         	printf("slices not stacked: dimensions or bit-depth varies\n");
         warnings->bitDepthVaries = true;
@@ -1961,18 +2007,22 @@ int nii_loadDir (struct TDCMopts* opts) {
     char indir[512];
     strcpy(indir,opts->indir);
     bool isFile = is_fileNotDir(opts->indir);
-    if (isFile) {//if user passes ~/dicom/mr1.dcm we will look at all files in ~/dicom
+    if (isFile) //if user passes ~/dicom/mr1.dcm we will look at all files in ~/dicom
         dropFilenameFromPath(opts->indir);//getParentFolder(opts.indir, opts.indir);
-    }
+    dropTrailingFileSep(opts->indir);
     if (strlen(opts->outdir) < 1)
         strcpy(opts->outdir,opts->indir);
-    else if (!is_dir(opts->outdir,true)) {
-        #ifdef myUseCOut
-    	std::cout << "Warning: output folder invalid "<< opts->outdir<<" will try %s\n"<< opts->indir <<std::endl;
-    	#else
-     	printf("Warning: output folder invalid %s will try %s\n",opts->outdir,opts->indir);
-        #endif
-        strcpy(opts->outdir,opts->indir);
+    dropTrailingFileSep(opts->outdir);
+    if (is_fileNotDir(opts->outdir)) //if user passes ~/dicom/mr1.dcm we will look at all files in ~/dicom
+        dropFilenameFromPath(opts->outdir);//getParentFolder(opts.indir, opts.indir);
+    if (!is_dir(opts->outdir,true)) {
+		#ifdef myUseInDirIfOutDirUnavailable
+		printf("Warning: output folder invalid %s will try %s\n",opts->outdir,opts->indir);
+		strcpy(opts->outdir,opts->indir);
+		#else
+		printf("Error: output folder invalid: %s\n",opts->outdir);
+		return EXIT_FAILURE;
+		#endif
     }
     /*if (isFile && ((isExt(indir, ".gz")) || (isExt(indir, ".tgz"))) ) {
         #ifndef myDisableTarGz

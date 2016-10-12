@@ -713,12 +713,14 @@ struct TDICOMdata clear_dicom_data() {
     d.sliceOrient = kSliceOrientUnknown;
     strcpy(d.patientName, "John_Doe");
     strcpy(d.patientID, "ID123");
+    strcpy(d.imageType,"ORIGINAL");
     strcpy(d.imageComments, "imgComments");
     strcpy(d.studyDate, "1/1/1977");
     strcpy(d.studyTime, "11:11:11");
     strcpy(d.manufacturersModelName, "N/A");
     d.dateTime = (double)19770703150928.0;
     d.acquisitionTime = 0.0f;
+    d.acquisitionDate = 0.0f;
     strcpy(d.protocolName, "MPRAGE");
     strcpy(d.seriesDescription, "T1_mprage");
     strcpy(d.sequenceName, "T1");
@@ -1694,7 +1696,7 @@ struct TDICOMdata  nii_readParRec (char * parname, int isVerbose, struct TDTI4D 
 
     return d;
 } //nii_readParRec()
-                    
+
 size_t nii_SliceBytes(struct nifti_1_header hdr) {
     //size of 2D slice
     size_t imgsz = hdr.bitpix/8;
@@ -2248,7 +2250,7 @@ unsigned char * nii_loadImgCoreJasper(char* imgname, struct nifti_1_header hdr, 
     return img;
 } //nii_loadImgCoreJasper()
 #endif
-        
+
 struct TJPEG {
     long offset;
     long size;
@@ -2515,6 +2517,7 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
 //#define  kSpecificCharacterSet 0x0008+(0x0005 << 16 ) //someday we should handle foreign characters...
 #define  kImageTypeTag 0x0008+(0x0008 << 16 )
 #define  kStudyDate 0x0008+(0x0020 << 16 )
+#define  kAcquisitionDate 0x0008+(0x0022 << 16 )
 #define  kStudyTime 0x0008+(0x0030 << 16 )
 #define  kAcquisitionTime 0x0008+(0x0032 << 16 )
 #define  kManufacturer 0x0008+(0x0070 << 16 )
@@ -2536,10 +2539,11 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
 #define  kPhaseEncodingSteps  0x0018+(0x0089 << 16 ) //'IS'
 #define  kProtocolName  0x0018+(0x1030<< 16 )
 #define  kGantryTilt  0x0018+(0x1120  << 16 )
+#define  kXRayExposure  0x0018+(0x1152  << 16 )
 #define  kFlipAngle  0x0018+(0x1314  << 16 )
 #define  kInPlanePhaseEncodingDirection  0x0018+(0x1312<< 16 ) //CS
 #define  kPatientOrient  0x0018+(0x5100<< 16 )    //0018,5100. patient orientation - 'HFS'
-    //#define  kDiffusionBFactorSiemens  0x0019+(0x100C<< 16 ) //   0019;000C;SIEMENS MR HEADER  ;B_value                         ;1;IS;1
+//#define  kDiffusionBFactorSiemens  0x0019+(0x100C<< 16 ) //   0019;000C;SIEMENS MR HEADER  ;B_value
 #define  kLastScanLoc  0x0019+(0x101B<< 16 )
 #define  kDiffusionDirectionGEX  0x0019+(0x10BB<< 16 ) //DS
 #define  kDiffusionDirectionGEY  0x0019+(0x10BC<< 16 ) //DS
@@ -2768,19 +2772,23 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                 }
                 break;} //{} provide scope for variable 'transferSyntax
             case kImageTypeTag:
-            	char typestr[kDICOMStr];
-                dcmStr (lLength, &buffer[lPos], typestr);
+            	dcmStr (lLength, &buffer[lPos], d.imageType);
                 int slen;
-                slen = (int) strlen(typestr);
+                slen = (int) strlen(d.imageType);
 				//if (strcmp(transferSyntax, "ORIGINAL_PRIMARY_M_ND_MOSAIC") == 0)
-                if((slen > 5) && !strcmp(typestr + slen - 6, "MOSAIC") )
+                if((slen > 5) && !strcmp(d.imageType + slen - 6, "MOSAIC") )
                 	isMosaic = true;
                 //isNonImage 0008,0008 = DERIVED,CSAPARALLEL,POSDISP
                 // attempt to detect non-images, see https://github.com/scitran/data/blob/a516fdc39d75a6e4ac75d0e179e18f3a5fc3c0af/scitran/data/medimg/dcm/mr/siemens.py
-                if((slen > 6) && (strstr(typestr, "DERIVED") != NULL) )
+                if((slen > 6) && (strstr(d.imageType, "DERIVED") != NULL) )
                 	d.isNonImage = true;
                 //if((slen > 4) && (strstr(typestr, "DIS2D") != NULL) )
                 //	d.isNonImage = true;
+            	break;
+            case kAcquisitionDate:
+            	char acquisitionDateTxt[kDICOMStr];
+                dcmStr (lLength, &buffer[lPos], acquisitionDateTxt);
+                d.acquisitionDate = atof(acquisitionDateTxt);
             	break;
             case kStudyDate:
                 dcmStr (lLength, &buffer[lPos], d.studyDate);
@@ -2792,11 +2800,11 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                 d.isHasPhase = (buffer[lPos]=='P') && (toupper(buffer[lPos+1]) == 'H');
                 d.isHasMagnitude = (buffer[lPos]=='M') && (toupper(buffer[lPos+1]) == 'A');
                 break;
-            case 	kAcquisitionTime : {
+            case 	kAcquisitionTime :
                 char acquisitionTimeTxt[kDICOMStr];
                 dcmStr (lLength, &buffer[lPos], acquisitionTimeTxt);
                 d.acquisitionTime = atof(acquisitionTimeTxt);
-                break;}
+                break;
             case 	kStudyTime :
                 dcmStr (lLength, &buffer[lPos], d.studyTime);
                 break;
@@ -2925,7 +2933,7 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                 d.TR = dcmStrFloat(lLength, &buffer[lPos]);
                 break;
             case 	kTE :
-                d.TE = dcmStrFloat(lLength, &buffer[lPos]);
+            	d.TE = dcmStrFloat(lLength, &buffer[lPos]);
                 break;
             case kEchoNum :
                 d.echoNum =  dcmStrInt(lLength, &buffer[lPos]);
@@ -2945,6 +2953,10 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
             case kGantryTilt :
                 d.gantryTilt = dcmStrFloat(lLength, &buffer[lPos]);
                 break;
+            case kXRayExposure : //CTs do not have echo times, we use this field to detect different exposures: https://github.com/neurolabusc/dcm2niix/pull/48
+            	if (d.TE == 0) // for CT we will use exposure (0018,1152) whereas for MR we use echo time (0018,0081)
+                	d.TE = dcmStrFloat(lLength, &buffer[lPos]);
+            	break;
             case 	kSlope :
                 d.intenScale = dcmStrFloat(lLength, &buffer[lPos]);
                 break;
