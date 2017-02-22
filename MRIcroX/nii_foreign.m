@@ -891,8 +891,111 @@ unsigned char * rgba2rgb(unsigned char* img, struct nifti_1_header *hdr) {
     return img;
 } //rgba2rgb()
 
-
-int nii_readpic(NSString * fname, struct nifti_1_header *nhdr) {
+int nii_readDeltaVision(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndian) {
+//https://gist.github.com/josch/5713871
+//https://github.com/jayunruh/Jay_Plugins/blob/master/jguis/DVFile.java
+    //https://github.com/openmicroscopy/bioformats/blob/v5.3.1/components/formats-gpl/src/loci/formats/in/DeltavisionReader.java
+    #define DV_HEADER_SIZE 1024
+    #define SIG_NATIVE 49312
+    #define SIG_SWAPPED 41152
+    typedef struct
+    {
+        int32_t nx; //0
+        int32_t ny;  //4
+        int32_t nz;  //8
+        int32_t datatype;  //12 range 0..7
+        float xDim; //40
+        float yDim; //44
+        float zDim; //48
+        int32_t ExtendedHeaderSize; //92
+        uint16_t sig; //96 little=0A0C big=0C0A
+        int32_t numTimes; //180
+        uint16_t numChannels; //196
+        float xOri; //208
+        float yOri; //212
+        float zOri; //216
+        //char padding3[926]; //98..
+    } dv_header;
+    * swapEndian = false;
+    size_t n;
+    FILE *f;
+    unsigned char buffer[DV_HEADER_SIZE];
+    f = fopen([fname fileSystemRepresentation], "rb");
+    if (f)
+        n = fread(&buffer, DV_HEADER_SIZE, 1, f);
+    if(!f || n!=1) {
+        printf("Problem reading DeltaVision file!\n");
+        fclose(f);
+        return EXIT_FAILURE;
+    }
+    dv_header dvhdr;
+    memcpy( &dvhdr.nx, buffer+0, sizeof( dvhdr.nx ) );
+    memcpy( &dvhdr.ny, buffer+4, sizeof( dvhdr.ny ) );
+    memcpy( &dvhdr.datatype, buffer+12, sizeof( dvhdr.datatype ) );
+    memcpy( &dvhdr.nz, buffer+8, sizeof( dvhdr.nz ) );
+    memcpy( &dvhdr.xDim, buffer+40, sizeof( dvhdr.xDim ) );
+    memcpy( &dvhdr.yDim, buffer+44, sizeof( dvhdr.yDim ) );
+    memcpy( &dvhdr.zDim, buffer+48, sizeof( dvhdr.zDim ) );
+    memcpy( &dvhdr.ExtendedHeaderSize, buffer+92, sizeof( dvhdr.ExtendedHeaderSize) );
+    memcpy( &dvhdr.sig, buffer+96, sizeof( dvhdr.sig ) );
+    memcpy( &dvhdr.numTimes, buffer+180, sizeof( dvhdr.numTimes ) );
+    memcpy( &dvhdr.numChannels, buffer+196, sizeof( dvhdr.numChannels ) );
+    memcpy( &dvhdr.xOri, buffer+208, sizeof( dvhdr.xOri ) );
+    memcpy( &dvhdr.yOri, buffer+212, sizeof( dvhdr.yOri ) );
+    memcpy( &dvhdr.zOri, buffer+216, sizeof( dvhdr.zOri ) );
+    if  (dvhdr.sig == SIG_SWAPPED) { //recorded in opposite endian as reader
+        * swapEndian = true;
+        nifti_swap_4bytes(1, &dvhdr.nx);
+        nifti_swap_4bytes(1, &dvhdr.ny);
+        nifti_swap_4bytes(1, &dvhdr.nz);
+        nifti_swap_4bytes(1, &dvhdr.datatype);
+        nifti_swap_4bytes(1, &dvhdr.xDim);
+        nifti_swap_4bytes(1, &dvhdr.yDim);
+        nifti_swap_4bytes(1, &dvhdr.zDim);
+        nifti_swap_4bytes(1, &dvhdr.ExtendedHeaderSize);
+        nifti_swap_4bytes(1, &dvhdr.numTimes);
+        nifti_swap_2bytes(1, &dvhdr.numChannels);
+        nifti_swap_4bytes(1, &dvhdr.xOri);
+        nifti_swap_4bytes(1, &dvhdr.yOri);
+        nifti_swap_4bytes(1, &dvhdr.zOri);
+        nifti_swap_2bytes(1, &dvhdr.sig);
+    }
+    if ((dvhdr.datatype < 0) || (dvhdr.datatype > 7) || (dvhdr.sig != SIG_NATIVE)) {
+        fclose(f);
+        return EXIT_FAILURE;
+    }
+    //NSLog(@"--> %g  %g  %g", dvhdr.xOri, dvhdr.yOri, dvhdr.zOri);
+    dvhdr.numChannels = dvhdr.numChannels < 1 ? 1 : dvhdr.numChannels;
+    dvhdr.numTimes = dvhdr.numTimes < 1 ? 1 : dvhdr.numTimes;
+    int sizeZ = dvhdr.nz;
+    int sizeT = 1;
+    if ( dvhdr.nz % (dvhdr.numTimes * dvhdr.numChannels) == 0 ) {
+        sizeZ = dvhdr.nz / (dvhdr.numTimes * dvhdr.numChannels);
+        sizeT = dvhdr.nz / sizeZ;
+    }
+    if (sizeT > 1)
+        nhdr->dim[0]=4;//4D
+    else
+        nhdr->dim[0]=3;//3D
+    nhdr->dim[1]=dvhdr.nx;
+    nhdr->dim[2]=dvhdr.ny;
+    nhdr->dim[3]=sizeZ; //slices per volume
+    nhdr->dim[4]=sizeT; //volumes
+    nhdr->pixdim[1]=dvhdr.xDim;
+    nhdr->pixdim[2]=dvhdr.yDim;
+    nhdr->pixdim[3]=dvhdr.zDim;
+    nhdr->datatype = DT_UINT16;
+    nhdr->vox_offset = DV_HEADER_SIZE + dvhdr.ExtendedHeaderSize;
+    nhdr->sform_code = 1;
+    nhdr->srow_x[0]=nhdr->pixdim[1];nhdr->srow_x[1]=0.0f;nhdr->srow_x[2]=0.0f;nhdr->srow_x[3]=-dvhdr.xOri;
+    nhdr->srow_y[0]=0.0f;nhdr->srow_y[1]=nhdr->pixdim[2];nhdr->srow_y[2]=0.0f;nhdr->srow_y[3]=-dvhdr.yOri;
+    nhdr->srow_z[0]=0.0f;nhdr->srow_z[1]=0.0f;nhdr->srow_z[2]=-nhdr->pixdim[3];nhdr->srow_z[3]=-dvhdr.zOri;
+    fclose(f);
+    convertForeignToNifti(nhdr);
+    return EXIT_SUCCESS;
+}
+        
+int nii_readpic(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndian) {
     //https://github.com/jefferis/pic2nifti/blob/master/libpic2nifti.c
 #define BIORAD_HEADER_SIZE 76
 #define BIORAD_NOTE_HEADER_SIZE 16
@@ -928,6 +1031,7 @@ int nii_readpic(NSString * fname, struct nifti_1_header *nhdr) {
     } biorad_note_header;
     size_t n;
     FILE *f;
+    * swapEndian = false; //ALWAYS little endian
     unsigned char buffer[BIORAD_HEADER_SIZE];
     f = fopen([fname fileSystemRepresentation], "rb");
     if (f)
@@ -947,6 +1051,14 @@ int nii_readpic(NSString * fname, struct nifti_1_header *nhdr) {
         fclose(f);
         return EXIT_FAILURE;
     }
+    #ifdef  __BIG_ENDIAN__ //biorad files always little-endian: byte swap!
+    * swapEndian = true;
+    nifti_swap_2bytes(1, &bhdr.nx);
+    nifti_swap_2bytes(1, &bhdr.ny);
+    nifti_swap_2bytes(1, &bhdr.npic);
+    nifti_swap_2bytes(1, &bhdr.byte_format);
+    #endif
+    
     nhdr->dim[0]=3;//3D
     nhdr->dim[1]=bhdr.nx;
     nhdr->dim[2]=bhdr.ny;
@@ -960,6 +1072,7 @@ int nii_readpic(NSString * fname, struct nifti_1_header *nhdr) {
     else
         nhdr->datatype = DT_UINT16;
     nhdr->vox_offset = BIORAD_HEADER_SIZE;
+
     if(fseek(f, bhdr.nx*bhdr.ny*bhdr.npic*bhdr.byte_format, SEEK_CUR)==0) {
         biorad_note_header nh;
         char noteheaderbuf[BIORAD_NOTE_HEADER_SIZE];
@@ -968,6 +1081,9 @@ int nii_readpic(NSString * fname, struct nifti_1_header *nhdr) {
             fread(&noteheaderbuf, BIORAD_NOTE_HEADER_SIZE, 1, f);
             fread(&note, BIORAD_NOTE_SIZE, 1, f);
             memcpy(&nh.note_flag, noteheaderbuf+2, sizeof(nh.note_flag));
+            #ifdef  __BIG_ENDIAN__ //biorad files always little-endian: byte swap!
+            nifti_swap_2bytes(1, &nh.note_flag);
+            #endif
             memcpy(&nh.note_type, noteheaderbuf+10, sizeof(nh.note_type));
             //		printf("regular note line %s\n",note);
             //		printf("note flag = %d, note type = %d\n",nh.note_flag,nh.note_type);
@@ -1920,8 +2036,10 @@ unsigned char * nii_readForeign(NSString * fname, struct nifti_1_header *niiHdr,
     //NSLog(@"%-- d %dx%dx%dx%d",niiHdr->dim[0], niiHdr->dim[1], niiHdr->dim[2], niiHdr->dim[3],  niiHdr->dim[4]);
     if ([ext rangeOfString:@"HEAD" options:NSCaseInsensitiveSearch].location != NSNotFound)
         OK = afni_readhead(fname, &imgname, niiHdr, &gzBytes, &swapEndian);
+    else if ([ext rangeOfString:@"DV" options:NSCaseInsensitiveSearch].location != NSNotFound)
+        OK = nii_readDeltaVision(fname, niiHdr, &swapEndian);
     else if ([ext rangeOfString:@"PIC" options:NSCaseInsensitiveSearch].location != NSNotFound)
-        OK = nii_readpic(fname, niiHdr);
+        OK = nii_readpic(fname, niiHdr, &swapEndian);
     else if (([ext rangeOfString:@"MHA" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([ext rangeOfString:@"MHD" options:NSCaseInsensitiveSearch].location != NSNotFound))
         OK = nii_readmha(fname, &imgname, niiHdr, &gzBytes, &swapEndian);
     else if (([ext rangeOfString:@"NHDR" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([ext rangeOfString:@"NRRD" options:NSCaseInsensitiveSearch].location != NSNotFound))

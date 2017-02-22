@@ -942,9 +942,7 @@ NSArray * niiFileTypes () {
       f->niftiptr->pixdim[1],f->niftiptr->pixdim[2],f->niftiptr->pixdim[3], f->niftiptr->pixdim[4], smat  ];
     
     NSString *desc= [NSString stringWithUTF8String:f->niftiptr->descrip];
-    
     desc = [desc stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-    
     if (desc.length > 0)
         ret = [ret stringByAppendingString:[@"\nDescription: " stringByAppendingString: desc]];
     NSString * slicecode;
@@ -963,6 +961,7 @@ NSArray * niiFileTypes () {
     else
         slicecode = @"";
     ret = [ret stringByAppendingString: slicecode];
+    ret = [ret stringByAppendingString: [NSString stringWithFormat:@"\nIntensity Intercept; Slope: %g; %g", f->niftiptr->scl_inter, f->niftiptr->scl_slope] ];
     
     
    /* NSString * vx;

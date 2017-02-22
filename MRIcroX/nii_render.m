@@ -264,6 +264,8 @@ void performBlurSobel(NII_PREFS* prefs, bool isOverlay) {
     glUseProgram(0);
     //clean up:
     glDeleteTextures(1,&tempTex3D);
+    glFlush();
+    glFinish();//<-wait for jobs to finish: we need these to draw 
 }
 
 void doShaderBlurSobel (NII_PREFS* prefs){
@@ -274,14 +276,14 @@ void doShaderBlurSobel (NII_PREFS* prefs){
         prefs->glslprogramIntBlur=  initVertFrag(vert_empty, kBlurShaderFrag);
     if (prefs->glslprogramIntSobel == 0)
         prefs->glslprogramIntSobel=  initVertFrag(vert_empty, kSobelShaderFrag);
+//#define MY_DEBUG
 #ifdef MY_DEBUG
     NSDate *methodStart = [NSDate date];
 #endif
-    
-    if (prefs->glslUpdateGradientsBG)
-        performBlurSobel(prefs, false); //performBlur(prefs);
     if (prefs->glslUpdateGradientsOverlay)
         performBlurSobel(prefs, true); //performBlur(prefs);
+    if (prefs->glslUpdateGradientsBG)
+        performBlurSobel(prefs, false); //performBlur(prefs);
 
 #ifdef MY_DEBUG
     NSLog(@"glsl = %1f", (1000.0*[[NSDate date] timeIntervalSinceDate:methodStart]));
@@ -1037,8 +1039,7 @@ void clipUniforms (NII_PREFS* prefs)
     glEnd();
 }*/
 
-void rayCasting (NII_PREFS* prefs)
-{
+void rayCasting (NII_PREFS* prefs) {
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, prefs->finalImage, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glUseProgram(prefs->glslprogramInt);
@@ -1276,10 +1277,15 @@ void  setupRender (NII_PREFS* prefs)  //InitGL
 
 void redrawRender (NII_PREFS* prefs)  //DisplayGL
 {
-    if ((prefs->renderHt < 1) || (prefs->renderWid < 1)) return;
+    if ((prefs->renderHt < 1) || (prefs->renderWid < 1))
+        return;
+    glDisable (GL_TEXTURE_3D);//this is critical!
     #ifdef  MY_USE_ADVANCED_GLSL
     doShaderBlurSobel (prefs);
     #endif
+    
+    
+    
     setupRender(prefs);
     resize(prefs->renderWid, prefs->renderHt, prefs);
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2], 0.0);
@@ -1289,7 +1295,6 @@ void redrawRender (NII_PREFS* prefs)  //DisplayGL
     glRotatef(prefs->renderAzimuth,0,0,1);
     glTranslatef(-prefs->TexScale[1]/2,-prefs->TexScale[2]/2,-prefs->TexScale[3]/2);
     renderBackFace(prefs);
-    
     rayCasting(prefs);
     glActiveTexture( GL_TEXTURE0 ); //this can be called in rayCasting, but MUST be called before 2D can be done
     disableRenderBuffers();

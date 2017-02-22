@@ -2849,8 +2849,11 @@ double  defuzzz(double x) {
     //build OpenGL context
     //http://lists.apple.com/archives/mac-opengl/2010/Mar/msg00077.html
     //NSOpenGLPFARemotePixelBuffer, //<-deprecated
+    //NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)NSOpenGLProfileVersionLegacy,
+    //NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)NSOpenGLProfileVersion3_2Core,
     NSOpenGLPixelFormatAttribute attributes[] =
     {
+        NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)NSOpenGLProfileVersionLegacy,
         NSOpenGLPFAAllowOfflineRenderers,
         NSOpenGLPFANoRecovery,
         NSOpenGLPFAAccelerated,
@@ -3557,6 +3560,15 @@ void closeOverlays (NII_PREFS* prefs)
     fclose( header_file ) ;
 }
 
+- (IBAction)notifyImageTooBig
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = [NSString stringWithFormat:@"Image too large for volume rendering"];
+    notification.informativeText = @"Display may be impaired";
+    notification.soundName = NULL;
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [NSTimer scheduledTimerWithTimeInterval: 4.5  target:self selector: @selector(closePopup) userInfo:self repeats:NO];
+}
 
 -(int)  setLoadImage2: (NSString *) file_name IsOverlay: (bool) isOverlay;
 {
@@ -3586,6 +3598,9 @@ void closeOverlays (NII_PREFS* prefs)
         [self notifyOpenFailed];
         return setLoadDummy(fslio, prefs);
     }
+    #define kMaxDim 1536
+    if ((fslio->niftiptr->dim[1]> kMaxDim) || (fslio->niftiptr->dim[2]> kMaxDim) || (fslio->niftiptr->dim[3]> kMaxDim))
+        [self notifyImageTooBig];
     if ((prefs->dicomWarn) && (fslio->niftiptr->isDICOM))
         [self notifyDICOMwarning];
     //if (fslio->niftiptr->rawvols > maxVols)
