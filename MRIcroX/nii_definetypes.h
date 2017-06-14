@@ -72,7 +72,7 @@ extern "C" {
         // force_refreshGL : rapid redraw of screen at next "doRedraw" timer - e.g. new origin selected
         // force_recalcGL : a slow recalculation is required at next "doRedraw" timer - e.g. rescale colors
         // busyGL : OpenGL is currently busy on an update, new "doRedraw" calls deferred until task is completed
-        bool retineResolution, dicomWarn, force_refreshGL, force_recalcGL, busyGL, updatedTimeline, showInfo, showOrient, orthoOrient,loadFewVolumes,  advancedRender, viewRadiological;
+        bool retinaResolution, dicomWarn, force_refreshGL, force_recalcGL, busyGL, updatedTimeline, showInfo, showOrient, orthoOrient,loadFewVolumes,  advancedRender, viewRadiological;
         float overlayFrac; //, colorBarBorder;
         int colorBarBorderPx;
         NII_OVERLAY overlays[MAX_OVERLAY];

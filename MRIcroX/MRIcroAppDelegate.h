@@ -70,6 +70,8 @@
 @property (unsafe_unretained) IBOutlet NSWindow *prefWindow;
 @property (weak) IBOutlet NSButton *prefOrientCheck;
 @property (weak) IBOutlet NSButton *prefLoadFewVolumesCheck;
+@property (weak) IBOutlet NSButton *prefRetinaCheck;
+
 @property (weak) IBOutlet NSButton *prefRadiologicalCheck;
 
 @property (weak) IBOutlet NSButton *prefDicomCheck;

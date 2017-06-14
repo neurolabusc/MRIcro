@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="10117" systemVersion="15G1510" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none">
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="10117"/>
@@ -267,6 +267,7 @@
                 <outlet property="prefLoadOrientCheck" destination="BaB-ni-e3W" id="DSh-RD-SNY"/>
                 <outlet property="prefOrientCheck" destination="HrM-7T-5Ue" id="Qor-kg-vyn"/>
                 <outlet property="prefRadiologicalCheck" destination="K3j-2g-wFi" id="bVM-CW-4fD"/>
+                <outlet property="prefRetinaCheck" destination="8cg-s1-JVF" id="Cr3-gB-EdG"/>
                 <outlet property="prefWin" destination="Ipr-J6-7DM" id="u2R-h7-div"/>
                 <outlet property="prefWindow" destination="Ipr-J6-7DM" id="aFt-Nu-ndS"/>
                 <outlet property="theTextView" destination="zug-ay-gyA" id="QyH-83-z31"/>
@@ -276,16 +277,16 @@
         </customObject>
         <window title="Settings" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="Ipr-J6-7DM">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <rect key="contentRect" x="109" y="132" width="177" height="350"/>
+            <rect key="contentRect" x="109" y="132" width="184" height="383"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1280" height="778"/>
-            <value key="minSize" type="size" width="177" height="350"/>
-            <value key="maxSize" type="size" width="177" height="350"/>
+            <value key="minSize" type="size" width="184" height="383"/>
+            <value key="maxSize" type="size" width="184" height="383"/>
             <view key="contentView" id="7g4-n1-yvc">
-                <rect key="frame" x="0.0" y="0.0" width="177" height="350"/>
+                <rect key="frame" x="0.0" y="0.0" width="184" height="383"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <button toolTip="Show colored cube on rendering to identify left and right side." id="Syh-Ul-eaV">
-                        <rect key="frame" x="11" y="284" width="155" height="18"/>
+                        <rect key="frame" x="11" y="320" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="3D orient cube" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="OXx-9E-Tgz">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -296,18 +297,18 @@
                         </connections>
                     </button>
                     <button toolTip="Create higher quality (but slower) renderings." id="E2J-lp-dqw">
-                        <rect key="frame" x="11" y="258" width="155" height="18"/>
+                        <rect key="frame" x="11" y="294" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="3D better render" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="35U-DZ-EKM">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                            <font key="font" size="13" name=".AppleSystemUIFont"/>
+                            <font key="font" metaFont="system"/>
                         </buttonCell>
                         <connections>
                             <action selector="prefChange:" target="494" id="kq6-hL-GB7"/>
                         </connections>
                     </button>
                     <button toolTip="Should the image show text noting the left, anterior and superior directions." id="HrM-7T-5Ue">
-                        <rect key="frame" x="11" y="232" width="155" height="18"/>
+                        <rect key="frame" x="11" y="268" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="2D show orient" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="0OT-TY-Aeb">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -318,7 +319,7 @@
                         </connections>
                     </button>
                     <button toolTip="Add lines to designate currently selected voxel." id="oEo-s9-wHU">
-                        <rect key="frame" x="11" y="206" width="155" height="18"/>
+                        <rect key="frame" x="11" y="242" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="2D show crosshairs" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="c29-Ms-L8I">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -329,7 +330,7 @@
                         </connections>
                     </button>
                     <button id="K3j-2g-wFi">
-                        <rect key="frame" x="10" y="180" width="155" height="18"/>
+                        <rect key="frame" x="10" y="216" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <string key="toolTip">For 2D slices, if checked left side of image reflects right side of object (radiological convention). If unchecked: left side of image is left side of object (neurological convention)</string>
                         <buttonCell key="cell" type="check" title="2D radiological view" bezelStyle="regularSquare" imagePosition="left" inset="2" id="7Ox-Gj-6Mx">
@@ -341,7 +342,7 @@
                         </connections>
                     </button>
                     <button toolTip="Show image brightness colorbar and image coordinates." id="0AG-v6-WiM">
-                        <rect key="frame" x="11" y="154" width="155" height="18"/>
+                        <rect key="frame" x="11" y="190" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Show colorbar" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="ihs-Ji-ndo">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -352,7 +353,7 @@
                         </connections>
                     </button>
                     <button toolTip="Should images have a white or black background?" id="weg-eN-cJe">
-                        <rect key="frame" x="11" y="128" width="155" height="18"/>
+                        <rect key="frame" x="11" y="164" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Black background" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="uu9-e0-ebD">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -363,7 +364,7 @@
                         </buttonCell>
                     </button>
                     <button toolTip="Opening DICOM images can generate a message reminding the user to consider converting the images to NIfTI format. " id="aVt-Ek-Uff">
-                        <rect key="frame" x="11" y="102" width="155" height="18"/>
+                        <rect key="frame" x="11" y="138" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Suggest dcm2nii" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="UJT-bB-9FH">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -374,7 +375,7 @@
                         </buttonCell>
                     </button>
                     <button toolTip="If checked, images are rotated to nearest orthogonal slice" id="BaB-ni-e3W">
-                        <rect key="frame" x="11" y="76" width="155" height="18"/>
+                        <rect key="frame" x="11" y="112" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Load oriented" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="xf6-da-Bca">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -385,7 +386,7 @@
                         </connections>
                     </button>
                     <button verticalHuggingPriority="750" id="WHv-Vd-W1H">
-                        <rect key="frame" x="5" y="308" width="164" height="32"/>
+                        <rect key="frame" x="5" y="344" width="164" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="push" title="Highlight Color" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="ACM-z8-E4n">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -395,19 +396,8 @@
                             </connections>
                         </buttonCell>
                     </button>
-                    <button verticalHuggingPriority="750" id="9ZI-nU-bB5">
-                        <rect key="frame" x="19" y="8" width="139" height="32"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <buttonCell key="cell" type="push" title="Reset Defaults" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2NN-eS-9QU">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
-                        </buttonCell>
-                        <connections>
-                            <action selector="prefResetClick:" target="494" id="KPe-Kh-opx"/>
-                        </connections>
-                    </button>
                     <button toolTip="If checked, only first 32 volumes of 4D images (fMRI, DTI) are loaded. This is faster and reduces memory requirements." id="8id-JN-N9W">
-                        <rect key="frame" x="11" y="50" width="155" height="18"/>
+                        <rect key="frame" x="11" y="86" width="155" height="18"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <buttonCell key="cell" type="check" title="Only initial volumes" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="arq-dp-49z">
                             <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -417,12 +407,34 @@
                             <action selector="prefChange:" target="494" id="Z8r-Et-KvZ"/>
                         </connections>
                     </button>
+                    <button toolTip="Enables retina resolution. Slower but higher quality" id="8cg-s1-JVF" userLabel="Retina Check">
+                        <rect key="frame" x="9" y="61" width="155" height="18"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="check" title="Retina support (slow)" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="POD-5i-jAa" userLabel="Retina">
+                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="prefChange:" target="494" id="FXb-B5-Skn"/>
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" id="9ZI-nU-bB5">
+                        <rect key="frame" x="19" y="13" width="139" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="push" title="Reset Defaults" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="2NN-eS-9QU">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="prefResetClick:" target="494" id="KPe-Kh-opx"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
             <connections>
                 <outlet property="delegate" destination="-2" id="jir-ud-RES"/>
             </connections>
-            <point key="canvasLocation" x="146.5" y="585"/>
+            <point key="canvasLocation" x="150" y="608.5"/>
         </window>
         <window title="dcm2nii" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="Qke-lH-ESB" customClass="dcm2niiWindow">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>

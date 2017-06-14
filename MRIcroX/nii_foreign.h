@@ -1,4 +1,5 @@
-//Convert foreign (non-DICOM) formats to NIfTI
+//Attempt to open non-DICOM image
+
 #ifndef _NII_FOREIGN_
 #define _NII_FOREIGN_
 
@@ -6,11 +7,10 @@
 extern "C" {
 #endif
 
-#include "nifti1.h"
-#import <Foundation/Foundation.h>
-    
-//unsigned char * nii_readForeignC(char * fname, struct nifti_1_header *niiHdr, int skipVol, int loadVol);
-unsigned char * nii_readForeign(NSString * fname, struct nifti_1_header *niiHdr, int skipVol, int loadVol);
+#include "nii_dicom_batch.h"
+
+//int  open_foreign (const char *fn);
+int  convert_foreign (const char *fn, struct TDCMopts opts);
 
 #ifdef  __cplusplus
 }

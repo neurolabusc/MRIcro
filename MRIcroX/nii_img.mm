@@ -2081,8 +2081,6 @@ int nii_setup(FSLIO* fslio, NII_PREFS* prefs)
         nii_setOrthoFSL (fslio);
     else
         fslio->niftiptr->sform_code = NIFTI_XFORM_UNKNOWN; //unknown orientation, do not place L/R A/P S/I labels
-
-    
     ret = nii_findrange(fslio, prefs);
     if (ret != EXIT_SUCCESS) return EXIT_FAILURE;
     for (long dim = 1; dim < 4; dim++) {
@@ -2435,7 +2433,7 @@ double getOverlayVoxelIntensity(long long vox, int overlayIndex, NII_PREFS* pref
     //    string = [NSString stringWithFormat:@"%g x %g x %g = %@ %d/%d",  defuzzz(prefs->mm[1]), defuzzz(prefs->mm[2]), defuzzz(prefs->mm[3]), intensityStr,  prefs->currentVolume, prefs->numVolumes];
     [glStringTex setString:string withAttributes:stanStringAttrib];
     //[glStringTex drawAtPoint:NSMakePoint (6, 24)];
-    [glStringTex drawLeftOfPoint:NSMakePoint (prefs->scrnWid-8, 14)];
+    [glStringTex drawAboveLeftOfPoint:NSMakePoint (prefs->scrnWid-8, 4)];
 }
 
 void drawVector (int lX, int lY, int lXo, int lYo, CGFloat XColor[4]) {
@@ -3514,7 +3512,6 @@ void closeOverlays (NII_PREFS* prefs)
 -(BOOL) checkSandAccess2: (NSString *)file_name
 {
     if (file_name.length < 3) return true;
-    //NSLog(@"sanbox : %@",file_name ); // [FName lastPathComponent]
     bool result = [self checkSandAccess: file_name];
     //bool result = checkSandAccess(file_name);
     if (!result) return result; //no access to primary file
@@ -3572,7 +3569,7 @@ void closeOverlays (NII_PREFS* prefs)
 
 -(int)  setLoadImage2: (NSString *) file_name IsOverlay: (bool) isOverlay;
 {
-    if (![self checkSandAccess2: file_name]) return EXIT_FAILURE;
+    if (![self checkSandAccess2: file_name]) return setLoadDummy(fslio, prefs);
     [self freePrefs];
     //fslio = FslInit();
     prefs->busyGL = TRUE;
@@ -3807,6 +3804,7 @@ void closeOverlays (NII_PREFS* prefs)
 }
 
 - (void) updateFont: (NSColor *) aColor {
+    //[glStringTex setScale: 1];
     [stanStringAttrib setObject:aColor forKey:NSForegroundColorAttributeName];
     //float y = 0.299 * aColor.redComponent + 0.587 * aColor.greenComponent + 0.114 * aColor.blueComponent;
     float y = (aColor.redComponent + aColor.greenComponent + aColor.blueComponent)*0.3333;

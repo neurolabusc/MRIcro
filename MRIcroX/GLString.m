@@ -118,6 +118,7 @@
 - (void) setScale:(float)scale // set retina scaling
 {
     retinaScaleFactor = scale;
+    //NSLog(@"%g", retinaScaleFactor);
 }
 
 // designated initializer
@@ -186,9 +187,9 @@
         frameSize = [string size]; // current string size
         frameSize.width += marginSize.width * 2.0f; // add padding
         frameSize.height += marginSize.height * 2.0f;
-        frameSizeScaled.x = frameSize.width * 1;
-        frameSizeScaled.y = frameSize.height * 1;
-        
+        frameSizeScaled.x = frameSize.width * retinaScaleFactor;
+        frameSizeScaled.y = frameSize.height * retinaScaleFactor;
+        //NSLog(@"%g", retinaScaleFactor);
         //frameSize.width *= retinaScaleFactor;
         //frameSize.height *= retinaScaleFactor;
     }
@@ -342,7 +343,9 @@
         [self genTexture]; // ensure size is calculated for bounds
     if (texName) // if successful
         //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)]; //RetinaX 2016
-        [self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width / retinaScaleFactor, texSize.height / retinaScaleFactor)];
+        //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)];
+        [self drawWithBounds:NSMakeRect (point.x, point.y, frameSizeScaled.x, frameSizeScaled.y)];
+        //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width / retinaScaleFactor, texSize.height / retinaScaleFactor)];
     //NSLog(@" %gx%g %gx%g %g",texSize.width, texSize.height, frameSize.width,frameSize.height, retinaScaleFactor);
 }
 
@@ -417,32 +420,34 @@
 	}
 }
 
+- (void) drawAboveLeftOfPoint:(NSPoint)point {
+    [self frameSize];
+    [self drawAtPoint: NSMakePoint(point.x-(frameSizeScaled.x), point.y+ (frameSizeScaled.y))];
+}
 
 - (void) drawLeftOfPoint:(NSPoint)point
 {
-    NSSize fs = [self frameSize];
-    NSPoint adj = point;
-    //adj.x = adj.x -fs.width;
-    adj.x = adj.x -frameSizeScaled.x;
-    adj.y = adj.y + (fs.height / 2);
-    [self drawAtPoint: adj];
+    [self frameSize];
+    [self drawAtPoint: NSMakePoint(point.x-(frameSizeScaled.x), point.y+ (0.5 * frameSizeScaled.y))];
 }
 
 - (void) drawRightOfPoint:(NSPoint)point
+{
+    [self frameSize];
+    [self drawAtPoint: NSMakePoint(point.x, point.y+ (0.5 * frameSizeScaled.y))];
+}
+/*- (void) drawRightOfPoint:(NSPoint)point
 {
     NSSize fs = [self frameSize];
     NSPoint adj = point;
     adj.x = adj.x;// -fs.width;
     adj.y = adj.y + (fs.height / 2);
     [self drawAtPoint: adj];
-}
+}*/
 
 - (void) drawBelowPoint:(NSPoint)point
 {
-    NSSize fs = [self frameSize];
-    NSPoint adj = point;
-    adj.x = adj.x -(fs.width/2);
-    [self drawAtPoint: adj];
+    [self frameSize];
+    [self drawAtPoint: NSMakePoint(point.x-(0.5 *frameSizeScaled.x), point.y)];
 }
-
 @end

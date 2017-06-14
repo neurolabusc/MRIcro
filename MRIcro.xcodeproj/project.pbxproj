@@ -40,6 +40,10 @@
 		4F12CE7B1A195DB000408A12 /* mricro.icns in Resources */ = {isa = PBXBuildFile; fileRef = 4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */; };
 		4F1C368318A7586000CE8008 /* MySplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C368218A7586000CE8008 /* MySplitViewController.m */; };
 		4F3E85FE18BD7E76003B3515 /* nii_label.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E85FD18BD7E76003B3515 /* nii_label.mm */; };
+		4F56F8C11EBCEF750087AB46 /* nii_foreignx.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */; };
+		4F56F8C21EBCEF750087AB46 /* nii_foreignx.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */; };
+		4F56F8C31EBCEF750087AB46 /* nii_foreign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */; };
+		4F56F8C41EBCEF750087AB46 /* nii_foreign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */; };
 		4F6B23931609EC2B003D311C /* nii_colorbar.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23831609EC2B003D311C /* nii_colorbar.m */; };
 		4F6B23941609EC2B003D311C /* nii_GLView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23861609EC2B003D311C /* nii_GLView.mm */; };
 		4F6B23951609EC2B003D311C /* nii_img.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23881609EC2B003D311C /* nii_img.mm */; };
@@ -48,7 +52,6 @@
 		4F6B239A1609EC2B003D311C /* nii_reslice.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23921609EC2B003D311C /* nii_reslice.m */; };
 		4F6B239E1609EC6C003D311C /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F6B239D1609EC6C003D311C /* libz.dylib */; };
 		4F70AC7716121AB90007FAB5 /* nii_timelineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F70AC7616121AB90007FAB5 /* nii_timelineView.m */; };
-		4F76B80D1A6FE189004C17FA /* nii_foreign.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F76B80C1A6FE189004C17FA /* nii_foreign.m */; };
 		4F7787F918AD5D360028CAE3 /* nii_mosaic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F7787F818AD5D360028CAE3 /* nii_mosaic.mm */; };
 		4F84E24819F46AB900D95B28 /* nii_ortho.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24619F46AB900D95B28 /* nii_ortho.cpp */; };
 		4F84E24B19F46AD500D95B28 /* nii_dicom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24919F46AD500D95B28 /* nii_dicom.cpp */; };
@@ -65,7 +68,6 @@
 		4F9A58B91609E963008ECBE2 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F9A58B81609E963008ECBE2 /* OpenGL.framework */; };
 		4FB5AFD61A8A6544000196DD /* ujpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F9E21A6BFA3500E96843 /* ujpeg.cpp */; };
 		4FB5AFD71A8A6556000196DD /* jpg_0XC3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC7949D1A6ADE2E00B2BA49 /* jpg_0XC3.cpp */; };
-		4FB5AFD81A8A657A000196DD /* nii_foreign.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F76B80C1A6FE189004C17FA /* nii_foreign.m */; };
 		4FC7949F1A6ADE2E00B2BA49 /* jpg_0XC3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC7949D1A6ADE2E00B2BA49 /* jpg_0XC3.cpp */; };
 		4FCDFAEC18BCFD4700FB2F28 /* mricro.icns in Resources */ = {isa = PBXBuildFile; fileRef = 4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */; };
 		4FD0B0E518BEE67F0061FAD2 /* GLString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD0B0E418BEE67F0061FAD2 /* GLString.m */; };
@@ -82,6 +84,10 @@
 		4F2D981119DEE86E00631700 /* tinydir.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tinydir.h; sourceTree = "<group>"; };
 		4F3E85FC18BD7E76003B3515 /* nii_label.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_label.h; sourceTree = "<group>"; };
 		4F3E85FD18BD7E76003B3515 /* nii_label.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = nii_label.mm; sourceTree = "<group>"; };
+		4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_foreignx.m; sourceTree = "<group>"; };
+		4F56F8BE1EBCEF750087AB46 /* nii_foreignx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreignx.h; sourceTree = "<group>"; };
+		4F56F8BF1EBCEF750087AB46 /* nii_foreign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreign.h; sourceTree = "<group>"; };
+		4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_foreign.cpp; sourceTree = "<group>"; };
 		4F6B23821609EC2B003D311C /* nii_colorbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_colorbar.h; sourceTree = "<group>"; };
 		4F6B23831609EC2B003D311C /* nii_colorbar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_colorbar.m; sourceTree = "<group>"; };
 		4F6B23841609EC2B003D311C /* nii_definetypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_definetypes.h; sourceTree = "<group>"; };
@@ -99,8 +105,6 @@
 		4F6B239D1609EC6C003D311C /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		4F70AC7516121AB90007FAB5 /* nii_timelineView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_timelineView.h; sourceTree = "<group>"; };
 		4F70AC7616121AB90007FAB5 /* nii_timelineView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_timelineView.m; sourceTree = "<group>"; };
-		4F76B80B1A6FE189004C17FA /* nii_foreign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreign.h; sourceTree = "<group>"; };
-		4F76B80C1A6FE189004C17FA /* nii_foreign.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_foreign.m; sourceTree = "<group>"; };
 		4F7787F718AD5D360028CAE3 /* nii_mosaic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_mosaic.h; sourceTree = "<group>"; };
 		4F7787F818AD5D360028CAE3 /* nii_mosaic.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = nii_mosaic.mm; sourceTree = "<group>"; };
 		4F7BF1BF1A07069B006B4A3D /* MRIcro.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = MRIcro.entitlements; sourceTree = "<group>"; };
@@ -211,8 +215,10 @@
 		4F9A589C1609E769008ECBE2 /* MRIcro */ = {
 			isa = PBXGroup;
 			children = (
-				4F76B80B1A6FE189004C17FA /* nii_foreign.h */,
-				4F76B80C1A6FE189004C17FA /* nii_foreign.m */,
+				4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */,
+				4F56F8BE1EBCEF750087AB46 /* nii_foreignx.h */,
+				4F56F8BF1EBCEF750087AB46 /* nii_foreign.h */,
+				4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */,
 				4F6B23891609EC2B003D311C /* nii_io.h */,
 				4F6B238A1609EC2B003D311C /* nii_io.mm */,
 				4FC7949E1A6ADE2E00B2BA49 /* jpg_0XC3.h */,
@@ -393,10 +399,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FC7949F1A6ADE2E00B2BA49 /* jpg_0XC3.cpp in Sources */,
+				4F56F8C41EBCEF750087AB46 /* nii_foreign.cpp in Sources */,
 				4F12CE5E1A195DB000408A12 /* main.m in Sources */,
 				4F12CE5F1A195DB000408A12 /* nii_mosaic.mm in Sources */,
 				4F12CE601A195DB000408A12 /* nii_dicom.cpp in Sources */,
-				4F76B80D1A6FE189004C17FA /* nii_foreign.m in Sources */,
 				4F90F9E41A6BFA3500E96843 /* ujpeg.cpp in Sources */,
 				4F12CE611A195DB000408A12 /* GLString.m in Sources */,
 				4F12CE621A195DB000408A12 /* nii_label.mm in Sources */,
@@ -411,6 +417,7 @@
 				4F12CE6A1A195DB000408A12 /* nii_GLView.mm in Sources */,
 				4F12CE6B1A195DB000408A12 /* nii_ortho.cpp in Sources */,
 				4F12CE6C1A195DB000408A12 /* nii_img.mm in Sources */,
+				4F56F8C21EBCEF750087AB46 /* nii_foreignx.m in Sources */,
 				4F12CE6D1A195DB000408A12 /* nii_io.mm in Sources */,
 				4F12CE6E1A195DB000408A12 /* nii_render.m in Sources */,
 				4F12CE6F1A195DB000408A12 /* nii_reslice.m in Sources */,
@@ -424,9 +431,9 @@
 			files = (
 				4FB5AFD71A8A6556000196DD /* jpg_0XC3.cpp in Sources */,
 				4F9A58A41609E769008ECBE2 /* main.m in Sources */,
+				4F56F8C31EBCEF750087AB46 /* nii_foreign.cpp in Sources */,
 				4F7787F918AD5D360028CAE3 /* nii_mosaic.mm in Sources */,
 				4F84E24B19F46AD500D95B28 /* nii_dicom.cpp in Sources */,
-				4FB5AFD81A8A657A000196DD /* nii_foreign.m in Sources */,
 				4FD0B0E518BEE67F0061FAD2 /* GLString.m in Sources */,
 				4F3E85FE18BD7E76003B3515 /* nii_label.mm in Sources */,
 				4F9A58AA1609E769008ECBE2 /* MRIcroAppDelegate.m in Sources */,
@@ -441,6 +448,7 @@
 				4FD5883F1A9CE1A000D62F6A /* dcm2niiWindow.m in Sources */,
 				4F6B23951609EC2B003D311C /* nii_img.mm in Sources */,
 				4F6B23961609EC2B003D311C /* nii_io.mm in Sources */,
+				4F56F8C11EBCEF750087AB46 /* nii_foreignx.m in Sources */,
 				4F6B23991609EC2B003D311C /* nii_render.m in Sources */,
 				4F6B239A1609EC2B003D311C /* nii_reslice.m in Sources */,
 				4F70AC7716121AB90007FAB5 /* nii_timelineView.m in Sources */,
@@ -504,6 +512,7 @@
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					/usr/local/include,
+					"/usr/local/include/openjpeg-2.1",
 				);
 				INFOPLIST_FILE = MRIcroPro.plist;
 				LIBRARY_SEARCH_PATHS = (
@@ -542,6 +551,7 @@
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					/usr/local/include,
+					"/usr/local/include/openjpeg-2.1",
 				);
 				INFOPLIST_FILE = MRIcroPro.plist;
 				LIBRARY_SEARCH_PATHS = (

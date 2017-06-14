@@ -5,7 +5,7 @@
 
 #import "MRIcroAppDelegate.h"
 #import "nii_WindowController.h"
-#include "nii_foreign.h"
+#include "nii_foreignx.h"
 #include "nii_io.h" //for MY_DEBUG define
 #import <OpenGL/gl.h>
 #import <OpenGL/glext.h>
@@ -208,7 +208,9 @@
         [NSNumber numberWithBool:NO], @"viewRadiological",
         [NSNumber numberWithBool:YES], @"advancedRender",
         [NSNumber numberWithBool:YES], @"blackBackground",
-        [NSNumber numberWithBool:YES], @"dicomWarn",nil];
+        [NSNumber numberWithBool:YES], @"dicomWarn",
+        [NSNumber numberWithBool:NO], @"retinaResolution",
+                                          nil];
     [[NSUserDefaults standardUserDefaults] registerDefaults:userDefaultsDefaults];
     [[NSUserDefaults standardUserDefaults]synchronize ];
         [[NSUserDefaults standardUserDefaults] setBool:true forKey:@"orthoOrient"]; //ALWAYS REST on launch
@@ -228,6 +230,7 @@
     _prefLoadOrientCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"orthoOrient"];
     //_prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     _prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
+    _prefRetinaCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     _prefRadiologicalCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"viewRadiological"];
     _prefAdvancedRenderCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"];
     _prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
@@ -264,7 +267,7 @@
         NSString* fname = [[files objectAtIndex:i] path];
         struct nifti_1_header niiHdr;
         unsigned char * img = NULL;
-        img = nii_readForeign(fname, &niiHdr, 0, 1);
+        img = nii_readForeignx(fname, &niiHdr, 0, 1);
         if (img != NULL) {
             //NSLog(@"read %@", fname);
             const char * nf = [fname UTF8String];
@@ -622,6 +625,21 @@
     //[[NSOperationQueue mainQueue] addOperation: op];
 }
 
+- (IBAction)closePopupX
+{
+    [[NSUserNotificationCenter defaultUserNotificationCenter] removeAllDeliveredNotifications];
+}
+
+- (IBAction)restartNotify;
+{
+    NSUserNotification *notification = [[NSUserNotification alloc] init];
+    notification.title = [NSString stringWithFormat:@"Restart suggested"];
+    notification.informativeText = @"Reason: Retina setting changed";
+    notification.soundName = NULL;
+    [[NSUserNotificationCenter defaultUserNotificationCenter] deliverNotification:notification];
+    [NSTimer scheduledTimerWithTimeInterval: 4.5  target:self selector: @selector(closePopupX) userInfo:self repeats:NO];
+}
+
 - (IBAction)prefChange:(id)sender {
     //NSLog(@"Got it %ld", (long)_pref3dOrientCheck.state );
     //[[NSUserDefaults standardUserDefaults] setObject:@"~" forKey:@"defaultFilename"];
@@ -631,9 +649,13 @@
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefOrientCheck.state forKey:@"showOrient"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefLoadOrientCheck.state forKey:@"orthoOrient"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefLoadFewVolumesCheck.state forKey:@"loadFewVolumes"];
+    bool prevRet = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
+    bool newRet = _prefRetinaCheck.state;
+    [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRetinaCheck.state forKey:@"retinaResolution"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRadiologicalCheck.state forKey:@"viewRadiological"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefAdvancedRenderCheck.state forKey:@"advancedRender"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefBlackBackgroundCheck.state forKey:@"blackBackground"];
+    
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefDicomCheck.state forKey:@"dicomWarn"];
     //_prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
     //NSLog(@"render %ld -> %ld",(long)_prefAdvancedRenderCheck.state,  (long)[[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"] );
@@ -643,6 +665,8 @@
     for (int i = 0; i < numWin; i++)
         [[ windowArray  objectAtIndex: i] updatePrefs:nil];
     //prefs->showCube
+    if (prevRet != newRet)
+        [self restartNotify];
 }
 
 /*- (void)changeTextColor:(id)sender {
@@ -680,7 +704,10 @@
     NSColor *clr =[self colorForKey:@"xBarColor"];
     if (clr == nil)
         clr = [NSColor orangeColor];
+    clr = [clr colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
     NSColorPanel *panel = [NSColorPanel sharedColorPanel];
+    panel.mode = NSRGBModeColorPanel;
+    //panel.colorSpace = NSRGBColorSpaceModel;
     [panel orderFront:nil];
     [panel setAction:@selector(changeColorForBackground:)];
     [panel setColor: clr];
@@ -735,7 +762,7 @@
 #ifndef STRIP_DCM2NII // /BuildSettings/PreprocessorMacros/STRIP_DCM2NII
     char niiFilename[1024];
     nii_createDummyFilename(niiFilename, opts);
-    [self.theTextView setString: [NSString stringWithFormat:@"%s\nVersion %s (%lu-bit)\n", niiFilename,kDCMvers, sizeof(size_t)*8 ]];
+    [self.theTextView setString: [NSString stringWithFormat:@"%s\nVersion %s (%lu-bit MacOS)\n", niiFilename,kDCMvers, sizeof(size_t)*8 ]];
     [self.theTextView setNeedsDisplay:YES];
     //[[self theTextView] setFont:[NSFont boldSystemFontOfSize:6.0]];
     //[[self theTextView] setFont:[NSFont systemFontOfSize:0.0]];

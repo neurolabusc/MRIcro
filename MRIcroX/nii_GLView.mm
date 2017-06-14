@@ -77,7 +77,7 @@
 -(void) updatePrefs
 {
     NII_PREFS *prefs =[gNiiImg getPREFS];
-    prefs->retineResolution = false;
+    prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     prefs->scrnOffsetX = 0;
     prefs->scrnOffsetY = 0;
     prefs->showCube = [[NSUserDefaults standardUserDefaults] boolForKey:@"showCube"];
@@ -91,12 +91,15 @@
     bool prev = prefs->advancedRender;
     prefs->advancedRender = [[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"];
     prefs->dicomWarn = [[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"];
+    prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     
     //NSLog(@"%d ---", prefs->dicomWarn);
     NSColor * aColor =nil;
     NSData *theData=[[NSUserDefaults standardUserDefaults] dataForKey:@"xBarColor"];
     if (theData != nil) {
         aColor =(NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
+        //next line required if user uses grayscale sliders to create NSCalibratedWhiteColorSpace which does not have a redComponent!
+        aColor = [aColor colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
         prefs->xBarColor[0] = aColor.redComponent;
         prefs->xBarColor[1] = aColor.greenComponent;
         prefs->xBarColor[2] = aColor.blueComponent;
@@ -119,8 +122,6 @@
         //prefs->backColor[2] = 1.0;
         [self setBackgroundColor: 1 Green: 1 Blue: 1];
     }
-    
-    
     theData=[[NSUserDefaults standardUserDefaults] dataForKey:@"colorBarTextColor"];
     if (theData != nil) {
         aColor =(NSColor *)[NSUnarchiver unarchiveObjectWithData:theData];
@@ -337,6 +338,7 @@ NSArray * niiFileTypes () {
     NSBitmapImageRep *repz = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
      pixelsWide: wz pixelsHigh: hz bitsPerSample: 8 samplesPerPixel: 4 hasAlpha: YES
        isPlanar: NO colorSpaceName: NSCalibratedRGBColorSpace bytesPerRow: 4*wz bitsPerPixel: 0];
+    [gNiiImg updateFontScale: zoom * retinaScaleFactor];
    for (int tile = 0; tile < (zoom * zoom); tile++){
         int tilex = (tile % zoom) * w;
         int tiley = (tile / zoom) * h;
@@ -385,7 +387,9 @@ NSArray * niiFileTypes () {
     //[gNiiImg setScreenWidHt: w Height: h]; //return to base resolution
     prefs->rayCastQuality1to10 = q;
     //[gNiiImg updateFontScale: screenShotScaleFactor];
+    [gNiiImg updateFontScale: retinaScaleFactor];
     [gNiiImg setScreenWidHtOffset: (w * retinaScaleFactor) Height: (h * retinaScaleFactor) OffsetX: 0 OffsetY: 0];
+    [self reshape];
     [self drawFrame];
 }
 /*- (void)saveScreenshotFromFileName:(NSString *) file_name //save PNG screenshot, or capture to clipboard
@@ -814,6 +818,7 @@ NSArray * niiFileTypes () {
 }
 
 - (void) reshape { //resize
+    
     [gNiiImg setScreenWidHt: [self bounds].size.width * self->retinaScaleFactor Height: [self bounds].size.height * self->retinaScaleFactor];//RetinaX 2016
     //[gNiiImg setScreenWidHt: [self bounds].size.width Height: [self bounds].size.height];//2014
     NSOpenGLContext    *currentContext = [self openGLContext];
@@ -1141,16 +1146,27 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
         }
     }
     NII_PREFS *prefs =[gNiiImg getPREFS]; //RetinaXX
-    if (prefs->retineResolution) {
+    [gNiiImg updateFontScale: retinaScaleFactor];
+    screenShotScaleFactor = 1.0;
+    if ((supportRetina > 1.0) && (prefs->retinaResolution)) {
         [self setWantsBestResolutionOpenGLSurface:YES];//RetinaX 2016  - (void) prepareOpenGL
         [self convertRectToBacking:[self bounds]];
-        retinaScaleFactor = supportRetina;
-        
+        //NSRect backingBounds = [self convertRectToBacking:[self bounds]];
+        //int wRetina = [self convertRectToBacking:[self bounds]].size.width;
+        //int wBase = [self bounds].size.width;
+        //if ((wRetina > wBase) && (wBase > 2))
+        //    retinaScaleFactor = wRetina/wBase;
+        retinaScaleFactor = [[NSScreen mainScreen] backingScaleFactor];
+        [gNiiImg updateFontScale: retinaScaleFactor];
+        //screenShotScaleFactor = retinaScaleFactor;
+        //retinaScaleFactor = 2.0;
     } else if (supportRetina > 1.0) {
         screenShotScaleFactor = supportRetina;
-        [gNiiImg updateFontScale: screenShotScaleFactor];
+        //[gNiiImg updateFontScale: screenShotScaleFactor];
+        //retinaScaleFactor = 1;
+        retinaScaleFactor = 1;
+        [gNiiImg updateFontScale: retinaScaleFactor];
     }
-    
         //RetinaX 2016
 
     
