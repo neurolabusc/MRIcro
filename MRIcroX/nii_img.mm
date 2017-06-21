@@ -2135,16 +2135,16 @@ void drawSagMirror (int lX, int lY, int lW, int lH, double lSlice[4], long Xgap,
 // assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
     glEnable (GL_TEXTURE_3D);
-    //glColor3f(1.0f, 1.0f, 1.0f);
+    glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
-        glTexCoord3d (lSlice[1],0,1);
-        glVertex2f(lX+lW,lY+lH);
-        glTexCoord3d (lSlice[1],0, 0);
-        glVertex2f(lX+lW,lY);
-        glTexCoord3d (lSlice[1], 1, 0);
-        glVertex2f(lX,lY);
-        glTexCoord3d (lSlice[1],1, 1);
-        glVertex2f(lX,lY+lH);
+    glTexCoord3d (lSlice[1],0,1);
+    glVertex2f(lX+lW,lY+lH);
+    glTexCoord3d (lSlice[1],0, 0);
+    glVertex2f(lX+lW,lY);
+    glTexCoord3d (lSlice[1], 1, 0);
+    glVertex2f(lX,lY);
+    glTexCoord3d (lSlice[1],1, 1);
+    glVertex2f(lX,lY+lH);
     glEnd();
     if (Xgap >= 0)
         drawXBar (lX, lY, lW, lH, 1-lSlice[2], lSlice[3], Xgap, XColor);
@@ -2155,16 +2155,16 @@ void drawSag (int lX, int lY, int lW, int lH, double lSlice[4], long Xgap, CGFlo
 //  assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
     glEnable (GL_TEXTURE_3D);
-    //glColor3f(1.0f, 1.0f, 1.0f);
+    glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
-        glTexCoord3d (lSlice[1],0,1);
-        glVertex2f(lX,lY+lH);
-        glTexCoord3d (lSlice[1],0, 0);
-        glVertex2f(lX,lY);
-        glTexCoord3d (lSlice[1], 1, 0);
-        glVertex2f(lX+lW,lY);
-        glTexCoord3d (lSlice[1],1, 1);
-        glVertex2f(lX+lW,lY+lH);
+    glTexCoord3d (lSlice[1],0,1);
+    glVertex2f(lX,lY+lH);
+    glTexCoord3d (lSlice[1],0, 0);
+    glVertex2f(lX,lY);
+    glTexCoord3d (lSlice[1], 1, 0);
+    glVertex2f(lX+lW,lY);
+    glTexCoord3d (lSlice[1],1, 1);
+    glVertex2f(lX+lW,lY+lH);
     glEnd();
     if (Xgap > 0)
         drawXBar (lX, lY, lW, lH, lSlice[2], lSlice[3], Xgap, XColor);
@@ -2175,17 +2175,18 @@ void drawAx (int lX,int lY, int lW, int lH, double lSlice[4], long Xgap, CGFloat
 //  assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
     glEnable (GL_TEXTURE_3D);
+    glColor3f(1.0f, 1.0f, 1.0f);
     float flip = 0;
     if (flipLR) flip = 1; //radiological
     glBegin(GL_QUADS);
-        glTexCoord3d (flip, 1, lSlice[3]);
-        glVertex2f(lX,lY+lH);
-        glTexCoord3d (flip,0, lSlice[3]);
-        glVertex2f(lX,lY);
-        glTexCoord3d (1-flip,0,lSlice[3]);
-        glVertex2f(lX+lW,lY);
-        glTexCoord3d (1-flip,1, lSlice[3]);
-        glVertex2f(lX+lW,lY+lH);
+    glTexCoord3d (flip, 1, lSlice[3]);
+    glVertex2f(lX,lY+lH);
+    glTexCoord3d (flip,0, lSlice[3]);
+    glVertex2f(lX,lY);
+    glTexCoord3d (1-flip,0,lSlice[3]);
+    glVertex2f(lX+lW,lY);
+    glTexCoord3d (1-flip,1, lSlice[3]);
+    glVertex2f(lX+lW,lY+lH);
     glEnd();
     if ((Xgap > 0) && flipLR)
         drawXBar (lX, lY, lW, lH, 1.0 - lSlice[1], lSlice[2], Xgap, XColor);//Xgap
@@ -2202,14 +2203,14 @@ void drawCoro (int lX, int lY, int lW,int lH, double lSlice[4], long Xgap, CGFlo
     float flip = 0;
     if (flipLR) flip = 1; //radiological
     glBegin(GL_QUADS);
-        glTexCoord3d (flip, lSlice[2], 1);
-        glVertex2f(lX,lY+lH);
-        glTexCoord3d (flip,lSlice[2], 0);
-        glVertex2f(lX,lY);
-        glTexCoord3d (1-flip,lSlice[2],0);
-        glVertex2f(lX+lW,lY);
-        glTexCoord3d (1-flip,lSlice[2], 1);
-        glVertex2f(lX+lW,lY+lH);
+    glTexCoord3d (flip, lSlice[2], 1);
+    glVertex2f(lX,lY+lH);
+    glTexCoord3d (flip,lSlice[2], 0);
+    glVertex2f(lX,lY);
+    glTexCoord3d (1-flip,lSlice[2],0);
+    glVertex2f(lX+lW,lY);
+    glTexCoord3d (1-flip,lSlice[2], 1);
+    glVertex2f(lX+lW,lY+lH);
     glEnd();
     if ((Xgap > 0) && flipLR)
         drawXBar (lX, lY, lW, lH, 1.0-lSlice[1], lSlice[3], Xgap, XColor);
@@ -2522,6 +2523,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
     #else
     glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
     #endif
+    //glBindTexture(GL_TEXTURE_RECTANGLE_EXT, prefs->intensityTexture3D);
     glColor3f(1.0f, 1.0f, 1.0f);
     switch (prefs->displayModeGL) {
         case   GL_2D_AXIAL:
@@ -2540,9 +2542,9 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
                 drawSag(2*prefs->scrnDim[1],0,prefs->scrnDim[2],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor);
                 
             } else {
-                drawAx(0,0,prefs->scrnDim[1],prefs->scrnDim[2], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 drawCoro(0,prefs->scrnDim[2],prefs->scrnDim[1],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 drawSag(prefs->scrnDim[1],prefs->scrnDim[2],prefs->scrnDim[2],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor);
+                drawAx(0,0,prefs->scrnDim[1],prefs->scrnDim[2], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 if (self.is2D)
                     drawHistogram(prefs, prefs->scrnDim[1], prefs->scrnDim[2], prefs->scrnDim[2]);
             }
@@ -2963,7 +2965,7 @@ double  defuzzz(double x) {
         #endif
         //printf("recalcGL required %fms\n", ((double)(clock()-start))/1000);
     }
-    
+    //glClearColor(1.0, 0.0, 0.0,1.0);
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2],1.0);
     glClear(GL_COLOR_BUFFER_BIT);
     #ifdef NII_IMG_RENDER
@@ -2980,7 +2982,8 @@ double  defuzzz(double x) {
     #endif
     GLenum err = glGetError();
     if (GL_NO_ERROR != err)   printf("glGetError = 0x%x\n", err);
-    glFlush();     // Flush all OpenGL calls - we will have the NSOpenGLView do this
+    glFinish();
+    //glFlush();     // Flush all OpenGL calls - we will have the NSOpenGLView do this
     prefs->force_refreshGL = false;
     prefs->busyGL = false;
     return true;

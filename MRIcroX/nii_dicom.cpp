@@ -2514,6 +2514,8 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
 	#else
 	size_t MaxBufferSz = 1000000; //ideally size of DICOM header, but this varies from 2D to 4D files
 	#endif
+	if (MaxBufferSz > fileLen)
+		MaxBufferSz = fileLen;
 	long lFileOffset = 0;
 	fseek(file, 0, SEEK_SET);
 	//Allocate memory
@@ -2689,11 +2691,11 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
     			MaxBufferSz = fileLen - lFileOffset;
 			fseek(file, lFileOffset, SEEK_SET);
 			size_t sz = fread(buffer, 1, MaxBufferSz, file);
-            if (sz < MaxBufferSz) {
-                printError("Only loaded %zu of %zu bytes for %s\n", sz, MaxBufferSz, fname);
-                fclose(file);
-                return d;
-            }
+			if (sz < MaxBufferSz) {
+         		printError("Only loaded %zu of %zu bytes for %s\n", sz, MaxBufferSz, fname);
+         		fclose(file);
+         		return d;
+    		}
 			lPos = 0;
     	}
     	#endif
@@ -3343,7 +3345,6 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                     d.imageStart = (int)lPos + (int)lFileOffset;
                 isIconImageSequence = false;
                 break;
-
         } //switch/case for groupElement
         } //if nest
         if (isVerbose > 1) {

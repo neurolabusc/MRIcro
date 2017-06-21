@@ -660,6 +660,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
         gzBytes = K_gzBytes_skipRead;
         //dicomImg = nii_readTIFF(fname,  &niiHdr, &gzBytes, &swapEndian);
     }
+    
     if (OK == EXIT_FAILURE) { //if all else fails, assume DICOM
         char fnameC[1024] = {""};
         strcat(fnameC,[fname cStringUsingEncoding:1]);
@@ -672,8 +673,10 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
                 return 0;
             }
         } else {
-            d =readDICOM(fnameC);
-            //if (!d.isValid) NSLog(@"DICOM failed ---> %@", imgname);
+            d.isValid = false;
+            if (isDICOMfile(fnameC) > 0)
+                d =readDICOM(fnameC);
+            if (!d.isValid) NSLog(@"DICOM failed: %@", imgname);
                 
             if (d.isValid)
                 isDICOM = TRUE;

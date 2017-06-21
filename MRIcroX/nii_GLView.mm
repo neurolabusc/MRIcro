@@ -1150,7 +1150,10 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
     screenShotScaleFactor = 1.0;
     if ((supportRetina > 1.0) && (prefs->retinaResolution)) {
         [self setWantsBestResolutionOpenGLSurface:YES];//RetinaX 2016  - (void) prepareOpenGL
-        [self convertRectToBacking:[self bounds]];
+        //[self convertRectToBacking:[self bounds]];
+        //NSRect backingBounds = self.;
+        
+        
         //NSRect backingBounds = [self convertRectToBacking:[self bounds]];
         //int wRetina = [self convertRectToBacking:[self bounds]].size.width;
         //int wBase = [self bounds].size.width;

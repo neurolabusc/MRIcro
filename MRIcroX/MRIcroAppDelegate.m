@@ -209,7 +209,7 @@
         [NSNumber numberWithBool:YES], @"advancedRender",
         [NSNumber numberWithBool:YES], @"blackBackground",
         [NSNumber numberWithBool:YES], @"dicomWarn",
-        [NSNumber numberWithBool:NO], @"retinaResolution",
+        [NSNumber numberWithBool:YES], @"retinaResolution",
                                           nil];
     [[NSUserDefaults standardUserDefaults] registerDefaults:userDefaultsDefaults];
     [[NSUserDefaults standardUserDefaults]synchronize ];
@@ -395,9 +395,26 @@
 
 - (void) glDidFinishLaunching
 {
+    static NSOpenGLPixelFormatAttribute pixelFormatAttributes[] = {0};
+    
+    /*NSOpenGLPixelFormatAttribute pixelFormatAttributes[] =
+    {
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
+        NSOpenGLPFAColorSize    , 24                           ,
+        NSOpenGLPFAAlphaSize    , 8                            ,
+        NSOpenGLPFADoubleBuffer ,
+        NSOpenGLPFAAccelerated  ,
+        NSOpenGLPFANoRecovery   ,
+        0
+    };*/
+    /*NSOpenGLPixelFormat *pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:pixelFormatAttributes] autorelease];
+    [self setView:[[[NSOpenGLView alloc] initWithFrame:[[[self window] contentView] bounds] pixelFormat:pixelFormat] autorelease]];
+    [[[self window] contentView] addSubview:[self view]];*/
+    
     //[self vectTest];
-    static NSOpenGLPixelFormatAttribute glAttributes[] = {0};
-    NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:glAttributes];
+    NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:pixelFormatAttributes];
+    
+    //NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:glAttributes];
     NSOpenGLContext *openGLContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
     [openGLContext makeCurrentContext];
     GLint virtualScreen = [openGLContext currentVirtualScreen];
