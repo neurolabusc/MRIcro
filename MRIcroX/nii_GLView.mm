@@ -548,6 +548,7 @@ NSArray * niiFileTypes () {
 
 - (NSPoint)convertPointX:(NSPoint)aPoint fromView:(NSView *)aView;
 {
+    
     NSPoint pt = [self convertPoint: aPoint fromView: aView];
     if (self->retinaScaleFactor > 1.0) {
         pt.x *= self->retinaScaleFactor;
@@ -557,10 +558,13 @@ NSArray * niiFileTypes () {
     return pt;
 }
 
-- (void)marchingAntsMouseDown:(NSEvent *)event
-{
+- (NSPoint)convertPointXR:(NSPoint)aPoint fromView:(NSView *)aView {
+    return [self convertPoint: aPoint fromView: aView];
+}
+
+- (void)marchingAntsMouseDown:(NSEvent *)event {
     // create animation for the layer - invisible for retina?
-    self->startPoint = [self convertPointX:[event locationInWindow] fromView:nil];
+    self->startPoint = [self convertPointXR:[event locationInWindow] fromView:nil];
     self->shapeLayer = [CAShapeLayer layer];
     self->shapeLayer.lineWidth = 2.0;
     //self->shapeLayer.strokeColor = [[NSColor blackColor] CGColor];
@@ -651,7 +655,7 @@ NSArray * niiFileTypes () {
 
 - (void)rightMouseDragged:(NSEvent *)event
 {
-    NSPoint point = [self convertPointX:[event locationInWindow] fromView:nil];
+    NSPoint point = [self convertPointXR:[event locationInWindow] fromView:nil];
     CGMutablePathRef path = CGPathCreateMutable();
     CGPathMoveToPoint(path, NULL, self->startPoint.x, self->startPoint.y);
     CGPathAddLineToPoint(path, NULL, self->startPoint.x, point.y);
