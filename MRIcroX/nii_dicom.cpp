@@ -169,14 +169,25 @@ static OPJ_SIZE_T opj_skip_from_buffer(OPJ_SIZE_T p_nb_bytes, BufInfo * p_file) 
     return (OPJ_SIZE_T)-1;
 } //opj_skip_from_buffer()
 
+//fix for https://github.com/neurolabusc/dcm_qa/issues/5
 static OPJ_BOOL opj_seek_from_buffer(OPJ_SIZE_T p_nb_bytes, BufInfo * p_file) {
-    if(p_file->cur + p_nb_bytes < p_file->buf + p_file->len ) {
-        p_file->cur += p_nb_bytes;
+    //printf("opj_seek_from_buffer %d + %d -> %d + %d\n", p_file->cur , p_nb_bytes, p_file->buf, p_file->len);
+    if (p_nb_bytes < p_file->len ) {
+        p_file->cur = p_file->buf + p_nb_bytes;
         return OPJ_TRUE;
     }
     p_file->cur = p_file->buf + p_file->len;
     return OPJ_FALSE;
 } //opj_seek_from_buffer()
+
+/*static OPJ_BOOL opj_seek_from_buffer(OPJ_SIZE_T p_nb_bytes, BufInfo * p_file) {
+    if((p_file->cur + p_nb_bytes) < (p_file->buf + p_file->len) ) {
+        p_file->cur += p_nb_bytes;
+        return OPJ_TRUE;
+    }
+    p_file->cur = p_file->buf + p_file->len;
+    return OPJ_FALSE;
+} //opj_seek_from_buffer()*/
 
 opj_stream_t* opj_stream_create_buffer_stream(BufInfo* p_file, OPJ_UINT32 p_size, OPJ_BOOL p_is_read_stream) {
     opj_stream_t* l_stream;
@@ -511,7 +522,6 @@ mat44 set_nii_header_x(struct TDICOMdata d, struct TDICOMdata d2, struct nifti_1
         double nRowCol = ceil(sqrt((double) d.CSA.mosaicSlices));
         double lFactorX = (d.xyzDim[1] -(d.xyzDim[1]/nRowCol)   )/2.0;
         double lFactorY = (d.xyzDim[2] -(d.xyzDim[2]/nRowCol)   )/2.0;
-        //printf("%g %g\n", lFactorX, lFactorY);
         Q44.m[0][3] =(float)((Q44.m[0][0]*lFactorX)+(Q44.m[0][1]*lFactorY)+Q44.m[0][3]);
 		Q44.m[1][3] = (float)((Q44.m[1][0] * lFactorX) + (Q44.m[1][1] * lFactorY) + Q44.m[1][3]);
 		Q44.m[2][3] = (float)((Q44.m[2][0] * lFactorX) + (Q44.m[2][1] * lFactorY) + Q44.m[2][3]);
@@ -621,6 +631,7 @@ struct TDICOMdata clear_dicom_data() {
         d.angulation[i] = 0.0f;
         d.xyzMM[i] = 1;
     }
+    d.CSA.sliceTiming[0] = -1.0f; //impossible value denotes not known
     d.CSA.numDti = 0;
     for (int i=0; i < 5; i++)
         d.xyzDim[i] = 1;
@@ -1004,19 +1015,16 @@ int readCSAImageHeader(unsigned char *buff, int lLength, struct TCSAdata *CSA, i
             else if (strcmp(tagCSA.name, "BandwidthPerPixelPhaseEncode") == 0)
                 CSA->bandwidthPerPixelPhaseEncode = csaMultiFloat (&buff[lPos], 3,lFloats, &itemsOK);
             else if ((strcmp(tagCSA.name, "MosaicRefAcqTimes") == 0) && (tagCSA.nitems > 3)  ){
-//#ifdef _MSC_VER
 				float * sliceTimes = (float *)malloc(sizeof(float) * (tagCSA.nitems + 1));
-//#else
-//				float sliceTimes[tagCSA.nitems + 1];
-//#endif
                 csaMultiFloat (&buff[lPos], tagCSA.nitems,sliceTimes, &itemsOK);
                 float maxTimeValue, minTimeValue, timeValue1;
-                for (int z = 0; z < kMaxDTI4D; z++)
-        			dti4D->S[z].sliceTiming = -1.0;
-
-                if (itemsOK <= kMaxDTI4D)
+                for (int z = 0; z < kMaxEPI3D; z++)
+        			CSA->sliceTiming[z] = -1.0;
+        		if (itemsOK <= kMaxEPI3D) {
                 	for (int z = 1; z <= itemsOK; z++)
-                		dti4D->S[z-1].sliceTiming = sliceTimes[z];
+                		CSA->sliceTiming[z-1] = sliceTimes[z];
+                } else
+                	printError("Please increase kMaxEPI3D and recompile\n");
                 CSA->multiBandFactor = 1;
                 timeValue1 = sliceTimes[1];
                 int nTimeZero = 0;
@@ -1328,10 +1336,8 @@ struct TDICOMdata  nii_readParRec (char * parname, int isVerbose, struct TDTI4D 
     char *p = fgets (buff, LINESZ, fp);
     bool isIntenScaleVaries = false;
     bool isIndexSequential = true;
-    for (int i = 0; i < kMaxDTI4D; i++) {
+    for (int i = 0; i < kMaxDTI4D; i++)
         dti4D->S[i].V[0] = -1.0;
-        dti4D->S[i].sliceTiming = -1.0;
-    }
     //d.dti4D = (TDTI *)malloc(kMaxDTI4D * sizeof(TDTI));
     while (p) {
         if (strlen(buff) < 1)
@@ -1896,42 +1902,34 @@ unsigned char * nii_loadImgCore(char* imgname, struct nifti_1_header hdr, int bi
 } //nii_loadImg()
 
 unsigned char * nii_planar2rgb(unsigned char* bImg, struct nifti_1_header *hdr, int isPlanar) {
-                        //DICOM data saved in triples RGBRGBRGB, NIfTI RGB saved in planes RRR..RGGG..GBBBB..B
-    if (bImg == NULL) return NULL;
-                        if (hdr->datatype != DT_RGB24) return bImg;
-                        if (isPlanar == 0) return bImg;//return nii_bgr2rgb(bImg,hdr);
-                        int dim3to7 = 1;
-                        for (int i = 3; i < 8; i++)
-                            if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
-                        //int sliceBytes24 = hdr->dim[1]*hdr->dim[2] * hdr->bitpix/8;
-                        int sliceBytes8 = hdr->dim[1]*hdr->dim[2];
-                        int sliceBytes24 = sliceBytes8 * 3;
-//#ifdef _MSC_VER
-                        unsigned char * slice24 = (unsigned char *)malloc(sizeof(unsigned char) * (sliceBytes24));
-//#else
-//                        unsigned char  slice24[ sliceBytes24 ];
-//#endif
-    int sliceOffsetRGB = 0;
-                        int sliceOffsetR = 0;
-                        int sliceOffsetG = sliceOffsetR + sliceBytes8;
-                        int sliceOffsetB = sliceOffsetR + 2*sliceBytes8;
-                        for (int sl = 0; sl < dim3to7; sl++) { //for each 2D slice
-                            memcpy(slice24, &bImg[sliceOffsetRGB], sliceBytes24);
-                            //int sliceOffsetG = sliceOffsetR + sliceBytes8;
-                            //int sliceOffsetB = sliceOffsetR + 2*sliceBytes8;
-                            int i = 0;
-                            for (int rgb = 0; rgb < sliceBytes8; rgb++) {
-                                bImg[i++] =slice24[sliceOffsetR+rgb];
-                                bImg[i++] =slice24[sliceOffsetG+rgb];
-                                bImg[i++] =slice24[sliceOffsetB+rgb];
-                            }
-                            sliceOffsetRGB += sliceBytes24;
-                        } //for each slice
-//#ifdef _MSC_VER
-                        free(slice24);
-//#endif
-                        return bImg;
-} //nii_rgb2Planar()
+	//DICOM data saved in triples RGBRGBRGB, NIfTI RGB saved in planes RRR..RGGG..GBBBB..B
+	if (bImg == NULL) return NULL;
+	if (hdr->datatype != DT_RGB24) return bImg;
+	if (isPlanar == 0) return bImg;
+	int dim3to7 = 1;
+	for (int i = 3; i < 8; i++)
+		if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
+	int sliceBytes8 = hdr->dim[1]*hdr->dim[2];
+	int sliceBytes24 = sliceBytes8 * 3;
+	unsigned char * slice24 = (unsigned char *)malloc(sizeof(unsigned char) * (sliceBytes24));
+	int sliceOffsetRGB = 0;
+	int sliceOffsetR = 0;
+	int sliceOffsetG = sliceOffsetR + sliceBytes8;
+	int sliceOffsetB = sliceOffsetR + 2*sliceBytes8;
+	//printMessage("planar->rgb %dx%dx%d\n", hdr->dim[1],hdr->dim[2], dim3to7);
+    int i = 0;
+	for (int sl = 0; sl < dim3to7; sl++) { //for each 2D slice
+		memcpy(slice24, &bImg[sliceOffsetRGB], sliceBytes24);
+		for (int rgb = 0; rgb < sliceBytes8; rgb++) {
+			bImg[i++] =slice24[sliceOffsetR+rgb];
+			bImg[i++] =slice24[sliceOffsetG+rgb];
+			bImg[i++] =slice24[sliceOffsetB+rgb];
+		}
+		sliceOffsetRGB += sliceBytes24;
+	} //for each slice
+	free(slice24);
+	return bImg;
+} //nii_planar2rgb()
 
 unsigned char * nii_rgb2planar(unsigned char* bImg, struct nifti_1_header *hdr, int isPlanar) {
     //DICOM data saved in triples RGBRGBRGB, Analyze RGB saved in planes RRR..RGGG..GBBBB..B
@@ -1941,14 +1939,9 @@ unsigned char * nii_rgb2planar(unsigned char* bImg, struct nifti_1_header *hdr, 
     int dim3to7 = 1;
     for (int i = 3; i < 8; i++)
         if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
-    //int sliceBytes24 = hdr->dim[1]*hdr->dim[2] * hdr->bitpix/8;
     int sliceBytes8 = hdr->dim[1]*hdr->dim[2];
     int sliceBytes24 = sliceBytes8 * 3;
-//#ifdef _MSC_VER
 	unsigned char * slice24 = (unsigned char *)malloc(sizeof(unsigned char) * (sliceBytes24));
-//#else
-//	unsigned char  slice24[ sliceBytes24 ];
-//#endif
     //printMessage("rgb->planar %dx%dx%d\n", hdr->dim[1],hdr->dim[2], dim3to7);
     int sliceOffsetR = 0;
     for (int sl = 0; sl < dim3to7; sl++) { //for each 2D slice
@@ -1965,9 +1958,7 @@ unsigned char * nii_rgb2planar(unsigned char* bImg, struct nifti_1_header *hdr, 
         }
         sliceOffsetR += sliceBytes24;
     } //for each slice
-//#ifdef _MSC_VER
 	free(slice24);
-//#endif
     return bImg;
 } //nii_rgb2Planar()
 
@@ -2253,7 +2244,7 @@ unsigned char * nii_loadImgJPEGC3(char* imgname, struct nifti_1_header hdr, stru
     // https://github.com/chafey/cornerstoneWADOImageLoader
     //I have never seen these segmented images in the wild, so we will simply warn the user if we encounter such a file
     //int Sz = JPEG_SOF_0XC3_sz (imgname, (dcm.imageStart - 4), dcm.isLittleEndian);
-    //printf("Sz %d %d\n", Sz, dcm.imageBytes );
+    //printMessage("Sz %d %d\n", Sz, dcm.imageBytes );
     //This behavior is legal but appears extremely rare
     //ftp://medical.nema.org/medical/dicom/final/cp900_ft.pdf
     if (65536 == dcm.imageBytes)
@@ -2423,7 +2414,7 @@ unsigned char * nii_loadImgXL(char* imgname, struct nifti_1_header *hdr, struct 
     if ((dcm.isLittleEndian != littleEndianPlatform()) && (hdr->bitpix > 8))
         img = nii_byteswap(img, hdr);
     }
-    if ((dcm.compressionScheme == kCompressNone) && (hdr->datatype ==DT_RGB24)) //img = nii_planar2rgb(img, hdr, dcm.isPlanarRGB); //
+    if ((dcm.compressionScheme == kCompressNone) && (hdr->datatype ==DT_RGB24))
         img = nii_rgb2planar(img, hdr, dcm.isPlanarRGB);//do this BEFORE Y-Flip, or RGB order can be flipped
     dcm.isPlanarRGB = true;
     if (dcm.CSA.mosaicSlices > 1) {
@@ -2648,9 +2639,8 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
 #define  kImageStartFloat 0x7FE0+(0x0008 << 16 )
 #define  kImageStartDouble 0x7FE0+(0x0009 << 16 )
 #define kNest 0xFFFE +(0xE000 << 16 ) //Item follows SQ
-#define  kUnnest 0xFFFE +(0xE00D << 16 ) //ItemDelimitationItem [length defined] http://www.dabsoft.ch/dicom/5/7.5/
+#define  kUnnest  0xFFFE +(0xE00D << 16 ) //ItemDelimitationItem [length defined] http://www.dabsoft.ch/dicom/5/7.5/
 #define  kUnnest2 0xFFFE +(0xE0DD << 16 )//SequenceDelimitationItem [length undefined]
-    dti4D->S[0].sliceTiming = -1.0;
     int nest = 0;
     double zSpacing = -1.0l; //includes slice thickness plus gap
     int locationsInAcquisitionGE = 0;
@@ -2669,6 +2659,9 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
     //float intenScalePhilips = 0.0;
     char acquisitionDateTimeTxt[kDICOMStr] = "";
     bool isEncapsulatedData = false;
+    int encapsulatedDataFragments = 0;
+    int encapsulatedDataFragmentStart = 0; //position of first FFFE,E000 for compressed images
+    int encapsulatedDataImageStart = 0; //position of 7FE0,0010 for compressed images (where actual image start should be start of first fragment)
     bool isOrient = false;
     bool isIconImageSequence = false;
     bool isSwitchToImplicitVR = false;
@@ -2770,13 +2763,18 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
             //printMessage("SQstart %d\n", sqDepth);
         }
         if ((groupElement == kNest) || ((vr[0] == 'S') && (vr[1] == 'Q'))) nest++;
-        if (groupElement == kUnnest) nest--;
+        //if ((groupElement == kUnnest) || (groupElement == kUnnest2)) { // <- ?
+        if (groupElement == kUnnest) {
+        	nest--;
+        }
         //next: look for required tags
         if ((groupElement == kNest)  && (isEncapsulatedData)) {
             d.imageBytes = dcmInt(4,&buffer[lPos-4],d.isLittleEndian);
             //printMessage("compressed data %d-> %ld\n",d.imageBytes, lPos);
             if (d.imageBytes > 128) {
-                d.imageStart = (int)lPos + (int)lFileOffset;
+            	encapsulatedDataFragments++;
+   				if (encapsulatedDataFragmentStart == 0)
+                	encapsulatedDataFragmentStart = (int)lPos + (int)lFileOffset;
             }
         }
         if ((isIconImageSequence) && ((groupElement & 0x0028) == 0x0028 )) groupElement = kUnused; //ignore icon dimensions
@@ -3126,7 +3124,7 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                 break;
             /*case kStackSliceNumber: { //https://github.com/Kevin-Mattheus-Moerman/GIBBON/blob/master/dicomDict/PMS-R32-dict.txt
             	int stackSliceNumber = dcmInt(lLength,&buffer[lPos],d.isLittleEndian);
-            	printf("%d\n",stackSliceNumber);
+            	printMessage("StackSliceNumber %d\n",stackSliceNumber);
             	break;
 			}*/
             case 	kNumberOfDynamicScans:
@@ -3329,6 +3327,8 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                 if ((d.compressionScheme != kCompressNone) && (!isIconImageSequence)) {
                     lLength = 0;
                     isEncapsulatedData = true;
+                    encapsulatedDataImageStart = (int)lPos + (int)lFileOffset;
+                    //printWarning("Encapsulated\n");
                 }
 				isIconImageSequence = false;
                 break;
@@ -3345,6 +3345,7 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
                     d.imageStart = (int)lPos + (int)lFileOffset;
                 isIconImageSequence = false;
                 break;
+
         } //switch/case for groupElement
         } //if nest
         if (isVerbose > 1) {
@@ -3369,6 +3370,16 @@ struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, stru
         //printMessage("%d\n",d.imageStart);
     } //while d.imageStart == 0
     free (buffer);
+    if (encapsulatedDataFragmentStart > 0) {
+        if (encapsulatedDataFragments > 1)
+        	printError(" Compressed image stored as %d fragments: decompress with Osirix, dcmdjpeg or dcmjp2k\n", encapsulatedDataFragments);
+    	else
+    		d.imageStart = encapsulatedDataFragmentStart;
+    } else if ((isEncapsulatedData) && (d.imageStart < 128)) {
+    	printWarning(" DICOM violation (contact vendor): compressed image without image fragments, assuming image offset defined by 0x7FE0,x0010\n");
+    	d.imageStart = encapsulatedDataImageStart;
+    }
+
     //Recent Philips images include DateTime (0008,002A) but not separate date and time (0008,0022 and 0008,0032)
     #define kYYYYMMDDlen 8 //how many characters to encode year,month,day in "YYYYDDMM" format
     if ((strlen(acquisitionDateTimeTxt) > (kYYYYMMDDlen+5)) && (!isFloatDiff(d.acquisitionTime, 0.0f)) && (!isFloatDiff(d.acquisitionDate, 0.0f)) ) {

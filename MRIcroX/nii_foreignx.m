@@ -319,6 +319,244 @@ int afni_readhead(NSString * fname, NSString ** imgname,  struct nifti_1_header 
 AA.m[1][0]=a21 , AA.m[1][1]=a22 , AA.m[1][2]=a23 ,   \
 AA.m[2][0]=a31 , AA.m[2][1]=a32 , AA.m[2][2]=a33  )
 
+/*int nii_readvtk(NSString * fname, NSString ** imgname, struct nifti_1_header *nhdr, long * gzBytes, bool * swapEndian)
+//VTK Simple Legacy Formats : STRUCTURED_POINTS : BINARY
+// http://daac.hpc.mil/gettingStarted/VTK_DataFormats.html
+// https://github.com/bonilhamusclab/MRIcroS/blob/master/%2BfileUtils/%2Bvtk/readVtk.m
+// http://www.ifb.ethz.ch/education/statisticalphysics/file-formats.pdf
+// ftp://ftp.tuwien.ac.at/visual/vtk/www/FileFormats.pdf
+//  "The VTK data files described here are written in big endian form"
+{
+    *gzBytes = 0;
+    *swapEndian = false;
+    FILE *fp;
+    fp = fopen([fname cStringUsingEncoding:1], "r");
+    if (fp == NULL) {
+        NSLog(@"Error opening %@ ", fname);
+        return EXIT_FAILURE;
+    }
+    const int kMaxStr = 1024;
+    char str[kMaxStr];
+    bool isLocal = true; //image and header embedded in same file, if false detached image
+    NSNumberFormatter * f = [[NSNumberFormatter alloc] init];
+    [f setNumberStyle:NSNumberFormatterDecimalStyle];
+    long dataType = 0;
+    long nDims = 0;
+    long compressedDataSize, headerSize = 0;
+    mat33 mat,matOrient;
+    long matElements = 0, matElementsOrient = 0, nPosition = 0, nOffset = 0;
+    int dimSize[4] = {0,0,0,0};
+    float elementSpacing[4] = {0,0,0,0};
+    float position[3], offset[3], centerOfRotation[3], elementSize[4];
+    //bool binaryData;
+    bool compressedData = false, readelementdatafile = false; //imageAndHeaderInSingleFile=false;
+    NSString *lnsStr;
+    do {
+        if( fgets (str, kMaxStr, fp)==NULL ) break;
+        NSLog(@"--> %s",str);
+        lnsStr = [NSString stringWithUTF8String:str];
+        lnsStr = [[lnsStr componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] componentsJoinedByString:@" "]; //remove EOLN
+        NSArray *array = [lnsStr componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        array = [array filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF != ''"]];
+        long nItems = ([array count] -2); //first two items are tag name and equal sign "NDims = 3" has 3 ["NDims" "=" "3"]
+        if (nItems < 1) break;
+        if ([array[0] rangeOfString:@"ObjectType" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if ([array[2] rangeOfString:@"Image" options:NSCaseInsensitiveSearch].location == NSNotFound) {
+                NSLog(@"Expecting file with tag 'ObjectType = Image' instead of 'ObjectType = %@'", array[2]);
+            }
+        } else if ([array[0] rangeOfString:@"NDims" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            nDims = [[f numberFromString: array[2]] intValue];
+            if (nDims > 4) {
+                NSLog(@"Warning: only reading first 4 dimensions");
+                nDims = 4;
+            }
+        } else if ([array[0] rangeOfString:@"BinaryDataByteOrderMSB" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+#ifdef __BIG_ENDIAN__
+            if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location == NSNotFound) *swapEndian = true;
+#else
+            if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location != NSNotFound) *swapEndian = true;
+#endif
+        } else if ([array[0] rangeOfString:@"BinaryData" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location != NSNotFound) binaryData = true;
+        } else if ([array[0] rangeOfString:@"CompressedDataSize" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //NSLog(@"nii_io myGZ %@", array[2]);
+            compressedDataSize = [[f numberFromString: array[2]] intValue];
+        } else if ([array[0] rangeOfString:@"CompressedData" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                compressedData = true;
+        }  else if ([array[0] rangeOfString:@"TransformMatrix" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 12) nItems = 12;
+            matElements = nItems;
+            float transformMatrix[12];
+            for (int i=0; i<nItems; i++)
+                transformMatrix[i] = [[f numberFromString: array[2+i]] floatValue];
+            if (matElements >= 12)
+                LOAD_MAT33(mat, transformMatrix[0],transformMatrix[1],transformMatrix[2],
+                           transformMatrix[4],transformMatrix[5],transformMatrix[6],
+                           transformMatrix[8],transformMatrix[9],transformMatrix[10]);
+            else if (matElements >= 9)
+                LOAD_MAT33(mat, transformMatrix[0],transformMatrix[1],transformMatrix[2],
+                           transformMatrix[3],transformMatrix[4],transformMatrix[5],
+                           transformMatrix[6],transformMatrix[7],transformMatrix[8]);
+            
+        } else if ([array[0] rangeOfString:@"Offset" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 3) nItems = 3;
+            nOffset = nItems;
+            for (int i=0; i<nItems; i++)
+                offset[i] = [[f numberFromString: array[2+i]] floatValue];
+        } else if ([array[0] rangeOfString:@"Position" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 3) nItems = 3;
+            nPosition = nItems;
+            for (int i=0; i<nItems; i++)
+                position[i] = [[f numberFromString: array[2+i]] floatValue];
+        } else if ([array[0] rangeOfString:@"CenterOfRotation" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 3) nItems = 3;
+            for (int i=0; i<nItems; i++)
+                centerOfRotation[i] = [[f numberFromString: array[2+i]] floatValue];
+        } else if ([array[0] rangeOfString:@"AnatomicalOrientation" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //e.g. RAI
+        } else if ([array[0] rangeOfString:@"Orientation" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //n.b. do this AFTER AnatomicalOrientation, since both include "Orientation"
+            if (nItems > 12) nItems = 12;
+            matElementsOrient = nItems;
+            float transformMatrix[12];
+            for (int i=0; i<nItems; i++)
+                transformMatrix[i] = [[f numberFromString: array[2+i]] floatValue];
+            if (matElementsOrient >= 12)
+                LOAD_MAT33(matOrient, transformMatrix[0],transformMatrix[1],transformMatrix[2],
+                           transformMatrix[4],transformMatrix[5],transformMatrix[6],
+                           transformMatrix[8],transformMatrix[9],transformMatrix[10]);
+            else if (matElementsOrient >= 9)
+                LOAD_MAT33(matOrient, transformMatrix[0],transformMatrix[1],transformMatrix[2],
+                           transformMatrix[3],transformMatrix[4],transformMatrix[5],
+                           transformMatrix[6],transformMatrix[7],transformMatrix[8]);
+            
+        } else if ([array[0] rangeOfString:@"ElementSpacing" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 4) nItems = 4;
+            for (int i=0; i<nItems; i++)
+                elementSpacing[i] = [[f numberFromString: array[2+i]] floatValue];
+        } else if ([array[0] rangeOfString:@"DimSize" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 4) nItems = 4;
+            for (int i=0; i<nItems; i++) {
+                dimSize[i] = [[f numberFromString: array[2+i]] intValue];
+                //NSLog(@"Dim %d %d",i, dimSize[i]);
+            }
+        } else if ([array[0] rangeOfString:@"HeaderSize" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            headerSize = [[f numberFromString: array[2]] intValue];
+        } else if ([array[0] rangeOfString:@"ElementSize" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if (nItems > 4) nItems = 4;
+            for (int i=0; i<nItems; i++)
+                elementSize[i] = [[f numberFromString: array[2+i]] floatValue];
+        } else if ([array[0] rangeOfString:@"ElementNumberOfChannels" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            long channels = [[f numberFromString: array[2]] intValue];
+            if (channels > 1) NSLog(@"Unable to read MHA/MHD files with multiple channels (%@ has %ld channels)",fname, channels);
+        } else if ([array[0] rangeOfString:@"ElementByteOrderMSB" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location != NSNotFound) byteOrderMSB = true;
+#ifdef __BIG_ENDIAN__
+            if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location == NSNotFound) *swapEndian = true;
+#else
+            if ([array[2] rangeOfString:@"True" options:NSCaseInsensitiveSearch].location != NSNotFound) *swapEndian = true;
+#endif
+        } else if ([array[0] rangeOfString:@"ElementType" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            //convert metaImage format to NIfTI http://portal.nersc.gov/svn/visit/tags/2.2.1/vendor_branches/vtk/src/IO/vtkMetaImageWriter.cxx
+            //set NIfTI datatype http://nifti.nimh.nih.gov/pub/dist/src/niftilib/nifti1.h
+            if ([array[2] rangeOfString:@"MET_UCHAR" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_UINT8; //
+            else if ([array[2] rangeOfString:@"MET_CHAR" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_INT8; //
+            else if ([array[2] rangeOfString:@"MET_SHORT" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_INT16; //
+            else if ([array[2] rangeOfString:@"MET_USHORT" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_UINT16; //
+            else if ([array[2] rangeOfString:@"MET_INT" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = 8; //DT_INT32
+            else if ([array[2] rangeOfString:@"MET_UINT" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_UINT32; //DT_UINT32
+            else if ([array[2] rangeOfString:@"MET_ULONG" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_UINT64; //DT_UINT64
+            else if ([array[2] rangeOfString:@"MET_LONG" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_INT64; //DT_INT64
+            else if ([array[2] rangeOfString:@"MET_FLOAT" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_FLOAT32; //DT_FLOAT32
+            else if ([array[2] rangeOfString:@"MET_DOUBLE" options:NSCaseInsensitiveSearch].location != NSNotFound)
+                dataType = DT_FLOAT64; //DT_FLOAT64
+        } else if ([array[0] rangeOfString:@"ElementDataFile" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            NSString *lowerStr =  [array[2] lowercaseString];
+            if(![lowerStr isEqualToString:@"local"]) {
+                *imgname = array[2];
+                isLocal = false;
+            }
+            //readelementdatafile=true; //never used
+            break;
+        }
+    } while (~readelementdatafile);  //while ~readelementdatafile
+    if ((headerSize == 0) && (isLocal)) headerSize = ftell (fp);
+    nhdr->vox_offset = headerSize;
+    fclose(fp);
+    //next: fill relevant parts of NIfTI array
+    nhdr->datatype = dataType;
+    nhdr->dim[0] = nDims;
+    nhdr->dim[1] = dimSize[0];
+    nhdr->dim[2] = dimSize[1];
+    nhdr->dim[3] = dimSize[2];
+    nhdr->dim[4] = dimSize[3];
+    nhdr->pixdim[1] = elementSpacing[0];
+    nhdr->pixdim[2] = elementSpacing[1];
+    nhdr->pixdim[3] = elementSpacing[2];
+    nhdr->pixdim[4] = elementSpacing[3];
+    if (nDims == 2) {
+        nhdr->dim[0] = 3;
+        nhdr->dim[3] = 1;
+        nhdr->pixdim[3] = (nhdr->pixdim[1]+nhdr->pixdim[2])/2; //for 2D images the 3rd dim is not specified and set to zero
+        NSLog(@"This software is designed for 3D rather than 2D images like %@", fname);
+    }
+    ///convert transform
+    if ((matElements >= 9) || (matElementsOrient >= 9)) {
+        mat33 d, t;
+        LOAD_MAT33(d, elementSpacing[0],0,0,
+                   0,elementSpacing[1],0,
+                   0,0,elementSpacing[2]);
+        
+        if (matElements >= 9)
+            t = nifti_mat33_mul( d, mat);
+        else
+            t = nifti_mat33_mul( d, matOrient);
+        if (nPosition > nOffset) {
+            offset[0] = position[0];
+            offset[1] = position[1];
+            offset[2] = position[2];
+        }
+        nhdr->srow_x[0]=-t.m[0][0];
+        nhdr->srow_x[1]=-t.m[1][0];
+        nhdr->srow_x[2]=-t.m[2][0];
+        nhdr->srow_x[3]=-offset[0];
+        nhdr->srow_y[0]=-t.m[0][1];
+        nhdr->srow_y[1]=-t.m[1][1];
+        nhdr->srow_y[2]=-t.m[2][1];
+        nhdr->srow_y[3]=-offset[1];
+        nhdr->srow_z[0]=t.m[0][2];
+        nhdr->srow_z[1]=t.m[1][2];
+        nhdr->srow_z[2]=t.m[2][2];
+        nhdr->srow_z[3]=offset[2];
+        //NSLog(@"row_x = %g %g %g %g",nhdr->srow_x[0],nhdr->srow_x[1],nhdr->srow_x[2],nhdr->srow_x[3]);
+        //NSLog(@"row_y = %g %g %g %g",nhdr->srow_y[0],nhdr->srow_y[1],nhdr->srow_y[2],nhdr->srow_y[3]);
+        //NSLog(@"row_z = %g %g %g %g",nhdr->srow_z[0],nhdr->srow_z[1],nhdr->srow_z[2],nhdr->srow_z[3]);
+    } else
+        NSLog(@"Warning: unable to determine image orientation (no metaIO 'TransformMatrix' tag)");
+    //end transform
+    convertForeignToNifti(nhdr);
+    //yflip_sform(nhdr);  2014 <- 66666
+    if (compressedData) {
+        //NSLog(@"ElementDataFile %@",*imgname);
+        if (compressedDataSize < 1)
+            *gzBytes = K_gzBytes_headeruncompressed;
+        
+        else
+            *gzBytes = compressedDataSize;
+    }
+    return EXIT_SUCCESS;
+}*/
+
 int nii_readmha(NSString * fname, NSString ** imgname, struct nifti_1_header *nhdr, long * gzBytes, bool * swapEndian)
 //Read VTK "MetaIO" format image
 //http://www.itk.org/Wiki/ITK/MetaIO/Documentation#Reading_a_Brick-of-Bytes_.28an_N-Dimensional_volume_in_a_single_file.29

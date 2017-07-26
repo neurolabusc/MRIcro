@@ -207,7 +207,7 @@ void geCorrectBvecs(struct TDICOMdata *d, int sliceDir, struct TDTI *vx){
 		printMessage("Impossible GE slice orientation!");
 	if (sliceDir < 0)
     	flp.v[2] = 1 - flp.v[2];
-    printMessage("Reorienting %s : %d GE DTI vectors: please validate. isCol=%d sliceDir=%d flp=%d %d %d\n", d->protocolName, d->CSA.numDti, col, sliceDir, flp.v[0], flp.v[1],flp.v[2]);
+    printMessage("Saving %d DTI gradients. GE Reorienting %s : please validate. isCol=%d sliceDir=%d flp=%d %d %d\n", d->CSA.numDti, d->protocolName, col, sliceDir, flp.v[0], flp.v[1],flp.v[2]);
 	if (!col)
 		printMessage(" reorienting for ROW phase-encoding untested.\n");
     for (int i = 0; i < d->CSA.numDti; i++) {
@@ -286,11 +286,11 @@ void siemensPhilipsCorrectBvecs(struct TDICOMdata *d, int sliceDir, struct TDTI 
             if (vx[i].V[v] == -0.0f) vx[i].V[v] = 0.0f; //remove sign from values that are virtually zero
     } //for each direction
     if (abs(sliceDir) == kSliceOrientMosaicNegativeDeterminant) {
-       printWarning("Please validate DTI vectors (matrix had a negative determinant, perhaps Siemens sagittal).\n");
+       printWarning("Saving %d DTI gradients. Validate vectors (matrix had a negative determinant).\n", d->CSA.numDti); //perhaps Siemens sagittal
     } else if ( d->sliceOrient == kSliceOrientTra) {
-        printMessage("Saving %d DTI gradients. Please validate if you are conducting DTI analyses.\n", d->CSA.numDti);
+        printMessage("Saving %d DTI gradients. Validate vectors.\n", d->CSA.numDti);
     } else {
-        printWarning("DTI gradient directions only tested for axial (transverse) acquisitions. Please validate bvec files.\n");
+        printWarning("Saving %d DTI gradients. Validate vectors (images are not axial slices).\n", d->CSA.numDti);
     }
 }// siemensPhilipsCorrectBvecs()
 
@@ -444,7 +444,7 @@ int siemensEchoEPIFactor(const char * filename,  int csaOffset, int csaLength, i
 	long lSize = ftell (pFile);
 	if (lSize < (csaOffset+csaLength)) {
 		fclose (pFile);
-        return 0;
+		return 0;
 	}
 	fseek(pFile, csaOffset, SEEK_SET);
 	char * buffer = (char*) malloc (csaLength);
@@ -550,7 +550,7 @@ void nii_SaveBIDS(char pathoutname[], struct TDICOMdata d, struct TDCMopts opts,
 	if (strlen(d.institutionName) > 0)
 		fprintf(fp, "\t\"InstitutionName\": \"%s\",\n", d.institutionName );
 	if (strlen(d.institutionAddress) > 0)
-		fprintf(fp, "\t\"InstitutionName\": \"%s\",\n", d.institutionAddress );
+		fprintf(fp, "\t\"InstitutionAddress\": \"%s\",\n", d.institutionAddress );
 	if (strlen(d.deviceSerialNumber) > 0)
 		fprintf(fp, "\t\"DeviceSerialNumber\": \"%s\",\n", d.deviceSerialNumber );
 	if (strlen(d.softwareVersions) > 0)
@@ -664,17 +664,13 @@ void nii_SaveBIDS(char pathoutname[], struct TDICOMdata d, struct TDCMopts opts,
     		if (effectiveEchoSpacing > 0.0)
     			fprintf(fp, "\t\"TrueEchoSpacing\": %g,\n", effectiveEchoSpacing * d.accelFactPE);
 	}
-	bool first = 1;
-	if (dti4D->S[0].sliceTiming >= 0.0) {
+	if (d.CSA.sliceTiming[0] >= 0.0) {
    		fprintf(fp, "\t\"SliceTiming\": [\n");
-   		for (int i = 0; i < kMaxDTI4D; i++) {
-			if (dti4D->S[i].sliceTiming >= 0.0){
-			  if (!first)
-				  fprintf(fp, ",\n");
-				else
-				  first = 0;
-				fprintf(fp, "\t\t%g", dti4D->S[i].sliceTiming / 1000.0 );
-			}
+   		for (int i = 0; i < kMaxEPI3D; i++) {
+   			if (d.CSA.sliceTiming[i] < 0.0) break;
+			if (i != 0)
+				fprintf(fp, ",\n");
+			fprintf(fp, "\t\t%g", d.CSA.sliceTiming[i] / 1000.0 );
 		}
 		fprintf(fp, "\t],\n");
 	}
@@ -1083,6 +1079,18 @@ int nii_createFilename(struct TDICOMdata dcm, char * niiFilename, struct TDCMopt
 				#else
     			printWarning("Ignoring '%%u' in output filename (recompile to segment by acquisition)\n");
     			#endif
+			}
+			if (f == 'V') {
+				if (dcm.manufacturer == kMANUFACTURER_GE)
+					strcat (outname,"GE");
+				else if (dcm.manufacturer == kMANUFACTURER_PHILIPS)
+					strcat (outname,"Philips");
+				else if (dcm.manufacturer == kMANUFACTURER_SIEMENS)
+					strcat (outname,"Siemens");
+				else if (dcm.manufacturer == kMANUFACTURER_TOSHIBA)
+					strcat (outname,"Toshiba");
+				else
+					strcat (outname,"NA");
 			}
 			if (f == 'X')
 				strcat (outname,dcm.studyID);
@@ -2014,7 +2022,7 @@ int saveDcm2Nii(int nConvert, struct TDCMsort dcmSort[],struct TDICOMdata dcmLis
     int returnCode = EXIT_FAILURE;
     //printMessage(" x--> %d ----\n", nConvert);
     if (! opts.isRGBplanar) //save RGB as packed RGBRGBRGB... instead of planar RRR..RGGG..GBBB..B
-        imgM = nii_planar2rgb(imgM, &hdr0, true);
+        imgM = nii_planar2rgb(imgM, &hdr0, true); //NIfTI is packed while Analyze was planar
     if ((hdr0.dim[4] > 1) && (saveAs3D))
         returnCode = nii_saveNII3D(pathoutname, hdr0, imgM,opts);
     else {
@@ -2597,7 +2605,7 @@ void setDefaultOpts (struct TDCMopts *opts, const char * argv[]) { //either "set
     opts->isGz = false;
     opts->gzLevel = -1;
     opts->isFlipY = true; //false: images in raw DICOM orientation, true: image rows flipped to cartesian coordinates
-    opts->isRGBplanar = false;
+    opts->isRGBplanar = false; //false for NIfTI (RGBRGB...), true for Analyze (RRR..RGGG..GBBB..B)
     opts->isCreateBIDS =  true;
     #ifdef myNoAnonymizeBIDS
     opts->isAnonymizeBIDS = false;
