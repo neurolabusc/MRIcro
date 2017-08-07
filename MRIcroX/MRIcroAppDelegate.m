@@ -189,6 +189,8 @@
 
 -(void)setDefaults: (bool) forceReset
 {
+    
+    //NSLog(@"%d", (unsigned long)NSBottomTabsBezelBorder);
     if (forceReset) {
         [[NSUserDefaults standardUserDefaults] setPersistentDomain:[NSDictionary dictionary] forName:[[NSBundle mainBundle] bundleIdentifier]];
         [[NSUserDefaults standardUserDefaults]synchronize ];

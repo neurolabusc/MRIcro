@@ -71,7 +71,50 @@ int nifti_short_order(void)   // determine this CPU's byte order
 #define REVERSE_ORDER(x) (3-(x))    // convert MSB_FIRST <--> LSB_FIRST
 
 
-void swap_nifti_header( struct nifti_1_header *h , int is_nifti )
+void swap_nifti2_header( struct nifti_2_header *h ){
+    //https://nifti.nimh.nih.gov/pub/dist/src/nifti2/nifti2_io.c
+    nifti_swap_4bytes(1, &h->sizeof_hdr);
+    
+    nifti_swap_2bytes(1, &h->datatype);
+    nifti_swap_2bytes(1, &h->bitpix);
+    
+    nifti_swap_8bytes(8, h->dim);
+    nifti_swap_8bytes(1, &h->intent_p1);
+    nifti_swap_8bytes(1, &h->intent_p2);
+    nifti_swap_8bytes(1, &h->intent_p3);
+    nifti_swap_8bytes(8, h->pixdim);
+    
+    nifti_swap_8bytes(1, &h->vox_offset);
+    nifti_swap_8bytes(1, &h->scl_slope);
+    nifti_swap_8bytes(1, &h->scl_inter);
+    nifti_swap_8bytes(1, &h->cal_max);
+    nifti_swap_8bytes(1, &h->cal_min);
+    nifti_swap_8bytes(1, &h->slice_duration);
+    nifti_swap_8bytes(1, &h->toffset);
+    nifti_swap_8bytes(1, &h->slice_start);
+    nifti_swap_8bytes(1, &h->slice_end);
+    
+    nifti_swap_4bytes(1, &h->qform_code);
+    nifti_swap_4bytes(1, &h->sform_code);
+    
+    nifti_swap_8bytes(1, &h->quatern_b);
+    nifti_swap_8bytes(1, &h->quatern_c);
+    nifti_swap_8bytes(1, &h->quatern_d);
+    nifti_swap_8bytes(1, &h->qoffset_x);
+    nifti_swap_8bytes(1, &h->qoffset_y);
+    nifti_swap_8bytes(1, &h->qoffset_z);
+    
+    nifti_swap_8bytes(4, h->srow_x);
+    nifti_swap_8bytes(4, h->srow_y);
+    nifti_swap_8bytes(4, h->srow_z);
+    
+    nifti_swap_4bytes(1, &h->slice_code);
+    nifti_swap_4bytes(1, &h->xyzt_units);
+    nifti_swap_4bytes(1, &h->intent_code);
+    return ;
+}
+
+void swap_nifti_header( struct nifti_1_header *h )
 {
     nifti_swap_4bytes(1, &h->sizeof_hdr);
     nifti_swap_4bytes(1, &h->extents);
@@ -113,6 +156,11 @@ static int need_nhdr_swap( short dim0, int hdrsize )
 {
     short d0    = dim0;     // so we won't have to swap them on the stack
     int   hsize = hdrsize;
+    /*if ( hsize == sizeof(nifti_2_header) ) return 2;
+    nifti_swap_4bytes(1, &hsize);     // swap?
+    if ( hsize == sizeof(nifti_2_header) ) return 3;
+    hsize = hdrsize;*/
+    
     
     if( d0 != 0 ){     // then use it for the check
         if( d0 > 0 && d0 <= 7 ) return 0;
@@ -149,14 +197,15 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
     }
     // determine if this is a NIFTI-1 compliant header
     is_nifti = NIFTI_VERSION(nhdr) ;
+    
     //before swapping header, record the Analyze75 orient code
     if(!is_nifti) {
         printf("Unsupported format: Analyze format instead of NIfTI? Try MRIcro or MRIcron.\n");
 //        unsigned char c = *((char *)(&nhdr.qform_code));
 //        nim->analyze75_orient = (analyze_75_orient_code)c;
     }
-    if( doswap )
-        swap_nifti_header( &nhdr , is_nifti ) ;
+    if( doswap == 1 )
+        swap_nifti_header( &nhdr ) ;
 //    if ( g_opts.debug > 2 ) disp_nifti_1_header("-d nhdr2nim : ", &nhdr);
     if( nhdr.datatype == DT_BINARY || nhdr.datatype == DT_UNKNOWN_DT  )  {
         NSLog(@"unknown or unsupported datatype (%d). Will attempt to view as unsigned 8-bit (assuming ImageJ export)", nhdr.datatype);
@@ -410,6 +459,88 @@ int nii_readhdr(NSString * fname, struct nifti_1_header *niiHdr, long * gzBytes)
     }
     if((!hdrdata) || (hdrdata.length < sizeof(nifti_1_header))) return EXIT_FAILURE;
     [hdrdata getBytes:niiHdr length:sizeof(struct nifti_1_header)];
+    //next for NIFTI2
+    int swapSz = sizeof(nifti_2_header);
+    nifti_swap_4bytes(1, &swapSz);
+    if ((niiHdr->sizeof_hdr == sizeof(nifti_2_header))|| (niiHdr->sizeof_hdr == swapSz)) {
+        struct nifti_2_header nii2Hdr ;
+        NSData *hdrdata2;
+        //[hdrdata setLength:0];
+        if (([[fname pathExtension] rangeOfString:@"GZ" options:NSCaseInsensitiveSearch].location != NSNotFound)
+            || ([[fname pathExtension] rangeOfString:@"VOI" options:NSCaseInsensitiveSearch].location != NSNotFound)) {
+            NSData *data = [NSData dataWithContentsOfFile:fname];
+            if (!data) return EXIT_FAILURE;
+            hdrdata2 = ungz(data, sizeof(nifti_2_header));
+            *gzBytes = K_gzBytes_headercompressed;
+        } else {
+            NSFileHandle *fileHandle = [NSFileHandle fileHandleForReadingAtPath:fname];
+            hdrdata2 = [fileHandle readDataOfLength:sizeof(nifti_2_header)];
+            *gzBytes = 0;
+        }
+        if((!hdrdata2) || (hdrdata2.length < sizeof(nifti_2_header))) return EXIT_FAILURE;
+        [hdrdata2 getBytes:&nii2Hdr length:sizeof(struct nifti_2_header)];
+        //NSLog(@"--->%lu %lld %lld %lld", (unsigned long)hdrdata2.length, nii2Hdr.dim[1], nii2Hdr.dim[2], nii2Hdr.dim[3]);
+        //NSLog(@"%d", nii2Hdr.bitpix);
+        if (niiHdr->sizeof_hdr == swapSz)
+            swap_nifti2_header( &nii2Hdr ) ;
+        //FILL NIFTI-1 header with NIFTI-2
+        niiHdr->sizeof_hdr = sizeof(nifti_1_header);
+        niiHdr->magic[0] = 'n';niiHdr->magic[1] = 'i';niiHdr->magic[2] = '1';niiHdr->magic[3] = 0;
+        niiHdr->datatype = nii2Hdr.datatype;
+        niiHdr->bitpix = nii2Hdr.bitpix;
+        for (int i = 0; i < 8; i++) {
+            if (nii2Hdr.dim[i] > 32767)
+                nii2Hdr.dim[i] = 32767;
+            niiHdr->dim[i] = nii2Hdr.dim[i];
+        }
+        niiHdr->intent_p1 = nii2Hdr.intent_p1;
+        niiHdr->intent_p2 = nii2Hdr.intent_p2;
+        niiHdr->intent_p3 = nii2Hdr.intent_p3;
+        for (int i = 0; i < 8; i++)
+            niiHdr->pixdim[i] = nii2Hdr.pixdim[i];
+        niiHdr->vox_offset = nii2Hdr.vox_offset;
+        niiHdr->scl_slope = nii2Hdr.scl_slope;
+        niiHdr->scl_inter = nii2Hdr.scl_inter;
+        niiHdr->cal_max = nii2Hdr.cal_max;
+        niiHdr->cal_min = nii2Hdr.cal_min;
+        niiHdr->slice_duration = nii2Hdr.slice_duration;
+        niiHdr->toffset = nii2Hdr.toffset;
+        niiHdr->slice_start = nii2Hdr.slice_start;
+        niiHdr->slice_end = nii2Hdr.slice_end;
+        for (int i = 0; i < 80; i++)
+            niiHdr->descrip[i] = nii2Hdr.descrip[i];
+        for (int i = 0; i < 24; i++)
+            niiHdr->aux_file[i] = nii2Hdr.aux_file[i];
+        niiHdr->qform_code = nii2Hdr.qform_code;
+        niiHdr->sform_code = nii2Hdr.sform_code;
+        niiHdr->quatern_b = nii2Hdr.quatern_b;
+        niiHdr->quatern_c = nii2Hdr.quatern_c;
+        niiHdr->quatern_d = nii2Hdr.quatern_d;
+        niiHdr->qoffset_x = nii2Hdr.qoffset_x;
+        niiHdr->qoffset_y = nii2Hdr.qoffset_y;
+        niiHdr->qoffset_z = nii2Hdr.qoffset_z;
+        for (int i = 0; i < 4; i++) {
+            niiHdr->srow_x[i] = nii2Hdr.srow_x[i];
+            niiHdr->srow_y[i] = nii2Hdr.srow_y[i];
+            niiHdr->srow_z[i] = nii2Hdr.srow_z[i];
+        }
+        niiHdr->slice_code = nii2Hdr.slice_code;
+        niiHdr->xyzt_units = nii2Hdr.xyzt_units;
+        niiHdr->intent_code = nii2Hdr.intent_code;
+        for (int i = 0; i < 16; i++)
+            niiHdr->intent_name[i] = nii2Hdr.intent_name[i];
+        niiHdr->dim_info = nii2Hdr.dim_info;
+        //removed fields https://brainder.org/2015/04/03/the-nifti-2-file-format/
+        for (int i = 0; i < 10; i++)
+            niiHdr->data_type[i] = 0;
+        for (int i = 0; i < 18; i++)
+            niiHdr->db_name[i] = 0;
+        niiHdr->extents = 0;
+        niiHdr->session_error = 0;
+        niiHdr->regular = 'r';
+        niiHdr->glmax = 0;
+        niiHdr->glmin = 0;
+    }
     return EXIT_SUCCESS;
 }
 

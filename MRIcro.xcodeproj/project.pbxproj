@@ -140,6 +140,7 @@
 		4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = mricro.icns; sourceTree = "<group>"; };
 		4FD0B0E318BEE67F0061FAD2 /* GLString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLString.h; sourceTree = "<group>"; };
 		4FD0B0E418BEE67F0061FAD2 /* GLString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GLString.m; sourceTree = "<group>"; };
+		4FE1562F1F38958600C33F3E /* print.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = print.h; sourceTree = "<group>"; };
 		4FE2EFC419E1C44900AA74C6 /* dcm2niiWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dcm2niiWindow.h; sourceTree = "<group>"; };
 		4FE2EFC519E1C44900AA74C6 /* dcm2niiWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = dcm2niiWindow.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -215,6 +216,7 @@
 		4F9A589C1609E769008ECBE2 /* MRIcro */ = {
 			isa = PBXGroup;
 			children = (
+				4FE1562F1F38958600C33F3E /* print.h */,
 				4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */,
 				4F56F8BE1EBCEF750087AB46 /* nii_foreignx.h */,
 				4F56F8BF1EBCEF750087AB46 /* nii_foreign.h */,
@@ -506,8 +508,13 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					DEBUG,
 					myDisableMiniZ,
+					"myErrorStdOut=1",
 				);
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = DEBUG;
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
+					DEBUG,
+					myDisableMiniZ,
+					myErrorStdOut,
+				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
@@ -545,8 +552,14 @@
 				GCC_GENERATE_TEST_COVERAGE_FILES = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MRIcroX/MRIcro-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = myDisableMiniZ;
-				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = myDisableMiniZ;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					myDisableMiniZ,
+					"myErrorStdOut=1",
+				);
+				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
+					myDisableMiniZ,
+					myErrorStdOut,
+				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
