@@ -30,7 +30,6 @@
 		4F12CE6F1A195DB000408A12 /* nii_reslice.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23921609EC2B003D311C /* nii_reslice.m */; };
 		4F12CE701A195DB000408A12 /* nii_timelineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F70AC7616121AB90007FAB5 /* nii_timelineView.m */; };
 		4F12CE721A195DB000408A12 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F07BCC716160EE7000216B2 /* QuartzCore.framework */; };
-		4F12CE731A195DB000408A12 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F6B239D1609EC6C003D311C /* libz.dylib */; };
 		4F12CE741A195DB000408A12 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F9A58B81609E963008ECBE2 /* OpenGL.framework */; };
 		4F12CE751A195DB000408A12 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F9A58961609E769008ECBE2 /* Cocoa.framework */; };
 		4F12CE771A195DB000408A12 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4F9A589F1609E769008ECBE2 /* InfoPlist.strings */; };
@@ -50,7 +49,6 @@
 		4F6B23961609EC2B003D311C /* nii_io.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B238A1609EC2B003D311C /* nii_io.mm */; };
 		4F6B23991609EC2B003D311C /* nii_render.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23901609EC2B003D311C /* nii_render.m */; };
 		4F6B239A1609EC2B003D311C /* nii_reslice.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23921609EC2B003D311C /* nii_reslice.m */; };
-		4F6B239E1609EC6C003D311C /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F6B239D1609EC6C003D311C /* libz.dylib */; };
 		4F70AC7716121AB90007FAB5 /* nii_timelineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F70AC7616121AB90007FAB5 /* nii_timelineView.m */; };
 		4F7787F918AD5D360028CAE3 /* nii_mosaic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F7787F818AD5D360028CAE3 /* nii_mosaic.mm */; };
 		4F84E24819F46AB900D95B28 /* nii_ortho.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24619F46AB900D95B28 /* nii_ortho.cpp */; };
@@ -68,6 +66,7 @@
 		4F9A58B91609E963008ECBE2 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F9A58B81609E963008ECBE2 /* OpenGL.framework */; };
 		4FB5AFD61A8A6544000196DD /* ujpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F9E21A6BFA3500E96843 /* ujpeg.cpp */; };
 		4FB5AFD71A8A6556000196DD /* jpg_0XC3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC7949D1A6ADE2E00B2BA49 /* jpg_0XC3.cpp */; };
+		4FBD92E220165A5600A240B1 /* libz.1.2.5.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FBD92E120165A5600A240B1 /* libz.1.2.5.tbd */; };
 		4FC7949F1A6ADE2E00B2BA49 /* jpg_0XC3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4FC7949D1A6ADE2E00B2BA49 /* jpg_0XC3.cpp */; };
 		4FCDFAEC18BCFD4700FB2F28 /* mricro.icns in Resources */ = {isa = PBXBuildFile; fileRef = 4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */; };
 		4FD0B0E518BEE67F0061FAD2 /* GLString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD0B0E418BEE67F0061FAD2 /* GLString.m */; };
@@ -102,7 +101,6 @@
 		4F6B23911609EC2B003D311C /* nii_reslice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_reslice.h; sourceTree = "<group>"; };
 		4F6B23921609EC2B003D311C /* nii_reslice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_reslice.m; sourceTree = "<group>"; };
 		4F6B239C1609EC53003D311C /* nifti1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nifti1.h; sourceTree = "<group>"; };
-		4F6B239D1609EC6C003D311C /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		4F70AC7516121AB90007FAB5 /* nii_timelineView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_timelineView.h; sourceTree = "<group>"; };
 		4F70AC7616121AB90007FAB5 /* nii_timelineView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_timelineView.m; sourceTree = "<group>"; };
 		4F7787F718AD5D360028CAE3 /* nii_mosaic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_mosaic.h; sourceTree = "<group>"; };
@@ -135,6 +133,7 @@
 		4F9A58B51609E7DC008ECBE2 /* nii_WindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_WindowController.h; sourceTree = "<group>"; };
 		4F9A58B61609E7DC008ECBE2 /* nii_WindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_WindowController.m; sourceTree = "<group>"; };
 		4F9A58B81609E963008ECBE2 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		4FBD92E120165A5600A240B1 /* libz.1.2.5.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.2.5.tbd; path = usr/lib/libz.1.2.5.tbd; sourceTree = SDKROOT; };
 		4FC7949D1A6ADE2E00B2BA49 /* jpg_0XC3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jpg_0XC3.cpp; sourceTree = "<group>"; };
 		4FC7949E1A6ADE2E00B2BA49 /* jpg_0XC3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jpg_0XC3.h; sourceTree = "<group>"; };
 		4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = mricro.icns; sourceTree = "<group>"; };
@@ -150,8 +149,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FBD92E220165A5600A240B1 /* libz.1.2.5.tbd in Frameworks */,
 				4F12CE721A195DB000408A12 /* QuartzCore.framework in Frameworks */,
-				4F12CE731A195DB000408A12 /* libz.dylib in Frameworks */,
 				4F12CE741A195DB000408A12 /* OpenGL.framework in Frameworks */,
 				4F12CE751A195DB000408A12 /* Cocoa.framework in Frameworks */,
 			);
@@ -162,7 +161,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F07BCC816160EE7000216B2 /* QuartzCore.framework in Frameworks */,
-				4F6B239E1609EC6C003D311C /* libz.dylib in Frameworks */,
 				4F9A58B91609E963008ECBE2 /* OpenGL.framework in Frameworks */,
 				4F9A58971609E769008ECBE2 /* Cocoa.framework in Frameworks */,
 			);
@@ -195,7 +193,7 @@
 		4F9A58951609E769008ECBE2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				4F6B239D1609EC6C003D311C /* libz.dylib */,
+				4FBD92E120165A5600A240B1 /* libz.1.2.5.tbd */,
 				4F9A58B81609E963008ECBE2 /* OpenGL.framework */,
 				4F9A58961609E769008ECBE2 /* Cocoa.framework */,
 				4F9A58981609E769008ECBE2 /* Other Frameworks */,

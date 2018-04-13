@@ -134,9 +134,9 @@
 extern "C" {
 #endif
 /*=================*/
-    
+
 #include <stdint.h>
-    
+
 
 /*! \struct nifti_1_header
     \brief Data structure defining the fields in the nifti1 header.
@@ -206,13 +206,13 @@ struct nifti_1_header { /* NIFTI-1 usage         */  /* ANALYZE 7.5 field(s) */
  char magic[4] ;      /*!< MUST be "ni1\0" or "n+1\0". */
 
 } ;                   /**** 348 bytes total ****/
-    
+
 
 #pragma pack(push)
 #pragma pack(1)
-    
+
 typedef struct nifti_1_header nifti_1_header ;
-    
+
     struct nifti_2_header {  /* NIFTI-2 usage           */ /* NIFTI-1 usage      */ /*  offset  */
         /***************************/ /**********************/ /************/
         int   sizeof_hdr;     /*!< MUST be 540           */ /* int sizeof_hdr; (348) */   /*   0 */
@@ -254,7 +254,7 @@ typedef struct nifti_1_header nifti_1_header ;
         char unused_str[15];  /*!< unused, filled with \0 */                                  /* 525 */
     } ;                   /**** 540 bytes total ****/
     typedef struct nifti_2_header nifti_2_header ;
-    
+
 #pragma pack(pop)
 /*---------------------------------------------------------------------------*/
 /* HEADER EXTENSIONS:
@@ -327,7 +327,7 @@ typedef struct nifti_1_header nifti_1_header ;
    program can simply ignore all extended header sections simply by jumping
    straight to the image data using vox_offset.
 -----------------------------------------------------------------------------*/
-   
+
 /*! \struct nifti1_extender
     \brief This structure represents a 4-byte string that should follow the
            binary nifti_1_header data in a NIFTI-1 header file.  If the char
@@ -961,7 +961,7 @@ typedef struct { unsigned char r,g,b; } rgb_byte ;
 
 #define NIFTI_INTENT_QUATERNION 1010
 
- /*! Dimensionless value - no params - although, as in _ESTIMATE 
+ /*! Dimensionless value - no params - although, as in _ESTIMATE
      the name of the parameter may be stored in intent_name.     */
 
 #define NIFTI_INTENT_DIMLESS    1011

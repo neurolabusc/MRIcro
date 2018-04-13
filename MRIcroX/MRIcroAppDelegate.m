@@ -187,6 +187,20 @@
     [[NSUserDefaults standardUserDefaults] setObject:data forKey:key];
 }
 
+- (void) updateThemeMode {
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"]) {
+        self.prefWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+        self.dcm2niiWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+        self.theTextView.textColor = [NSColor blackColor];
+        self.theTextView.backgroundColor = [NSColor grayColor];
+    } else {
+        self.prefWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+        self.dcm2niiWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+        self.theTextView.textColor = [NSColor blackColor];
+        self.theTextView.backgroundColor = [NSColor whiteColor];
+    }
+}
+
 -(void)setDefaults: (bool) forceReset
 {
     
@@ -212,6 +226,7 @@
         [NSNumber numberWithBool:YES], @"blackBackground",
         [NSNumber numberWithBool:YES], @"dicomWarn",
         [NSNumber numberWithBool:YES], @"retinaResolution",
+        [NSNumber numberWithBool:YES], @"darkMode",
                                           nil];
     [[NSUserDefaults standardUserDefaults] registerDefaults:userDefaultsDefaults];
     [[NSUserDefaults standardUserDefaults]synchronize ];
@@ -233,10 +248,12 @@
     //_prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     _prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     _prefRetinaCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
+    _prefDarkModeCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"];
     _prefRadiologicalCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"viewRadiological"];
     _prefAdvancedRenderCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"];
     _prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
     _prefDicomCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"];
+    [self updateThemeMode];
 }
 
 - (IBAction)prefResetClick:(id)sender {
@@ -398,6 +415,15 @@
 - (void) glDidFinishLaunching
 {
     static NSOpenGLPixelFormatAttribute pixelFormatAttributes[] = {0};
+    
+    /*
+     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"])
+     theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+     else
+     theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
+     self.prefWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+    self.dcm2niiWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+    //self.window.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];*/
     
     /*NSOpenGLPixelFormatAttribute pixelFormatAttributes[] =
     {
@@ -671,6 +697,7 @@
     bool prevRet = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     bool newRet = _prefRetinaCheck.state;
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRetinaCheck.state forKey:@"retinaResolution"];
+    [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefDarkModeCheck.state forKey:@"darkMode"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRadiologicalCheck.state forKey:@"viewRadiological"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefAdvancedRenderCheck.state forKey:@"advancedRender"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefBlackBackgroundCheck.state forKey:@"blackBackground"];
@@ -679,11 +706,11 @@
     //_prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
     //NSLog(@"render %ld -> %ld",(long)_prefAdvancedRenderCheck.state,  (long)[[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"] );
     //NSLog(@"Got it %ld -> %ld",(long)_prefDicomCheck.state,  (long)[[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"] );
+    [self updateThemeMode];
     int numWin = (int)[windowArray count];
     if (numWin < 1) return;
     for (int i = 0; i < numWin; i++)
         [[ windowArray  objectAtIndex: i] updatePrefs:nil];
-    //prefs->showCube
     if (prevRet != newRet)
         [self restartNotify];
 }

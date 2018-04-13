@@ -73,9 +73,18 @@
    [self updateEverything];
 }
 
+-(void) updateThemeMode {
+if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"])
+theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
+else
+theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+}
+
 -(void) updatePrefs:(id)sender {
+    [self updateThemeMode];
     [niiGL updatePrefs];
 }
+
 -(void) stopTimer {
     if (timelineTimer == nil) {
             //NSLog(@"Timer already stopped");
@@ -126,7 +135,7 @@
     
 }
 
-- (IBAction)infoClick:(id)sender { //[[NSApp Delegate] window]
+- (IBAction)infoClick:(id)sender { //
     NSString *message = [niiGL getHeaderInfo];
     NSBeginAlertSheet(@"Header Information", @"OK",NULL,NULL,theWindow, self,
                       NULL, NULL, NULL,
@@ -173,6 +182,7 @@
 }
 
 - (void)updateEverything { //on loading new image
+    [self updateThemeMode];
     [self setTitle];
     [self updateTimelineTimer];
     [self updateToolbar];
@@ -249,20 +259,17 @@
     [niiTimeline saveTab];
 }
 
-- (IBAction) saveTimelineAsText: (id) sender
-{
+- (IBAction) saveTimelineAsText: (id) sender {
     //This is currently unused - "saveTimelineAsPDF" saves as PDF and Text
         [niiTimeline saveTab];
 }
 
-- (IBAction) closeOverlays: (id) sender 
-{
+- (IBAction) closeOverlays: (id) sender {
     [niiGL closeOverlaysGL:  sender];
     [self updateToolbar];
 }
 
-- (IBAction) addOverlay: (id) sender 
-{
+- (IBAction) addOverlay: (id) sender {
     [niiGL addOverlayGL:  sender];
     [self updateToolbar];
 }
@@ -289,23 +296,19 @@
     
 }
 
-- (IBAction) saveDocumentAs: (id) sender;
-{
+- (IBAction) saveDocumentAs: (id) sender {
     [niiGL saveDocumentAs: sender];
 }
 
--(NSDragOperation)draggingEntered:(id < NSDraggingInfo >)sender
-{
+-(NSDragOperation)draggingEntered:(id < NSDraggingInfo >)sender {
     return NSDragOperationGeneric;
 }
 
--(BOOL)prepareForDragOperation:(id < NSDraggingInfo >)sender
-{
+-(BOOL)prepareForDragOperation:(id < NSDraggingInfo >)sender {
     return YES;
 }
 
-bool containsString (NSString *string, NSString *substring)
-{
+bool containsString (NSString *string, NSString *substring) {
     NSRange textRange;
     textRange =[string rangeOfString:substring];
     if(textRange.location != NSNotFound)
@@ -374,11 +377,9 @@ bool containsString (NSString *string, NSString *substring)
         timelineTimer = nil; //off
     }
     return self;
-    
 }
 
-- (void)windowDidLoad
-{
+- (void)windowDidLoad {
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(niiNotificationUpdateMosaic:) name:@"niiMosaic" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(niiNotificationUpdateToolbar:) name:@"niiUpdate" object:nil];
     [theWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
@@ -390,8 +391,7 @@ bool containsString (NSString *string, NSString *substring)
     //[theWindow setContentMinSize : NSMakeSize(10.0, 10.0)];
 }
 
-- (void)windowWillClose:(NSNotification *)notification
-{
+- (void)windowWillClose:(NSNotification *)notification {
     [self stopTimer];
     [niiGL deallocGL];
     //NSLog(@"windowWillClose %d\n", (int)[ [[NSApp sharedApplication] window] count]);
@@ -419,21 +419,18 @@ bool containsString (NSString *string, NSString *substring)
     [niiGL sharpen];
 }
 
-- (BOOL) isActiveKey
-{
+- (BOOL) isActiveKey {
     //NSLog(@"order %hhd %ld", [theWindow isKeyWindow],(long)[theWindow orderedIndex]);
     //return [theWindow isKeyWindow];
     return ([theWindow orderedIndex] == 1);
 }
 
-- (void)windowDidResignKey:(NSNotification *)notification
-{
+- (void)windowDidResignKey:(NSNotification *)notification {
     [self stopTimer];
     //NSLog(@"bye");
     //[theWindow setAutodisplay: NO];
 }
-- (void)windowDidBecomeKey:(NSNotification *)notification
-{
+- (void)windowDidBecomeKey:(NSNotification *)notification {
     [theWindow setAutodisplay: NO];
     [self updateMostThings];
     [theWindow setAutodisplay: YES];
@@ -447,8 +444,7 @@ bool containsString (NSString *string, NSString *substring)
     [niiGL skipNumberOfVolumesGL: 1];
 }
 
-- (void)keyDown:(NSEvent *)theEvent
-{
+- (void)keyDown:(NSEvent *)theEvent {
     NSString*   const   character   =   [theEvent charactersIgnoringModifiers];
     unichar     const   code        =   [character characterAtIndex:0];
     

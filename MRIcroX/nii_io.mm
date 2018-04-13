@@ -711,7 +711,7 @@ void nii_zeroHdr(struct nifti_1_header *nhdr)
 
 struct TDICOMdata nii_readParRecV(char * fname) {
     TDTI4D unused;
-    return nii_readParRec(fname, false, &unused);
+    return nii_readParRec(fname, false, &unused, false);
 } // readParRec()
 
 int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
@@ -829,7 +829,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             
         }
         if (d.isValid) {
-            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0);
+            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0, NULL);
             gzBytes = K_gzBytes_skipRead;
             OK = EXIT_SUCCESS;
         } else

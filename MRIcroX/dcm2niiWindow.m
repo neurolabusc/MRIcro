@@ -15,6 +15,8 @@
 - (void)awakeFromNib {
     //http://stackoverflow.com/questions/8567348/accepting-dragged-files-on-a-cocoa-application
     [self registerForDraggedTypes:[NSArray arrayWithObject:NSFilenamesPboardType]];
+     //NSLog(@"New backing: %g", self.backingScaleFactor);
+
 }
 
 
@@ -30,6 +32,10 @@
 {
     return YES;
 }
+
+//- (void)viewDidChangeBackingProperties {
+//    NSLog(@"New backing: %g", self.backingScaleFactor);/
+//}
 
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
     #ifndef STRIP_DCM2NII // /BuildSettings/PreprocessorMacros/STRIP_DCM2NII
