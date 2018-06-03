@@ -1,8 +1,8 @@
+#include <stdbool.h> //requires VS 2015 or later
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include "jpg_0XC3.h"
 #include "print.h"
 

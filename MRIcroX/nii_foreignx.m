@@ -838,7 +838,7 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
     do {
         if( fgets (str, kMaxStr, fp)==NULL )
             break;
-        //NSLog(@"--> %s",str);
+        if (strlen(str) < 1) break;
         lnsStr = [NSString stringWithUTF8String:str];
         lnsStr = [[lnsStr componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] componentsJoinedByString:@" "]; //remove EOLN
         if (lnsStr.length < 2) break;
@@ -852,21 +852,21 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
             array = [array filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"SELF != ''"]];
             nItems = (int)array.count;
             if (nItems < 1) break;
-            if ([tagName rangeOfString:@"dimension" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            if ([tagName rangeOfString:@"dimension" options:NSCaseInsensitiveSearch].location == 0) {
                 nDims = [[f numberFromString: array[0]] intValue];
                 //NSLog(@"dim  %ld",nDims);
-            } else if ([tagName rangeOfString:@"spacings" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"spacings" options:NSCaseInsensitiveSearch].location == 0) {
                 if (nItems > 6) nItems = 6;
                 for (int i=0; i<nItems; i++) {
                     nhdr->pixdim[i+1] = [[f numberFromString: array[i]] floatValue];
                     if isnan(nhdr->pixdim[i+1]) nhdr->pixdim[i+1] = 0;
                 }
-            } else if ([tagName rangeOfString:@"sizes" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"sizes" options:NSCaseInsensitiveSearch].location == 0) {
                 if (nItems > 6) nItems = 6;
                 for (int i=0; i<nItems; i++)
                     nhdr->dim[i+1] = [[f numberFromString: array[i]] intValue];
                 //NSLog(@"dims  %d %d %d",nhdr->dim[1], nhdr->dim[2], nhdr->dim[3]);
-            } else if ([tagName rangeOfString:@"space directions" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"space directions" options:NSCaseInsensitiveSearch].location == 0) {
                 if (nItems > 12) nItems = 12;
                 //NSLog(@"nitems  %d !!!",nItems);
                 //for (int i=0; i<nItems; i++)
@@ -892,7 +892,8 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                                transformMatrix[3],transformMatrix[4],transformMatrix[5],
                                transformMatrix[6],transformMatrix[7],transformMatrix[8]);
                 //NSLog(@"mtx");
-            } else if ([tagName rangeOfString:@"type" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"type" options:NSCaseInsensitiveSearch].location == 0) {
+                //NSLog(@"%lu", (unsigned long)[tagName rangeOfString:@"type" options:NSCaseInsensitiveSearch].location);
                 //"uchar",  "uint8", "uint8_t", "unsigned char",
                 if (([array[0] caseInsensitiveCompare:@"uchar"] == NSOrderedSame ) ||
                     ([array[0] caseInsensitiveCompare:@"uint8"] == NSOrderedSame) ||
@@ -923,19 +924,21 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                     nhdr->datatype = DT_INT16; //do UNSIGNED first, as "isigned" includes string "unsigned"
                 else if ([array[0] caseInsensitiveCompare:@"double"] == NSOrderedSame)
                     nhdr->datatype = DT_DOUBLE; //DT_DOUBLE
-                else if ([array[0] rangeOfString:@"int" options:NSCaseInsensitiveSearch].location != NSNotFound) //do this last and "uint" includes "int"
+                else if ([array[0] rangeOfString:@"uint" options:NSCaseInsensitiveSearch].location != NSNotFound) //do this last and "uint" includes "int"
                     nhdr->datatype = DT_UINT32;
+                else if ([array[0] rangeOfString:@"int" options:NSCaseInsensitiveSearch].location != NSNotFound) //do this last and "uint" includes "int"
+                    nhdr->datatype = DT_INT32;
                 else {
                     NSLog(@"Unsupported NRRD datatype %@ %@",array[0],array[1]);
                     //if (nItems > 1) NSLog(@"... %@",array[1]);
                 }
-            } else if ([tagName rangeOfString:@"endian" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"endian" options:NSCaseInsensitiveSearch].location == 0) {
 #ifdef __BIG_ENDIAN__
                 if ([array[0] rangeOfString:@"little" options:NSCaseInsensitiveSearch].location == NSNotFound) *swapEndian = true;
 #else
                 if ([array[0] rangeOfString:@"big" options:NSCaseInsensitiveSearch].location != NSNotFound) *swapEndian = true;
 #endif
-            } else if ([tagName rangeOfString:@"encoding" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            } else if ([tagName rangeOfString:@"encoding" options:NSCaseInsensitiveSearch].location == 0) {
                 if ([array[0] rangeOfString:@"raw" options:NSCaseInsensitiveSearch].location != NSNotFound)
                     *gzBytes = 0;
                 else if (([array[0] rangeOfString:@"gz" options:NSCaseInsensitiveSearch].location != NSNotFound) ||
@@ -944,29 +947,52 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
 
                 } else
                     NSLog(@"Unknown encoding format %@",array[0]);
-            }  else if ([tagName rangeOfString:@"space origin" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            }  else if ([tagName rangeOfString:@"space origin" options:NSCaseInsensitiveSearch].location == 0) {
                 if (nItems > 3) nItems = 3;
                 for (int i=0; i<nItems; i++)
                     offset[i] = [[f numberFromString: array[i]] floatValue];
                 //NSLog(@"origin");
-            }  else if ([tagName rangeOfString:@"line skip" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            }  else if ([tagName rangeOfString:@"line skip" options:NSCaseInsensitiveSearch].location == 0) {
                 NSLog(@"The NRRD tag 'line skip' is ignored, this will not appear correctly");
-            }  else if ([tagName rangeOfString:@"byte skip" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            }  else if ([tagName rangeOfString:@"byte skip" options:NSCaseInsensitiveSearch].location == 0) {
                 headerSize = [[f numberFromString: array[0]] intValue]; //dcm2niix
-            } else if ([tagName rangeOfString:@"data file" options:NSCaseInsensitiveSearch].location != NSNotFound){
-                *imgname = [array[0] lastPathComponent]  ;
+            } else if ([tagName rangeOfString:@"data file" options:NSCaseInsensitiveSearch].location == 0){
+                *imgname = @"";
+                NSString *fnm = [[lnsStr componentsSeparatedByString:@":"] lastObject];
+                fnm = [array[0] lastPathComponent];
+                if ( ![[NSFileManager defaultManager] fileExistsAtPath:fnm] ) {
+                    fnm = [[fname stringByDeletingLastPathComponent] stringByAppendingPathComponent: [fnm lastPathComponent]];
+                }
+                if ( [[NSFileManager defaultManager] fileExistsAtPath:fnm] )
+                    *imgname = fnm;
                 //NSLog(@"Filename is %@",*imgname);
-                if (([[array[0] lastPathComponent] rangeOfString:@"%" options:NSCaseInsensitiveSearch].location != NSNotFound) && (nItems > 1) ) {
+                if ( (![[NSFileManager defaultManager] fileExistsAtPath:*imgname] ) && (nItems > 1) ) {
                     //"data file: ./r_sphere_%02d.raw.gz 1 4 1"
                     //NSLog(@"mango  moyamoya is %@",*imgname);
                     //NSString *string = [NSString i] ;
+                    fnm = [array[0] lastPathComponent];
                     int firstVol = [[f numberFromString: array[1]] intValue];
                     //NSLog(@"Filename is %@",*imgname);
                     //NSLog(@"First Volume is %d",firstVol);
-                    *imgname = [NSString stringWithFormat:*imgname, firstVol];
-                    //NSLog(@"Filename is %@",*imgname);
-
+                    fnm = [NSString stringWithFormat:fnm, firstVol];
+                    if ( ![[NSFileManager defaultManager] fileExistsAtPath:fnm] ) {
+                        fnm = [[fname stringByDeletingLastPathComponent] stringByAppendingPathComponent: [fnm lastPathComponent]];
+                    }
+                    if ( [[NSFileManager defaultManager] fileExistsAtPath:fnm] )
+                        *imgname = fnm;
                 }
+                if (![[NSFileManager defaultManager] fileExistsAtPath:*imgname] ) {
+                    //"data file: 102 PLAIN.raw.gz" <- spaces in file name: not just last component!
+                    NSString *fnm = [[lnsStr componentsSeparatedByString:@":"] lastObject];
+                    fnm = [fnm stringByTrimmingCharactersInSet: [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                    if ( ![[NSFileManager defaultManager] fileExistsAtPath:fnm] ) {
+                        fnm = [[fname stringByDeletingLastPathComponent] stringByAppendingPathComponent: [fnm lastPathComponent]];
+                    }
+                    if ( [[NSFileManager defaultManager] fileExistsAtPath:fnm] )
+                        *imgname = fnm;
+                    
+                }
+                //NSLog(@">>%@<<",*imgname);
                 if(([array[0] lastPathComponent].length == 4 ) && ([[array[0] lastPathComponent] rangeOfString:@"LIST" options:NSCaseInsensitiveSearch].location != NSNotFound) )  {
                     // "data file: LIST \n ./r_sphere_01.raw.gz"
                     //NSLog(@"NRRD LIST");
@@ -976,11 +1002,8 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                     lnsStr = [NSString stringWithUTF8String:str];
                     lnsStr = [[lnsStr componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] componentsJoinedByString:@""]; //remove EOLN
                     *imgname = lnsStr;
-
-
                 }
                 //NSLog(@"Filename is %lu",(unsigned long)array.count);
-
                 detachedFile = true;
             } /*else if ([tagName caseInsensitiveCompare:@"space"] == NSOrderedSame) {
                NSLog(@"Space is %@", array[0]);
@@ -988,7 +1011,7 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
         }
     } while (true);  //while ~readelementdatafile
     if ((headerSize == 0) && (!detachedFile)) headerSize = ftell (fp);
-    //NSLog(@"header size %ld",headerSize);
+    NSLog(@"header size %ld",headerSize);
     fclose(fp);
     //next: fill relevant parts of NIfTI array
     //nhdr->dim[0] = nDims;
@@ -1015,8 +1038,6 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
         nhdr->srow_z[1]=mat.m[1][2];
         nhdr->srow_z[2]=mat.m[2][2];
         nhdr->srow_z[3]=offset[2];
-
-
         //warning: ITK does not generate a "spacings" tag - lets get this from the matrix...
         for (int dim=0; dim < 3; dim++) {
             float vSqr = 0.0f;

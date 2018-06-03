@@ -74,16 +74,16 @@ int nifti_short_order(void)   // determine this CPU's byte order
 void swap_nifti2_header( struct nifti_2_header *h ){
     //https://nifti.nimh.nih.gov/pub/dist/src/nifti2/nifti2_io.c
     nifti_swap_4bytes(1, &h->sizeof_hdr);
-    
+
     nifti_swap_2bytes(1, &h->datatype);
     nifti_swap_2bytes(1, &h->bitpix);
-    
+
     nifti_swap_8bytes(8, h->dim);
     nifti_swap_8bytes(1, &h->intent_p1);
     nifti_swap_8bytes(1, &h->intent_p2);
     nifti_swap_8bytes(1, &h->intent_p3);
     nifti_swap_8bytes(8, h->pixdim);
-    
+
     nifti_swap_8bytes(1, &h->vox_offset);
     nifti_swap_8bytes(1, &h->scl_slope);
     nifti_swap_8bytes(1, &h->scl_inter);
@@ -93,21 +93,21 @@ void swap_nifti2_header( struct nifti_2_header *h ){
     nifti_swap_8bytes(1, &h->toffset);
     nifti_swap_8bytes(1, &h->slice_start);
     nifti_swap_8bytes(1, &h->slice_end);
-    
+
     nifti_swap_4bytes(1, &h->qform_code);
     nifti_swap_4bytes(1, &h->sform_code);
-    
+
     nifti_swap_8bytes(1, &h->quatern_b);
     nifti_swap_8bytes(1, &h->quatern_c);
     nifti_swap_8bytes(1, &h->quatern_d);
     nifti_swap_8bytes(1, &h->qoffset_x);
     nifti_swap_8bytes(1, &h->qoffset_y);
     nifti_swap_8bytes(1, &h->qoffset_z);
-    
+
     nifti_swap_8bytes(4, h->srow_x);
     nifti_swap_8bytes(4, h->srow_y);
     nifti_swap_8bytes(4, h->srow_z);
-    
+
     nifti_swap_4bytes(1, &h->slice_code);
     nifti_swap_4bytes(1, &h->xyzt_units);
     nifti_swap_4bytes(1, &h->intent_code);
@@ -160,14 +160,14 @@ static int need_nhdr_swap( short dim0, int hdrsize )
     nifti_swap_4bytes(1, &hsize);     // swap?
     if ( hsize == sizeof(nifti_2_header) ) return 3;
     hsize = hdrsize;*/
-    
-    
+
+
     if( d0 != 0 ){     // then use it for the check
         if( d0 > 0 && d0 <= 7 ) return 0;
         nifti_swap_2bytes(1, &d0);        // swap?
         if( d0 > 0 && d0 <= 7 ) return 1;
         return -1;        // bad, naughty d0
-    } 
+    }
     // dim[0] == 0 should not happen, but could, so try hdrsize
     if( hsize == sizeof(nifti_1_header) ) return 0;
     nifti_swap_4bytes(1, &hsize);     // swap?
@@ -175,13 +175,83 @@ static int need_nhdr_swap( short dim0, int hdrsize )
     return -2;     // bad, naughty hsize
 }
 
+
+NSString * NewFileExt(NSString *oldname, NSString *newx) {
+    NSString* newname = [oldname stringByDeletingPathExtension];
+    newname = [newname stringByAppendingString: newx];
+    return newname;
+}
+
+uint32_t makeRGBAx (THIS_UINT8 r, THIS_UINT8 g, THIS_UINT8 b, THIS_UINT8 a)
+{
+    return (r << 0)+ (g << 8) + (b << 16) + (a << 24);
+}
+
+bool checkSandAccessX (NSString *file_name) {
+    bool result = (!access([file_name UTF8String], R_OK) );
+    if (result) return result; //already have access
+    NSOpenPanel *openPanel  = [NSOpenPanel openPanel];
+    [openPanel setDirectoryURL: [[NSURL alloc] initWithString:file_name]];
+    //NSLog(@"selecting : %@",[FName lastPathComponent] ); // [FName lastPathComponent]
+    openPanel.title = [@"Select file " stringByAppendingString:[file_name lastPathComponent]];
+    NSString *Ext = [file_name pathExtension];
+    NSArray *fileTypes = [NSArray arrayWithObjects: Ext, nil];
+    [openPanel setAllowedFileTypes:fileTypes];
+    [openPanel runModal];
+    result = (!access([file_name UTF8String], R_OK) );
+    if (result) return result; //already have access
+    NSBeginAlertSheet(@"Unable to open image", @"OK",NULL,NULL, [[NSApplication sharedApplication] keyWindow], NULL,//self,
+                      NULL, NULL, NULL,
+                      @"%@"
+                      , [@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]]);
+    return result; //no access
+}
+
+int readLUT(const char* filename, nifti_image *nim) {
+#pragma pack(push)
+#pragma pack(1)
+    THIS_UINT8 rgbLUT[768];
+#pragma pack(pop)
+    NSString* basename = [NSString stringWithFormat:@"%s" , filename];
+    NSString* lutname = [basename stringByDeletingPathExtension];
+    lutname = NewFileExt(lutname, @".lut");
+    if (![[NSFileManager defaultManager] fileExistsAtPath:lutname]) {
+        lutname = NewFileExt(lutname, @".nii.lut");
+    }
+    if (![[NSFileManager defaultManager] fileExistsAtPath:lutname]) {
+        //NSLog(@"Unable to find a file named %@", lutname);
+        return EXIT_FAILURE;
+    }
+    if (!checkSandAccessX (lutname)) {
+        return EXIT_FAILURE;
+    }
+    NSData *hdrdata2;
+    NSFileHandle *fileHandle = [NSFileHandle fileHandleForReadingAtPath:lutname];
+    hdrdata2 = [fileHandle readDataOfLength:sizeof(rgbLUT)];
+    if((!hdrdata2) || (hdrdata2.length < sizeof(rgbLUT))) return EXIT_FAILURE;
+    [hdrdata2 getBytes:&rgbLUT length:sizeof(rgbLUT)];
+    //NSLog(@"WOOT %d %d %d", rgbLUT[0],rgbLUT[1],rgbLUT[2]);
+    for (int i = 0; i < 256; i++) {
+        nim->lut[i] =makeRGBAx(rgbLUT[i],rgbLUT[i+256],rgbLUT[i+512],255);
+    }
+    return EXIT_SUCCESS;
+} //readLUT()
+
+
+bool isSpecial32( float value ) {
+    if ((value == INFINITY) || (value == -INFINITY))
+        return TRUE;
+    return ((*(THIS_UINT32*)&value) & 0x7fffffff) > 0x7f800000;
+}
+
 nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fname )
-{    
+{
     int   ii , doswap , ioff ;
     int   is_nifti , is_onefile ;
     nifti_image *nim;
     nim = (nifti_image *)calloc( 1 , sizeof(nifti_image) ) ;
     if( !nim ) ERREX("failed to allocate nifti image");
+    nim->isCustomLUT = false;
     nim->rawvols = 0;
     // be explicit with pointers
     nim->fname = NULL;
@@ -197,7 +267,7 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
     }
     // determine if this is a NIFTI-1 compliant header
     is_nifti = NIFTI_VERSION(nhdr) ;
-    
+
     //before swapping header, record the Analyze75 orient code
     if(!is_nifti) {
         printf("Unsupported format: Analyze format instead of NIfTI? Try MRIcro or MRIcron.\n");
@@ -210,13 +280,41 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
     if( nhdr.datatype == DT_BINARY || nhdr.datatype == DT_UNKNOWN_DT  )  {
         NSLog(@"unknown or unsupported datatype (%d). Will attempt to view as unsigned 8-bit (assuming ImageJ export)", nhdr.datatype);
         nhdr.datatype =DT_UNSIGNED_CHAR;
-        
+
         //ERREX("bad datatype") ;
     }
     if( nhdr.dim[1] <= 0 ) {
         free(nim);
         ERREX("bad dim[1]") ;
     }
+    bool corruptSForm = false;
+    for (int i = 0; i < 4; i++) {
+        if (isSpecial32(nhdr.srow_x[i]) || isSpecial32(nhdr.srow_y[i]) || isSpecial32(nhdr.srow_z[i]))
+        	corruptSForm = true;
+    }
+    if (corruptSForm) {
+    	NSLog(@"corrupt sform (inf or NaN)");
+		for (int i = 0; i < 4; i++) {
+			nhdr.srow_x[i] = 0.0;
+			nhdr.srow_y[i] = 0.0;
+			nhdr.srow_z[i] = 0.0;
+		}
+		nhdr.srow_x[0] = 1.0;
+		nhdr.srow_y[1] = 1.0;
+		nhdr.srow_z[2] = 1.0;
+    }
+    bool corruptQForm = false;
+    if (isSpecial32(nhdr.quatern_b)) corruptQForm = true;
+    if (isSpecial32(nhdr.quatern_c)) corruptQForm = true;
+    if (isSpecial32(nhdr.quatern_d)) corruptQForm = true;
+    if (isSpecial32(nhdr.qoffset_x)) corruptQForm = true;
+    if (isSpecial32(nhdr.qoffset_x)) corruptQForm = true;
+    if (isSpecial32(nhdr.qoffset_z)) corruptQForm = true;
+    if ((corruptQForm) && (nhdr.qform_code > 0)) {
+    	NSLog(@"corrupt qform (inf or NaN)");
+    	nhdr.qform_code = 0; //use sform
+    }
+
     // fix bad dim[] values in the defined dimension range
     for( ii=2 ; ii <= nhdr.dim[0] ; ii++ )
         if( nhdr.dim[ii] <= 0 ) nhdr.dim[ii] = 1 ;
@@ -237,7 +335,7 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
             nhdr.dim[ii] = 1;
     }
     */
-    
+
     // set bad grid spacings to 1.0
     for( ii=1 ; ii <= nhdr.dim[0] ; ii++ ){
         if( nhdr.pixdim[ii] == 0.0         ||
@@ -281,6 +379,9 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
     nim->du = nim->pixdim[5] = nhdr.pixdim[5] ;
     nim->dv = nim->pixdim[6] = nhdr.pixdim[6] ;
     nim->dw = nim->pixdim[7] = nhdr.pixdim[7] ;
+    //
+
+
     // compute qto_xyz transformation from pixel indexes (i,j,k) to (x,y,z)
     if( !is_nifti || nhdr.qform_code <= 0 ){
         // if not nifti or qform_code <= 0, use grid spacing for qto_xyz
@@ -407,12 +508,14 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
     nim->iname_offset = ioff ;
     // deal with file names if set
     if (fname!=NULL) {
-        nim->fname = NULL;  
+        nim->fname = NULL;
         nim->iname = NULL;
-    } else { 
-        nim->fname = NULL;  
-        nim->iname = NULL; 
+    } else {
+        nim->fname = NULL;
+        nim->iname = NULL;
     }
+    if (nim->intent_code == NIFTI_INTENT_LABEL)
+        nim->isCustomLUT = ( readLUT( fname, nim) == EXIT_SUCCESS);
     return nim;
 }
 
@@ -545,7 +648,7 @@ int nii_readhdr(NSString * fname, struct nifti_1_header *niiHdr, long * gzBytes)
 }
 
 NSData * ungz(NSData* data, NSInteger DecompBytes)
-//set DecompByte =  NSIntegerMax to decompress entire file  
+//set DecompByte =  NSIntegerMax to decompress entire file
 {
     if ([data length] == 0) return data;
     unsigned full_length = (unsigned)[data length];
@@ -608,7 +711,7 @@ void swapByteOrder (FSLIO* fslio) {
     //NSLog(@"Swap?");
     if (fslio->niftiptr->byteorder == nifti_short_order()) return; //already native byte order
     //NSLog(@"Swap!");
-    
+
     if (fslio->niftiptr->datatype == DT_RGBA32) return;
     if ( fslio->niftiptr->datatype == DT_RGB24) return;
     size_t nvox = fslio->niftiptr->nvox;
@@ -624,37 +727,10 @@ void swapByteOrder (FSLIO* fslio) {
         NSLog(@"swapByteOrder: Unsupported data type!");
 }
 
-NSString * NewFileExt(NSString *oldname, NSString *newx) {
-    NSString* newname = [oldname stringByDeletingPathExtension];
-    newname = [newname stringByAppendingString: newx];
-    return newname;
-}
-
 /*
  NSAlert *alert = [[NSAlert alloc] init];
  [alert setMessageText:[@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]] ];
  [alert runModal];*/
-
-bool checkSandAccessX (NSString *file_name) {
-    bool result = (!access([file_name UTF8String], R_OK) );
-    if (result) return result; //already have access
-    NSOpenPanel *openPanel  = [NSOpenPanel openPanel];
-    [openPanel setDirectoryURL: [[NSURL alloc] initWithString:file_name]];
-    //NSLog(@"selecting : %@",[FName lastPathComponent] ); // [FName lastPathComponent]
-    openPanel.title = [@"Select file " stringByAppendingString:[file_name lastPathComponent]];
-    NSString *Ext = [file_name pathExtension];
-    NSArray *fileTypes = [NSArray arrayWithObjects: Ext, nil];
-    [openPanel setAllowedFileTypes:fileTypes];
-    [openPanel runModal];
-    result = (!access([file_name UTF8String], R_OK) );
-    if (result) return result; //already have access
-    NSBeginAlertSheet(@"Unable to open image", @"OK",NULL,NULL, [[NSApplication sharedApplication] keyWindow], NULL,//self,
-                      NULL, NULL, NULL,
-                      @"%@"
-                      , [@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]]);
-    return result; //no access
-}
-
 bool checkSandAccess3 (NSString *file_name)
 {
     if (file_name.length < 3) return true;
@@ -791,7 +867,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
         gzBytes = K_gzBytes_skipRead;
         //dicomImg = nii_readTIFF(fname,  &niiHdr, &gzBytes, &swapEndian);
     }
-    
+
     if (OK == EXIT_FAILURE) { //if all else fails, assume DICOM
         char fnameC[1024] = {""};
         strcat(fnameC,[fname cStringUsingEncoding:1]);
@@ -808,7 +884,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             if (isDICOMfile(fnameC) > 0)
                 d =readDICOM(fnameC);
             if (!d.isValid) NSLog(@"DICOM failed: %@", imgname);
-                
+
             if (d.isValid)
                 isDICOM = TRUE;
             /*if (dicomWarn) {
@@ -824,9 +900,9 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
                 [alert setMessageText:@"Please convert DICOM images to NIfTI (solution: use the free dcm2nii tool)" ];
                 #endif
                 [alert runModal];
-                
+
             }*/
-            
+
         }
         if (d.isValid) {
             dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0, NULL);

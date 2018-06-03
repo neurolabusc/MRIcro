@@ -3,7 +3,7 @@
 #include "nii_label.h"
 
 
-//see /fsl/etc/luts/fsrandlut.txt 
+//see /fsl/etc/luts/fsrandlut.txt
 
 uint32_t makeRGB (THIS_UINT8 r, THIS_UINT8 g, THIS_UINT8 b) {
     return (r << 0)+ (g << 8) + (b << 16) + (128 << 24);
@@ -139,37 +139,64 @@ void createlutLabel(int colorscheme, uint32_t* lut, float saturationFrac) {
 
 void parseNiiLabels (NSString *rawStr, NSMutableArray *lblArray) {
     NSArray *lines = [rawStr componentsSeparatedByString:@"\n"];
+    //NSLog(@"lines ... %lu", (unsigned long)[lines count]);
     if ([lines count] < 1) return;
     NSNumberFormatter * f = [[NSNumberFormatter alloc] init];
     [f setNumberStyle:NSNumberFormatterDecimalStyle];
     //first pass: find number of indices...
     int maxIndex = -1;
     for (NSString *line in lines) {
-        NSArray *fields = [line componentsSeparatedByString:@"\t"];
+        //NSArray *fields = [line componentsSeparatedByString:@"\t"];
+        NSArray *fields = [line componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        //NSLog(@"line ...'%@'=%lu", line, (unsigned long)[fields count]);
+        
         if ([fields count] > 1) { //need two fields: first is index number, second is label
             int index = [[f numberFromString: fields[0]] intValue];
             if (index > maxIndex) maxIndex = index;
                 } //if line has at least two fields
     } //for each line
-    //NSLog(@"%lu",maxIndex);
-    
     if ((maxIndex < 1) || (maxIndex > 32767)) return;
     [lblArray removeAllObjects];
     for (int i = 0; i <= maxIndex; i++) //fill array in case of missing/misordered indices
         [lblArray addObject: @""];
     //second pass: fill the array
     for (NSString *line in lines) {
-        NSArray *fields = [line componentsSeparatedByString:@"\t"];
+        //NSArray *fields = [line componentsSeparatedByString:@"\t"];
+        NSArray *fields = [line componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         if ([fields count] > 1) { //need two fields: first is index number, second is label
             int index = [[f numberFromString: fields[0]] intValue];
             if ((index >=0) && (index <= maxIndex)) //add item removing leading/trailing white space
                 lblArray[index] = [fields[1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+                lblArray[index] = [[lblArray[index] componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] componentsJoinedByString:@" "];
                 } //if line has at least two fields
     } //for each line
+}
+void readLabelsExt (NSString *fname, NSMutableArray *lblArray) {
+//read external tab-delimited text where first column is an integer index and second is the region name, one row
+    NSString* txtname = [fname stringByDeletingPathExtension];
+    txtname = NewFileExt(txtname, @".txt");
+    if (![[NSFileManager defaultManager] fileExistsAtPath:txtname])
+        txtname = NewFileExt(txtname, @".nii.txt");
+    if (![[NSFileManager defaultManager] fileExistsAtPath:txtname])
+        return;
+    if (!checkSandAccessX (txtname))
+        return;
+    size_t sz = [[[NSFileManager defaultManager] attributesOfItemAtPath:txtname error:nil] fileSize];
+    if (sz < 1) return;
+    NSFileHandle *fileHandle = [NSFileHandle fileHandleForReadingAtPath:txtname];
+    [fileHandle seekToFileOffset: 0];
+    NSData *hdrdata;
+    hdrdata = [fileHandle readDataOfLength:sz];
+    if (!hdrdata) return;
+    if (hdrdata.length < sz) return;
+    //NSLog(@"--->%zu", sz);
+    NSString* hdrString = [[NSString alloc] initWithData:hdrdata encoding:NSASCIIStringEncoding];
+    parseNiiLabels(hdrString, lblArray);
 }
 
 void readLabels (NSString *fname, int offset, int sz, NSMutableArray *lblArray) {
 //read tab-delimited text where first column is an integer index and second is the region name, one row per region
+    
     NSData *hdrdata;
     if (([[fname pathExtension] rangeOfString:@"GZ" options:NSCaseInsensitiveSearch].location != NSNotFound) ||
         ([[fname pathExtension] rangeOfString:@"VOI" options:NSCaseInsensitiveSearch].location != NSNotFound)) {

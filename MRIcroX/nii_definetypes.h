@@ -27,9 +27,9 @@ extern "C" {
     
     #define MAX_OVERLAY 3 //maximum number of overlays allowed
     #define MAX_CLIPDEPTH 1000 //clip depth 0...1000 - e.g. 300 means 30% clip
-#define MAX_DTIvectors 32
+#define MAX_DTIvectors 64
 #define MAX_HISTO_BINS 512
-    typedef uint32_t tRGBAlut[256];
+    //typedef uint32_t tRGBAlut[256];
     
     typedef struct   {
         //overlay rescaled to have same dimensions as background image, so only few details required 

@@ -7,7 +7,9 @@
 //
 
 #include "nifti1.h"  // defines struct nifti_1_header
+//#import "nii_definetypes.h" //tRGBAlut lut;
 #import "nifti1_io_core.h"
+
 
 #ifndef MRIpro_nii_io_h
 #define MRIpro_nii_io_h
@@ -32,8 +34,8 @@ typedef unsigned long   THIS_UINT64;
 typedef long            THIS_INT64;
 typedef float           THIS_FLOAT32;
 typedef double          THIS_FLOAT64;
-
-
+    typedef uint32_t tRGBAlut[256];
+    
 typedef struct {                /*!< Image storage struct **/
     int ndim ;                    /*!<DEPRECATED USE DIM last dimension greater than 1 (1..7) */
     int nx ;                      /*!<DEPRECATED USE DIM dimensions of grid array             */
@@ -102,13 +104,16 @@ typedef struct {                /*!< Image storage struct **/
     char  intent_name[16] ;       /*!< optional description of intent data */
     char descrip[80]  ;           /*!< optional text to describe dataset   */
     char aux_file[24] ;           /*!< auxiliary filename                  */
+    tRGBAlut lut;
+    //THIS_UINT32 lut[256] ;           /*!< auxiliary filename                  */
+    
     char *fname ;                 /*!< header filename (.hdr or .nii)         */
     char *iname ;                 /*!< image filename  (.img or .nii)         */
     long long   iname_offset ;          /*!< offset into iname where data starts    */
     int   swapsize ;              /*!< swap unit in image data (might be 0)   */
     int   byteorder ;             /*!< byte order on disk (MSB_ or LSB_FIRST) */
     int   rawvols; /*number of volumes in file, regardless of number of volumes loaded */
-    bool isDICOM;
+    bool isDICOM, isCustomLUT;
     void *data ;                  /*!< pointer to data: nbyper*nvox bytes     */
 } nifti_image ;
 static const int K_gzBytes_skipRead = -3 ;
@@ -131,7 +136,9 @@ nifti_image* nifti_convert_nhdr2nim(struct nifti_1_header nhdr, const char * fna
 int FslClose(FSLIO *fslio);
 void nifti_image_infodump( const nifti_image *nim );
 int nii_readhdr(const char * fname);
-
+NSString * NewFileExt(NSString *oldname, NSString *newx);
+    bool checkSandAccessX (NSString *file_name);
+    
 #ifdef  __cplusplus
 }
 #endif

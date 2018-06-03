@@ -136,7 +136,7 @@ void mm2frac (int Xmm, int Ymm, int Zmm, NII_PREFS* prefs)
     for (int i = 0; i < 3; i++) {
         //-1 as zero based: frac=0.5
         prefs->sliceFrac[i+1] = ( (R.m[i][0]*Xmm)+(R.m[i][1]*Ymm)+ (R.m[i][2]*Zmm)+R.m[i][3] )/(prefs->voxelDim[i+1]-1);
-        
+
         if ((prefs->sliceFrac[i+1] < 0) || (prefs->sliceFrac[i+1]> 1)) prefs->sliceFrac[i+1] = 0.5;
     }
     #ifdef MY_DEBUG //from nii_io.h
@@ -296,7 +296,7 @@ void frac2mm (float frac[4], NII_PREFS* prefs, bool sliceCenter)
 //int ret = convertBufferToScaled(&outbuf[0], fslio->niftiptr->data, (long)(fslio->niftiptr->nvox), slope, inter, fslio->niftiptr->datatype);
 //nii_unify_datatype
 int xx(FSLIO* fslio) {
-    
+
 
         if (fslio->niftiptr->scl_slope == 0) { //nonsense value - fix the header!
             fslio->niftiptr->scl_slope = 1.0;
@@ -311,9 +311,9 @@ int xx(FSLIO* fslio) {
         for (int i=0; i<len; i++)
             if (((THIS_UINT8 *)(inbuf)+i) != 0)
                 ret += 1;
-    
+
     return ret;
-    
+
 }
 int  convertBufferToScaled(SCALED_IMGDATA *outbuf, void *inbuf, long len, float slope, float inter, int nifti_datatype ) {
 //adapted from fslio.c "convertBufferToScaledDouble" library that was placed in the public domain
@@ -359,7 +359,7 @@ int  convertBufferToScaled(SCALED_IMGDATA *outbuf, void *inbuf, long len, float 
             if ((slope == 1.0f) && (inter == 0.0f)) { //NIFTI stores inter/slope as 32-bit floats, so not really appropriate for 64 bit
                 for (i=0; i<len; i++)
                     outbuf[i] = (SCALED_IMGDATA) ( *((THIS_FLOAT64 *)(inbuf)+i) );
-                
+
             } else {
                 for (i=0; i<len; i++)
                     outbuf[i] = (SCALED_IMGDATA) ( *((THIS_FLOAT64 *)(inbuf)+i) * slope + inter);
@@ -541,7 +541,7 @@ void clipInf32 (void *inbuf, size_t len) {
     }
     if (nmin == INFINITY) nmin = 0; //ONLY occurs if all voxels are INFINITY
     if (nmax == -INFINITY) nmax = 0; //ONLY occurs if all voxels are -INFINITY
-    
+
     for (size_t i=0; i<len; i++) {
         if (buf[i] == INFINITY) buf[i] = nmax;
         if (buf[i] == -INFINITY) buf[i] = nmin;
@@ -556,7 +556,7 @@ static bool isNaN64 (double value) {
 }
 
 void ZeroNaN64 (void *inbuf, size_t len) {
-    THIS_FLOAT64  *buf = (THIS_FLOAT64 *) inbuf;  
+    THIS_FLOAT64  *buf = (THIS_FLOAT64 *) inbuf;
     for (size_t i=0; i<len; i++) {
         if ( isNaN64(buf[i]))
             buf[i] = 0.0;
@@ -598,7 +598,7 @@ void clipInf64 (void *inbuf, size_t len) {
 
 int nii_unify_datatype(FSLIO* fslio)
 //this converts all unusual datatypes to SCALED_IMGDATA type (nii_definetypes)
-// common supported datatypes are not changed. 
+// common supported datatypes are not changed.
 {
     if (fslio->niftiptr->scl_slope == 0) { //nonsense value - fix the header!
         fslio->niftiptr->scl_slope = 1.0;
@@ -611,7 +611,7 @@ int nii_unify_datatype(FSLIO* fslio)
         clipInf32(fslio->niftiptr->data, fslio->niftiptr->nvox);
     }
     if ( fslio->niftiptr->datatype == NIFTI_TYPE_FLOAT64) {
-        
+
         ZeroNaN64(fslio->niftiptr->data, fslio->niftiptr->nvox);
         clipInf64(fslio->niftiptr->data, fslio->niftiptr->nvox);
     }
@@ -627,7 +627,7 @@ int nii_unify_datatype(FSLIO* fslio)
         printf("nii_unify: voxels not loaded!");
         return EXIT_FAILURE;
     }
-    
+
 //don't convert a format that is natively supported...
     if ( fslio->niftiptr->datatype == DT_RGB24) return convertRGB2RGBA(fslio); //24-bit RGBA must convert to 32-bit RGBA
     if ( fslio->niftiptr->datatype == DT_RGBA32) return EXIT_SUCCESS; //32-bit RGBA bit format is supported!
@@ -637,7 +637,7 @@ int nii_unify_datatype(FSLIO* fslio)
     float slope = fslio->niftiptr->scl_slope;
     float inter = fslio->niftiptr->scl_inter;
     if ((fslio->niftiptr->datatype == SCALED_IMGDATA_TYPE) && (slope == 1.0f) && (inter == 0.0f)) return EXIT_SUCCESS;//float 32 bit format is supported!
-    
+
     //if ((fslio->niftiptr->datatype == NIFTI_TYPE_FLOAT32) && (slope == 1.0f) && (inter == 0.0f)) return EXIT_SUCCESS;//float 32 bit format is supported!
     //convertBufferToScaled SCALED_IMGDATA_TYPE        NIFTI_TYPE_FLOAT32
     if (fslio->niftiptr->datatype == SCALED_IMGDATA_TYPE) {
@@ -785,7 +785,7 @@ int nii_findrange8ui (FSLIO* fslio, NII_PREFS* prefs)
         pos =  round( (float)j * histoScale);
         prefs->histo[j] = bins[pos];
     }
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -883,12 +883,12 @@ int nii_findrange (FSLIO* fslio, NII_PREFS* prefs) {
         prefs->nearMax = fslio->niftiptr->cal_max;
     }
     //initially provide the user with image contrast using the image intensity range that ignores outliers...
-    if (prefs->nearMin != prefs->nearMax) { 
+    if (prefs->nearMin != prefs->nearMax) {
         prefs->viewMin = prefs->nearMin;
         prefs->viewMax = prefs->nearMax;
     } else {
         prefs->viewMin = prefs->fullMin;
-        prefs->viewMax = prefs->fullMax;        
+        prefs->viewMax = prefs->fullMax;
     }
     if ((prefs->viewMin >= -4096) && (prefs->viewMin <= -1000) && (prefs->viewMax >= 1000) && (prefs->viewMax <= 4096)) { //autoscale CT scans for brain
         prefs->viewMin = -10;
@@ -914,7 +914,7 @@ uint32_t lerprgb (uint32_t lo, uint32_t hi, int loindex, int hiindex, int tarind
     THIS_UINT8* plo = (THIS_UINT8*)&lo;
     THIS_UINT8* phi = (THIS_UINT8*)&hi;
     THIS_UINT8* pret = (THIS_UINT8*)&ret;
-    for (int i = 0; i < 4; i++) 
+    for (int i = 0; i < 4; i++)
         pret[i] = (plo[i]+ frac*(phi[i]- plo[i]) ); //linear interpolations
     return ret;
 }
@@ -1048,7 +1048,7 @@ uint32_t copyAlpha (uint32_t rgb, uint32_t alpha)
     THIS_UINT8* pret = (THIS_UINT8*)&ret;
     //pret[0] = a[0]; //linear interpolations
     pret[3] = a[3]; //linear interpolations
-    
+
     return ret;
 }
 
@@ -1090,7 +1090,7 @@ int createlut(int colorscheme, uint32_t* lut, float bias)
         lut[clr] = copyAlpha(lut[clr], luto[clr]);
         //NSLog(@"%f %f", t, idx);
     }
-    
+
     return EXIT_SUCCESS;
 }
 
@@ -1268,27 +1268,27 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
         prefs->clipElevation = 90;*/
     prefs->force_refreshGL = true;
     //NSLog(@"%d %d Change clip %d %d",x, y, prefs->clipAzimuth,  prefs->clipElevation);
-    
+
 }
 
 -(bool) magnifyRender: (float) delta;
 {
     //NSLog(@"swipe %g",delta);
-    
+
     if ((delta == 0.0) || (isInSection(prefs->mouseX,prefs->mouseY, FALSE, prefs, fslio))) return false; //not for 2D slices, only rendering
     //NSLog(@"magnifyRender %g",delta);
     float dx = prefs->renderDistance;
     const float kMinRender = 0.5;
     const float kMaxRender = 5.0;
     const float kStepRender = 0.1;
-    
+
     if (delta < 0)
         dx -= kStepRender;
     else
         dx += kStepRender;
     if (dx < kMinRender) dx = kMinRender;
     if (dx > kMaxRender) dx = kMaxRender;
-    
+
     prefs->renderDistance = dx;
     //NSLog(@"magnifyRender %g",dx);
     prefs->force_refreshGL = true;
@@ -1344,7 +1344,7 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
     [self magnifyRender: (y - prefs->mouseY)];
     prefs->mouseX = x;
     prefs->mouseY = y;
-    
+
     //NSLog(@"nii_img right-drag %d %d", prefs->clipAzimuth, prefs->clipElevation);
 #endif
 }*/
@@ -1357,13 +1357,13 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
             [self changeClipDepth: -25]; // prefs->clipDepth = prefs->clipDepth - 25;
         else if (x < 0)
             [self changeClipDepth: +25]; //prefs->clipDepth = prefs->clipDepth + 25;
-        
+
         //NSLog(@"new clip %d", prefs->clipDepth);
         [self setClip: prefs->clipAzimuth Elev: prefs->clipElevation Depth: prefs->clipDepth];
         //[self changeClipPlane: x Y:  y];
-        
+
         return; //only for 2D slices, not rendering
-        
+
     }if (prefs->numVolumes > 1) {
         //if (isInSection(prefs->mouseX,prefs->mouseY, FALSE, prefs, fslio)) {
             //NSLog(@"swipe %d %d",prefs->mouseX,prefs->mouseY);
@@ -1788,7 +1788,7 @@ void recalcSubGL(NII_PREFS* prefs, THIS_UINT8 *img8bit, tRGBAlut lut)
     //glDeleteTextures(1,&prefs->intensityTexture3D);
     uint32_t *data = new uint32_t[prefs->voxelDim[1]*prefs->voxelDim[2]*prefs->voxelDim[3]]; //*4 as RGBA
     uint32_t *ptr = data;
-    for (size_t i = 0; i < (prefs->voxelDim[1]*prefs->voxelDim[2]*prefs->voxelDim[3]); i++) 
+    for (size_t i = 0; i < (prefs->voxelDim[1]*prefs->voxelDim[2]*prefs->voxelDim[3]); i++)
         *ptr++ = lut[img8bit[i]];
         //clock_t start = clock();
 #ifdef MY_DEBUG //from nii_io.h
@@ -1879,7 +1879,7 @@ void rescaleRGBA(NII_PREFS* prefs, uint32_t *rawdata)
         *ptr++ = *rawptr++; //leave alpha unchanged...
     }
   glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, prefs->voxelDim[1], prefs->voxelDim[2], prefs->voxelDim[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-  
+
 delete[] data;
 }
 
@@ -1895,7 +1895,7 @@ GLuint recalcSubRGBA(NII_PREFS* prefs, uint32_t *data, GLuint oldHandle)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);//?
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);//?
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);//?
-    
+
     if ((fabs(prefs->viewMin- 0.0) < 0.01) && (fabs(prefs->viewMax-255)<0.01 ) ) //no need to rescale image brightness/contrast
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, prefs->voxelDim[1], prefs->voxelDim[2], prefs->voxelDim[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     else
@@ -1914,7 +1914,15 @@ int recalcGL(FSLIO* fslio, NII_PREFS* prefs)
         return EXIT_FAILURE;
     }
      if ((fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->datatype == NIFTI_TYPE_UINT8)) {
-        createlutLabel(prefs->colorScheme, prefs->lut,fabs(prefs->viewMax-prefs->viewMin)/100 );
+         if (fslio->niftiptr->isCustomLUT) {
+             for (int i = 1; i <= 255; i++)
+                 prefs->lut[i] = fslio->niftiptr->lut[i];
+             float saturationFrac = fabs(prefs->viewMax-prefs->viewMin)/100;
+             if ((saturationFrac >= 0) && (saturationFrac <= 1.0))
+                 for (int i = 1; i <= 255; i++)
+                     prefs->lut[i] = desaturateRGBA(prefs->lut[i], saturationFrac);
+        } else
+            createlutLabel(prefs->colorScheme, prefs->lut,fabs(prefs->viewMax-prefs->viewMin)/100 );
         THIS_UINT8 *raw8 = (THIS_UINT8 *) fslio->niftiptr->data;
         prefs->lut[0] = makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
          recalcSubGL(prefs,raw8, prefs->lut);
@@ -2009,7 +2017,7 @@ void fix_sform (FSLIO* fslio)
 }
 
 void nii_setOrthoFSL (FSLIO* f){
-    
+
     if (f->niftiptr->sform_code == NIFTI_XFORM_UNKNOWN) {
         return;
     }
@@ -2281,7 +2289,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
         if (prefs->displayModeGL == GL_2D_AND_3D) Hmm = Hmm + mmMax;
         Hmm = prefs->scrnWid/Hmm; //mmPerPix horizontal
         double Vmm = mmMax;
-        
+
         Vmm = prefs->scrnHt/Vmm; //mmPerPix vertical
         if (Vmm > Hmm) Vmm = Hmm;
         //NSLog(@" %g %g", mmPerPix, Vmm );
@@ -2328,7 +2336,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
     }
     #endif
     //NSLog(@"%gx%gx%g -> %dx%dx%d", prefs->fieldOfViewMM[1], prefs->fieldOfViewMM[2], prefs->fieldOfViewMM[3], prefs->scrnDim[1], prefs->scrnDim[2], prefs->scrnDim[3]);
-    
+
 }
 
 void scrnSize (NII_PREFS* prefs) {
@@ -2446,15 +2454,18 @@ void drawVector (int lX, int lY, int lXo, int lYo, CGFloat XColor[4]) {
     glEnd();
 } //drawVector()
 
-void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4]) {
+void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4], bool viewRadiological) {
     int min = dimX;
     if (dimY < min) min = dimY;
     if (dimZ < min) min = dimZ;
     min = min / 2;
     //adjust vector length
     Vec[0] = Vec[0]*min;
+    if (viewRadiological)
+        Vec[0] = -Vec[0];
     Vec[1] = Vec[1]*min;
     Vec[2] = Vec[2]*min;
+    glLineWidth(5);
     //on coronal
     drawVector (dimX/2, dimY+(dimZ/2), Vec[0], Vec[2],XColor);
     //on axial
@@ -2463,7 +2474,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
     drawVector (dimX+ (dimY/2), dimY+(dimZ/2), Vec[1], Vec[2],XColor);
 } //drawVectors
 
--(void) drawOrientLabelTex { //to do : radiological orientation!!!
+-(void) drawOrientLabelTex {
     if (prefs->scrnDim[1] < 16) return;
     if ((fslio->niftiptr->dim[1] < 2) || (fslio->niftiptr->dim[2] < 2) || (fslio->niftiptr->dim[3] < 2)) return;
     if (fslio->niftiptr->sform_code == NIFTI_XFORM_UNKNOWN) return;
@@ -2540,7 +2551,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
                 drawAx(0,0,prefs->scrnDim[1],prefs->scrnDim[2], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 drawCoro(prefs->scrnDim[1],0,prefs->scrnDim[1],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 drawSag(2*prefs->scrnDim[1],0,prefs->scrnDim[2],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor);
-                
+
             } else {
                 drawCoro(0,prefs->scrnDim[2],prefs->scrnDim[1],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor, prefs->viewRadiological);
                 drawSag(prefs->scrnDim[1],prefs->scrnDim[2],prefs->scrnDim[2],prefs->scrnDim[3], prefs->sliceFrac, prefs->xBarGap, prefs->xBarColor);
@@ -2548,13 +2559,12 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
                 if (self.is2D)
                     drawHistogram(prefs, prefs->scrnDim[1], prefs->scrnDim[2], prefs->scrnDim[2]);
             }
-            
-    }
 
+    }
     if (prefs->numDtiV >= prefs->currentVolume) {
         CGFloat color[4] = {0.9, 0.9,0.1,0.9};
         CGFloat v[3] = {prefs->dtiV[prefs->currentVolume-1][0],prefs->dtiV[prefs->currentVolume-1][1],prefs->dtiV[prefs->currentVolume-1][2]};
-        drawVectors(prefs->scrnDim[1],prefs->scrnDim[2],prefs->scrnDim[3],v, color);
+        drawVectors(prefs->scrnDim[1],prefs->scrnDim[2],prefs->scrnDim[3],v, color, prefs->viewRadiological);
     }
     //drawVector(33,33,44,44, prefs->xBarColor);
     //if ((prefs->showInfo) && (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) )
@@ -2562,7 +2572,7 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
         if (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) drawColorBarTex(prefs, glStringTex, stanStringAttrib);
         [self drawVolumeLabelTex];
     }
-    
+
     if (prefs->showOrient)
         [self drawOrientLabelTex];
     //glDisable (GL_TEXTURE_3D);
@@ -2733,13 +2743,13 @@ double  defuzzz(double x) {
 
     NSRect viewRect = NSMakeRect(0.0, 0.0, mosaicRect.size.width, mosaicRect.size.height);
     NSOpenGLView *mosaicView = [[NSOpenGLView alloc] initWithFrame:viewRect pixelFormat: pf];
-    
+
     [mosaicWindow setContentView: mosaicView];
-    
-    
+
+
     id ctx = [[NSOpenGLContext alloc] initWithFormat:pf shareContext:nil];
     [ctx setView: mosaicView];
-    
+
     [ctx makeCurrentContext];
     glViewport(0,0,width,height);
     prefs->scrnWid = width;
@@ -2782,8 +2792,8 @@ double  defuzzz(double x) {
     prefs->gradientOverlay3D = 0;
     prefs->intensityTexture3D = 0;
     prefs->gradientTexture3D = 0;
-    
-    
+
+
     //create the mosaic
     [self mosaicPrepGL:  width Height:height];
     [self redrawMosaic: mos];
@@ -2903,7 +2913,7 @@ double  defuzzz(double x) {
     prefs->intensityTexture3D = 0;
     prefs->gradientTexture3D = 0;
 
-    
+
     //create the mosaic
     [self mosaicPrepGL:  width Height:height];
     [self redrawMosaic: mos];
@@ -3086,7 +3096,7 @@ double  defuzzz(double x) {
 } //removeHaze()
 
 -(bool) sharpen { //apply unsharp mask
-    if (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) return FALSE; //the border of Area 17 and 18 is NOT 16 or 19!!! 
+    if (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) return FALSE; //the border of Area 17 and 18 is NOT 16 or 19!!!
     if (fslio->niftiptr->datatype == DT_RGBA32) return FALSE; //not for RGB data
     int Xdim = prefs->voxelDim[1];
     int Ydim = prefs->voxelDim[2];
@@ -3274,15 +3284,15 @@ double  defuzzz(double x) {
 }
 
 -(void) setClip: (int) azim Elev: (int) elev Depth: (int) depth {
-    if (depth > MAX_CLIPDEPTH) 
+    if (depth > MAX_CLIPDEPTH)
         depth = MAX_CLIPDEPTH;
-    if (depth < 0) 
+    if (depth < 0)
         depth = 0;
     /*if (elev < -90)
         elev = -90;
-    if (elev > 90) 
+    if (elev > 90)
         elev = 90;*/
-    prefs->clipDepth = depth;  
+    prefs->clipDepth = depth;
     prefs->clipAzimuth = azim;
     prefs->clipElevation = elev;
     if (prefs->clipElevation < -360)
@@ -3375,7 +3385,7 @@ int setLoadDummy(FSLIO* fslio, NII_PREFS* prefs)
     //nifti_image_infodump(fslio->niftiptr);
     THIS_UINT8 *outbuf = (THIS_UINT8 *) malloc(kSz*kSz*kSz);
     #ifdef MY_DEBUG //from nii_io.h
-    NSLog(@"nii_img 4 malloc size %d",kSz*kSz*kSz);
+    NSLog(@"nii_img dummy malloc size %d",kSz*kSz*kSz);
     #endif
     //fill array with simple image
     long i =0;
@@ -3383,6 +3393,31 @@ int setLoadDummy(FSLIO* fslio, NII_PREFS* prefs)
     int lo = 2; //border
     int hi = kSz-lo;
     i = 0;
+    float *sins = (float *)malloc(sizeof(float) * kSz * kSz);
+    float v = 0.5/kSz;
+    for (int i = 0; i < (kSz*kSz); i++)
+        sins[i] = sin(i * v);
+    //create a 'Borg' using Paul Bourke's formula
+    for (long z = 0; z < kSz; z++) {
+        for (long y = 0; y < kSz; y++) {
+            for (long x = 0; x < kSz; x++) {
+                if ((x < lo) || (x > hi) || (y < lo) || (y > hi) || (z < lo) || (z > hi) )
+                    outbuf[i] = 0; //outside border
+                else if ((x>6) && (x<12) && (y > 6) && (y < 42))
+                    outbuf[i] = 0;  //vertical of L
+                else if ((x > 11) && (x < 24) && (y>6) && (y<12))
+                    outbuf[i] = 0; //horizontal of L
+                else {
+                    v = sins[x * y] + sins[y * z] + sins[z * x];
+                    if (v < 0) v = 0;
+                    THIS_UINT8 b = round(255.0/3.0 * v);
+                    outbuf[i] = b; //warning (kSz-1)*3 must be less than 255
+                }
+                i++;
+            }
+        }
+    }
+    /* //a simpler pattern
     for (long z = 0; z < kSz; z++) {
         for (long y = 0; y < kSz; y++) {
             for (long x = 0; x < kSz; x++) {
@@ -3397,7 +3432,8 @@ int setLoadDummy(FSLIO* fslio, NII_PREFS* prefs)
                 i++;
             }
         }
-    }
+    }*/
+    free(sins);
     free(fslio->niftiptr->data);
     fslio->niftiptr->data = outbuf;
     nii_setup(fslio, prefs);
@@ -3410,10 +3446,10 @@ void closeOverlays (NII_PREFS* prefs)
     for (int i = 0; i < MAX_OVERLAY; i++) {
         if (prefs->overlays[i].datatype != DT_NONE) free(prefs->overlays[i].data); //free memory
         prefs->overlays[i].datatype = DT_NONE; //mark slot as free
-    }  
+    }
 }
 
--(void) freePrefs 
+-(void) freePrefs
 {
     FslClose(fslio);
     closeOverlays(prefs);
@@ -3431,14 +3467,14 @@ void closeOverlays (NII_PREFS* prefs)
     prefs->busyGL = TRUE;
     [self freePrefs];
     //load FA
-    char fname[ [faname length]+1];    
+    char fname[ [faname length]+1];
     [faname getCString:fname maxLength:sizeof(fname)/sizeof(*fname) encoding:NSUTF8StringEncoding];
     int vol = FslReadVolumes(fslio,fname,0,1);
     if ((prefs->dicomWarn) && (fslio->niftiptr->isDICOM))
         [self notifyDICOMwarning];
     if (vol < 1) return setLoadDummy(fslio, prefs);
     //load 3 volumes vectors
-    char vname[ [v1name length]+1]; 
+    char vname[ [v1name length]+1];
     [v1name getCString:vname maxLength:sizeof(vname)/sizeof(*vname) encoding:NSUTF8StringEncoding];
     FSLIO* lfslio = FslInit();
     vol = FslReadVolumes(lfslio,vname,0,3);
@@ -3465,7 +3501,7 @@ void closeOverlays (NII_PREFS* prefs)
 //            mx = 1.0;
 //        }
         int o = 0;
-        
+
         float faval;
         for (int v = 0; v < nvox; v++) { //for each slice
             faval = faimg[v]/mx;
@@ -3528,9 +3564,11 @@ void closeOverlays (NII_PREFS* prefs)
     return [self checkSandAccess: FName];
 }
 
--(void) setLoadBVec: (NSString *) file_name;
-{
-    if ((prefs->orthoOrient) || (prefs->numVolumes < 2)) return; //only if displaying 4D images in raw orientation
+-(void) setLoadBVec: (NSString *) file_name rawvol:  (int) rawvols  {
+    //NSLog(@"Loading bvecs : %@ %d",file_name, prefs->numVolumes);
+    // prefs->loadFewVolumes xxxxxx
+
+    if ((prefs->orthoOrient) || (rawvols < 2) || (prefs->numVolumes < 2)) return; //only if displaying 4D images in raw orientation
     NSString* theFileName = [file_name stringByDeletingPathExtension];
     if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
         theFileName = [theFileName stringByDeletingPathExtension]; //remove both .nii and .gz from img.nii.gz
@@ -3538,7 +3576,7 @@ void closeOverlays (NII_PREFS* prefs)
     theFileName = [theFileName stringByAppendingString: @".bvec"];
     if (![[NSFileManager defaultManager] fileExistsAtPath:theFileName]) return;
     if (![self checkSandAccess2: theFileName]) return;
-    NSLog(@"BVec!! %@",theFileName);
+    //NSLog(@"BVec!! %@",theFileName);
     FILE *header_file;
     header_file = fopen([theFileName cStringUsingEncoding:1], "r");
     if (header_file == NULL) {
@@ -3547,7 +3585,7 @@ void closeOverlays (NII_PREFS* prefs)
     }
     float val;
     for (int v = 0; v < 3; v++) {
-        for (int i = 0; i < prefs->numVolumes; i++) {
+        for (int i = 0; i < rawvols; i++) {
             int count = fscanf( header_file , "%f" , &val ) ;
             if ((count > 0) && (i < MAX_DTIvectors)) {
                 //NSLog(@" %f<< %d",val, count);
@@ -3556,7 +3594,8 @@ void closeOverlays (NII_PREFS* prefs)
             }
         } //for each i
     }//for v 0,1,2
-    //NSLog(@" %gx%gx%g << %d",prefs->dtiV[1][0],prefs->dtiV[1][1],prefs->dtiV[1][2], prefs->dtiVnum);
+    //NSLog(@" %gx%gx%g << %d",prefs->dtiV[0][0],prefs->dtiV[0][1],prefs->dtiV[0][2], prefs->numDtiV);
+    //NSLog(@" %gx%gx%g << %d",prefs->dtiV[1][0],prefs->dtiV[1][1],prefs->dtiV[1][2], prefs->numDtiV);
     fclose( header_file ) ;
 }
 
@@ -3590,7 +3629,6 @@ void closeOverlays (NII_PREFS* prefs)
     int maxVols = INT_MAX;
     //if (prefs->loadFewVolumes) maxVols = 32;
     if (prefs->loadFewVolumes) maxVols = -1;
-    
     if (isOverlay) maxVols = 1;
     void *buffer = FslReadAllVolumes(fslio,fname,maxVols);
     if (buffer == NULL) {
@@ -3611,9 +3649,12 @@ void closeOverlays (NII_PREFS* prefs)
     NSString* theFileName = [[file_name lastPathComponent] stringByDeletingPathExtension];
     if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
         theFileName = [theFileName stringByDeletingPathExtension]; //remove both .nii and .gz from .nii.gz
-    
-    [self setLoadBVec: file_name];
+    //NSLog(@"%d", fslio->niftiptr->rawvols);
+    [self setLoadBVec: file_name rawvol: fslio->niftiptr->rawvols];
     strcpy( prefs->nii_prefs_fname, [theFileName UTF8String] );
+    //NSLog(@"%d -> %lld", (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL), fslio->niftiptr->iname_offset);
+    if ((fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->iname_offset == 352))
+    	readLabelsExt (file_name, labelArray);
     if ( (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->iname_offset >400)
         && ( (fslio->niftiptr->iname_offset % 16) == 0))
         readLabels (file_name, 352, round(fslio->niftiptr->iname_offset-352), labelArray);
@@ -3625,7 +3666,7 @@ void closeOverlays (NII_PREFS* prefs)
 -(int)  setLoadImage: (NSString *) file_name;
 {
     return [self setLoadImage2: file_name IsOverlay: false];
-    
+
 /*
     if (![self checkSandAccess2: file_name]) return EXIT_FAILURE;
     [self freePrefs];
@@ -3654,7 +3695,7 @@ void closeOverlays (NII_PREFS* prefs)
     NSString* theFileName = [[file_name lastPathComponent] stringByDeletingPathExtension];
     if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
         theFileName = [theFileName stringByDeletingPathExtension]; //remove both .nii and .gz from .nii.gz
-    
+
     [self setLoadBVec: file_name];
     strcpy( prefs->nii_prefs_fname, [theFileName UTF8String] );
     if ( (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->iname_offset >400)
@@ -3729,7 +3770,7 @@ void closeOverlays (NII_PREFS* prefs)
     THIS_UINT8 *outbuf = (THIS_UINT8 *) malloc(prefs->numVox3D*over->niftiptr->nbyper);
     memcpy (outbuf, over->niftiptr->data, prefs->numVox3D*over->niftiptr->nbyper);
     prefs->overlays[overlayNum].data = outbuf;
-     #if !__has_feature(objc_arc) 
+     #if !__has_feature(objc_arc)
     [lniiimg release];
     #endif
     #ifdef MY_DEBUG //from nii_io.h
@@ -3765,7 +3806,7 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->xBarColor[1] = 0.3;
         prefs->xBarColor[2] = 1.0;
         prefs->colorBarBorderColor[0] = 0.25;
-        prefs->colorBarBorderColor[1] = 0.25; 
+        prefs->colorBarBorderColor[1] = 0.25;
         prefs->colorBarBorderColor[2] = 0.75;
         prefs->colorBarTextColor[0] = 0.5;
         prefs->colorBarTextColor[1] = 0.5;
@@ -3777,7 +3818,7 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->xBarGap = 3;
         prefs->overlayFrac = 0.5;
         prefs->colorBarBorderPx = 2; // 1/2%
-        
+
         //x prefs->colorBarBorder = 0.002; // 1/2%
         prefs->busyGL = FALSE; //prepared for drawing
         prefs->updatedTimeline = FALSE;
@@ -3790,7 +3831,7 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->advancedRender = false;
         prefs->loadFewVolumes = true;
         prefs->viewRadiological = false;
-        
+
         for (int i = 0; i < MAX_OVERLAY; i++) prefs->overlays[i].datatype = DT_NONE; //all slots empty
         #ifdef NII_IMG_RENDER
         initTRayCast(prefs);
@@ -3837,7 +3878,7 @@ void closeOverlays (NII_PREFS* prefs)
     //free(prefs);
     [self freePrefs];
     FslClose(fslio);
-    #if !__has_feature(objc_arc) 
+    #if !__has_feature(objc_arc)
     [super dealloc];
     #endif
 }
