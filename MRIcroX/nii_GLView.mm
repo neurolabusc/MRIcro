@@ -34,10 +34,12 @@
 
 -(void) ShowAlert: (NSString *)theMessage Title: (NSString *) theTitle
 {
-    NSBeginAlertSheet(theTitle, @"OK",NULL,NULL,[[NSApplication sharedApplication] keyWindow], self,
-                      NULL, NULL, NULL,
-                      @"%@"
-                      , theMessage);
+    /*2018 NSBeginAlertSheet(theTitle, @"OK",NULL,NULL,[[NSApplication sharedApplication] keyWindow], self,NULL, NULL, NULL,@"%@", theMessage);
+    NSAlert *alert = [[NSAlert alloc] init];*/
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:theTitle];
+    [alert setInformativeText:theMessage];
+    [alert addButtonWithTitle:@"OK"];
 }
 
 -(void) makeMosaicGL:(NSString *)mosStr
@@ -189,7 +191,7 @@
     [openPanel setTitle:@"Choose _FA image"];
     [openPanel setAllowedFileTypes:fileTypes];
     NSInteger result    = [openPanel runModal];
-    if(result!= NSOKButton) return;
+    if(result!= NSModalResponseOK) return;
     //if (![self checkSandAccess: [[openPanel URL] path]]) return;
     NSString *inName = [[openPanel URL] path];
     NSString *v1Name = [inName stringByReplacingOccurrencesOfString:@"_FA" withString:@"_V1"];
@@ -268,7 +270,7 @@ NSArray * niiFileTypes () {
     [openPanel setAllowedFileTypes:niiFileTypes()];
     //[openPanel setAllowedFileTypes:[NSImage imageFileTypes]];
     NSInteger result    = [openPanel runModal];
-    if(result != NSOKButton) return;
+    if(result != NSModalResponseOK) return;
     //if (![self checkSandAccess: [[openPanel URL] path]]) return;
     [self openDocumentFromFileNameGL: [[openPanel URL] path]] ;
     [self drawFrame];
@@ -584,7 +586,6 @@ NSArray * niiFileTypes () {
     [dashAnimation setRepeatCount:HUGE_VALF];
     [self->shapeLayer addAnimation:dashAnimation forKey:@"linePhase"];
 }
-
 
 - (void)mouseDown:(NSEvent *)event {
     //NSPoint location = [self convertPoint:[event locationInWindow] fromView:nil];
@@ -970,7 +971,10 @@ NSArray * niiFileTypes () {
     else
         slicecode = @"";
     ret = [ret stringByAppendingString: slicecode];
-    ret = [ret stringByAppendingString: [NSString stringWithFormat:@"\nIntensity Intercept; Slope: %g; %g", f->niftiptr->scl_inter, f->niftiptr->scl_slope] ];
+    float scl_inter = f->niftiptr->scl_inter;
+    if (f->niftiptr->isINT16_was_UINT16) //we converted a UINT16 to a INT16 by subtracting 32768
+        scl_inter = f->niftiptr->scl_inter + (-32768 * f->niftiptr->scl_slope); //hide adjustment from user
+    ret = [ret stringByAppendingString: [NSString stringWithFormat:@"\nIntensity Intercept; Slope: %g; %g", scl_inter, f->niftiptr->scl_slope] ];
     
     
    /* NSString * vx;

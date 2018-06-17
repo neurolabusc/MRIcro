@@ -55,7 +55,8 @@
     int numWin = (int)[windowArray count];
     //NSLog(@"++AppDel openImageInActiveWindowIfPossible %d", numWin );
     NSUInteger flags = [[NSApp currentEvent] modifierFlags];
-    if  ((flags & NSShiftKeyMask) || (numWin < 1)) {
+    //if  ((flags & NSShiftKeyMask) || (numWin < 1)) {
+    if ((flags & NSEventModifierFlagCommand) || (numWin < 1)) {
         [self createNewDocument: self];//self was sender
         return;
     }
@@ -170,8 +171,23 @@
 	}
 }
 
-- (NSColor *)colorForKey:(NSString *)key
-{
+- (NSColor *)colorForKey:(NSString *)key {
+    //xxx setFloat
+    
+    
+    
+    //NSData  *data = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    //return (NSColor *)[NSKeyedUnarchiver unarchiveObjectWithData: data];
+    
+    //return [NSKeyedUnarchiver unarchiveObjectWithData:data];
+    //return [NSColor blackColor];
+    //NSData *colorData = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    //if (colorData == nil) return [NSColor blackColor];
+    
+    //return [NSKeyedUnarchiver unarchiveObjectWithData:colorData];
+    
+    //2018
+    
     NSData  *data = [[NSUserDefaults standardUserDefaults] objectForKey:key];
     if (data == nil)
         return nil;
@@ -181,8 +197,19 @@
     return color;
 }
 
-- (void)setColor:(NSColor *)color forKey:(NSString *)key
-{
+- (void)setColor:(NSColor *)color forKey:(NSString *)key {
+    // [[NSUserDefaults standardUserDefaults] setObject:[NSKeyedUnarchiver unarchiveObjectWithData:color] forKey:key];
+    
+    
+    //[NSKeyedUnarchiver unarchiveObjectWithData:colorData]
+    /*return;
+    if ((color ==nil) || (key == nil)) return;
+     NSData *colorData = [NSKeyedArchiver archivedDataWithRootObject:color];
+    if (colorData ==nil) return;
+    NSLog(@">> %@ >> %@", colorData, key);
+    [[NSUserDefaults standardUserDefaults] setObject:colorData forKey:key];
+    */
+     //2018
     NSData *data = [NSArchiver archivedDataWithRootObject:color];
     [[NSUserDefaults standardUserDefaults] setObject:data forKey:key];
 }
@@ -231,8 +258,6 @@
     [[NSUserDefaults standardUserDefaults] registerDefaults:userDefaultsDefaults];
     [[NSUserDefaults standardUserDefaults]synchronize ];
         [[NSUserDefaults standardUserDefaults] setBool:true forKey:@"orthoOrient"]; //ALWAYS REST on launch
-    
-    
     NSColor *clr =[self colorForKey:@"xBarColor"];
     if (clr == nil)
         [self setColor: [NSColor colorWithCalibratedRed:0.4 green:0.4 blue:1.0 alpha:1.0] forKey:@"xBarColor"];
@@ -279,7 +304,7 @@
     NSInteger isOKButton = [openDlg runModal];
     NSArray* files = [openDlg URLs];
     //NSString* outdir = @"";
-    if ((isOKButton != NSOKButton) || ([files count] < 1)) return;
+    if ((isOKButton != NSModalResponseOK) || ([files count] < 1)) return;
     for (int i = 0; i < files.count; i++){
         //NSLog(@"%lu", (unsigned long)files.count);
         //outdir = [[files objectAtIndex:0] path];
@@ -341,9 +366,9 @@
             //AppKit UI should only be updated from the main thread
             dispatch_async(dispatch_get_main_queue(),^{
                 NSString* stdOutString = [[NSString alloc] initWithBytesNoCopy:data length:readResult encoding:NSUTF8StringEncoding freeWhenDone:YES];
-                [[[_theTextView textStorage] mutableString] appendString:stdOutString];
+                [[[self->_theTextView textStorage] mutableString] appendString:stdOutString];
                 //[_theTextView setNeedsDisplay:YES];
-                [_theTextView setNeedsDisplay:YES];
+                [self->_theTextView setNeedsDisplay:YES];
                 //[_theTextView display];
             });
         }
@@ -480,11 +505,15 @@
     const int kMinVRAM = 250;
     if (videoMemory < kMinVRAM) {
         NSString *str = [NSString stringWithFormat:@"This software requires %dmb of video memory. If you are using a virtual machine try adjusting the graphics settings", kMinVRAM];
-        NSAlert *alert = [NSAlert alertWithMessageText: @"Insufficient video memory"
-                                         defaultButton: @"OK"
-                                       alternateButton: @""
-                                           otherButton: @""
-                             informativeTextWithFormat: @"%@",str ];
+        //NSAlert *alert = [NSAlert alertWithMessageText: @"Insufficient video memory"
+        //                                 defaultButton: @"OK"
+        //                               alternateButton: @""
+        //                                   otherButton: @""
+        //                     informativeTextWithFormat: @"%@",str ];
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Insufficient video memory"];
+        [alert setInformativeText:str];
+        [alert addButtonWithTitle:@"OK"];
         [[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
         [alert runModal];
         videoMemory = 0;
@@ -849,7 +878,7 @@
     NSInteger isOKButton = [openDlg runModal];
     NSArray* files = [openDlg URLs];
     NSString* outdir = @"";
-    if ((isOKButton == NSOKButton)  && ([files count] > 0))
+    if ((isOKButton == NSModalResponseOK)  && ([files count] > 0))
         outdir = [[files objectAtIndex:0] path];
     strcpy(opts.outdir, [outdir cStringUsingEncoding:1]);
     [self showPrefs];
@@ -906,7 +935,7 @@
         [openDlg setCanChooseFiles:NO];
         [openDlg setCanChooseDirectories:YES];
         [openDlg setPrompt:@"Select"];
-        if ([openDlg runModal] != NSOKButton ) return;
+        if ([openDlg runModal] != NSModalResponseOK ) return;
         NSArray* files = [openDlg URLs];
         if ([files count] < 1) return;
         [self processDicomFile: [[files objectAtIndex:0] path] ];

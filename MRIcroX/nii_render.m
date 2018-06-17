@@ -195,7 +195,10 @@ void performBlurSobel(NII_PREFS* prefs, bool isOverlay) {
     glViewport(0, 0, prefs->voxelDim[1], prefs->voxelDim[2]);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     gluOrtho2D(0, 1, 0, 1);
+#pragma clang diagnostic pop
     glMatrixMode(GL_MODELVIEW);
     glDisable(GL_TEXTURE_2D);
     //STEP 1: run smooth program gradientTexture -> tempTex3D
@@ -1285,9 +1288,6 @@ void redrawRender (NII_PREFS* prefs)  //DisplayGL
     #ifdef  MY_USE_ADVANCED_GLSL
     doShaderBlurSobel (prefs);
     #endif
-    
-    
-    
     setupRender(prefs);
     resize(prefs->renderWid, prefs->renderHt, prefs);
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2], 0.0);

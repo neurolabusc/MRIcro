@@ -113,7 +113,7 @@ typedef struct {                /*!< Image storage struct **/
     int   swapsize ;              /*!< swap unit in image data (might be 0)   */
     int   byteorder ;             /*!< byte order on disk (MSB_ or LSB_FIRST) */
     int   rawvols; /*number of volumes in file, regardless of number of volumes loaded */
-    bool isDICOM, isCustomLUT;
+    bool isDICOM, isCustomLUT, isINT16_was_UINT16;
     void *data ;                  /*!< pointer to data: nbyper*nvox bytes     */
 } nifti_image ;
 static const int K_gzBytes_skipRead = -3 ;

@@ -18,26 +18,27 @@
 @implementation nii_WindowController
 
 - (NSString *)inputDialog: (NSString *)prompt defaultValue: (NSString *)defaultValue {
+   /*2018 elegant code deprecated...
     NSAlert *alert = [NSAlert alertWithMessageText: prompt
                                      defaultButton:@"OK"
                                    alternateButton:@"Cancel"
                                        otherButton:nil
-                         informativeTextWithFormat:@""];
+                         informativeTextWithFormat:@""];*/
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:prompt];
+    //[alert setInformativeText:@""];
+    [alert addButtonWithTitle:@"OK"];
+    [alert addButtonWithTitle:@"Cancel"];
     
     NSTextField *input = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
     [input setStringValue:defaultValue];
-    //[input autorelease];
     [alert setAccessoryView:input];
     NSInteger button = [alert runModal];
-    if (button == NSAlertDefaultReturn) {
+    if (button == NSAlertFirstButtonReturn) {
         [input validateEditing];
         return [input stringValue];
-    } else if (button == NSAlertAlternateReturn) {
+    } else
         return nil;
-    } else {
-        //NSAssert1(NO, @"Invalid input dialog button %d", button);
-        return nil;
-    }
 }
 
 - (void)niiNotificationUpdateMosaic:(NSNotification *) notification
@@ -137,11 +138,17 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 
 - (IBAction)infoClick:(id)sender { //
     NSString *message = [niiGL getHeaderInfo];
+    /*2018 Elegant method deprecated!
     NSBeginAlertSheet(@"Header Information", @"OK",NULL,NULL,theWindow, self,
-                      NULL, NULL, NULL,
-                      @"%@"
-                      , message
-                      );
+                      NULL, NULL, NULL,@"%@", message);*/
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:@"Header Information"];
+    [alert setInformativeText:message];
+    [alert addButtonWithTitle:@"OK"];
+    [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse returnCode) {
+        //if (returnCode == NSAlertSecondButtonReturn)
+        //NSLog(@"This project was deleted!");
+    }];
 }
 
 - (void) setTitle {
@@ -239,9 +246,12 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 - (IBAction) saveTimelineAsPDF: (id) sender
 {
     if ([niiGL getNumberOfVolumesGL] <2) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         NSBeginAlertSheet(@"Error", @"OK",NULL,NULL,theWindow, self,
                           NULL, NULL, NULL,
                           @"%@", @"Only able to save timelines for 4D data (e.g. raw fMRI or DTI)");
+#pragma clang diagnostic pop
         return;
     }
     if (niiTimeline.bounds.size.height < 2) {
@@ -397,8 +407,8 @@ bool containsString (NSString *string, NSString *substring) {
     //NSLog(@"windowWillClose %d\n", (int)[ [[NSApp sharedApplication] window] count]);
     //[ [[NSApplication sharedApplication] delegate] ]
     //[windowArray removeObjectIdenticalTo: self  ];
-    MRIcroXAppDelegate *delegate = [NSApp delegate];
-    [delegate windowWillCloseX:self];
+    //2018 MRIcroXAppDelegate *delegate = [NSApp delegate];
+    //2018 [delegate windowWillCloseX:self];
 }
 
 - (IBAction) changeBackgroundColor: (id) sender {

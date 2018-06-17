@@ -140,7 +140,7 @@ PACK( typedef struct {
         int32_t hdr[4], r[31][4];
     }) ecat_list_hdr;
     bool swapEndian = false;
-    size_t n;
+    size_t n = 0;
     FILE *f;
     ecat_main_hdr mhdr;
     f = fopen(fname, "rb");

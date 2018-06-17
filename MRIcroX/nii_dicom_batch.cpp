@@ -23,6 +23,8 @@
     #else
         #include <zlib.h>
     #endif
+#else
+	#undef MiniZ
 #endif
 #include "tinydir.h"
 #include "print.h"
@@ -909,14 +911,12 @@ void nii_SaveBIDS(char pathoutname[], struct TDICOMdata d, struct TDCMopts opts,
 	float phaseOversampling = 0.0;
 	int viewOrderGE = -1;
 	int sliceOrderGE = -1;
-	#ifdef myDebug
 	if (d.phaseEncodingGE != kGE_PHASE_DIRECTION_UNKNOWN) { //only set for GE
 		if (d.phaseEncodingGE == kGE_PHASE_DIRECTION_BOTTOM_UP) fprintf(fp, "\t\"PhaseEncodingGE\": \"BottomUp\",\n" );
 		if (d.phaseEncodingGE == kGE_PHASE_DIRECTION_TOP_DOWN) fprintf(fp, "\t\"PhaseEncodingGE\": \"TopDown\",\n" );
 		if (d.phaseEncodingGE == kGE_PHASE_DIRECTION_CENTER_OUT_REV) fprintf(fp, "\t\"PhaseEncodingGE\": \"CenterOutReversed\",\n" );
 		if (d.phaseEncodingGE == kGE_PHASE_DIRECTION_CENTER_OUT) fprintf(fp, "\t\"PhaseEncodingGE\": \"CenterOut\",\n" );
 	}
-	#endif
 	#ifdef myReadGeProtocolBlock
 	if ((d.manufacturer == kMANUFACTURER_GE) && (d.protocolBlockStartGE> 0) && (d.protocolBlockLengthGE > 19)) {
 		printWarning("Using GE Protocol Data Block for BIDS data (beware: new feature)\n");
@@ -2124,6 +2124,109 @@ int nii_saveNII3D(char * niiFilename, struct nifti_1_header hdr, unsigned char* 
     return EXIT_SUCCESS;
 }// nii_saveNII3D()
 
+/*
+//this version can convert INT16->UINT16
+// some were concerned about this https://github.com/rordenlab/dcm2niix/issues/198
+void nii_scale16bitSigned(unsigned char *img, struct nifti_1_header *hdr){
+    if (hdr->datatype != DT_INT16) return;
+    int dim3to7 = 1;
+    for (int i = 3; i < 8; i++)
+        if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
+    int nVox = hdr->dim[1]*hdr->dim[2]* dim3to7;
+    if (nVox < 1) return;
+    int16_t * img16 = (int16_t*) img;
+    int16_t max16 = img16[0];
+    int16_t min16 = max16;
+    //clock_t start = clock();
+    for (int i=0; i < nVox; i++) {
+        if (img16[i] < min16)
+            min16 = img16[i];
+        if (img16[i] > max16)
+            max16 = img16[i];
+    }
+    int kMx = 32000; //actually 32767 - maybe a bit of padding for interpolation ringing
+    bool isConvertToUint16 = true; //if false output is always same as input: INT16, if true and no negative values output will be UINT16
+    if ((isConvertToUint16) && (min16 >= 0))
+    	kMx = 64000;
+    int scale = kMx / (int)max16;
+	if (abs(min16) > max16)
+		scale = kMx / (int)abs(min16);
+	if (scale < 2) return; //already uses dynamic range
+    hdr->scl_slope = hdr->scl_slope/ scale;
+	if ((isConvertToUint16) && (min16 >= 0)) { //only positive values: save as UINT16 0..65535
+		hdr->datatype = DT_UINT16;
+		uint16_t * uimg16 = (uint16_t*) img;
+    	for (int i=0; i < nVox; i++)
+    		uimg16[i] = (int)img16[i] * scale;
+	} else {//includes negative values: save as INT16 -32768..32768
+		for (int i=0; i < nVox; i++)
+    		img16[i] = img16[i] * scale;
+	}
+    printMessage("Maximizing 16-bit range: raw %d..%d\n", min16, max16);
+}*/
+
+void nii_storeIntegerScaleFactor(int scale, struct nifti_1_header *hdr) {
+//appends NIfTI header description field with " isN" where N is integer scaling
+	char newstr[256];
+	sprintf(newstr, " is%d", scale);
+	if ((strlen(newstr)+strlen(hdr->descrip)) < 80)
+		strcat (hdr->descrip,newstr);
+}
+void nii_scale16bitSigned(unsigned char *img, struct nifti_1_header *hdr) {
+//lossless scaling of INT16 data: e.g. input with range -100...3200 and scl_slope=1
+//  will be stored as -1000...32000 with scl_slope 0.1
+    if (hdr->datatype != DT_INT16) return;
+    int dim3to7 = 1;
+    for (int i = 3; i < 8; i++)
+        if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
+    int nVox = hdr->dim[1]*hdr->dim[2]* dim3to7;
+    if (nVox < 1) return;
+    int16_t * img16 = (int16_t*) img;
+    int16_t max16 = img16[0];
+    int16_t min16 = max16;
+    for (int i=0; i < nVox; i++) {
+        if (img16[i] < min16)
+            min16 = img16[i];
+        if (img16[i] > max16)
+            max16 = img16[i];
+    }
+    int kMx = 32000; //actually 32767 - maybe a bit of padding for interpolation ringing
+    int scale = kMx / (int)max16;
+	if (abs(min16) > max16)
+		scale = kMx / (int)abs(min16);
+	if (scale < 2) return; //already uses dynamic range
+    hdr->scl_slope = hdr->scl_slope/ scale;
+	for (int i=0; i < nVox; i++)
+    	img16[i] = img16[i] * scale;
+    printMessage("Maximizing 16-bit range: raw %d..%d is%d\n", min16, max16, scale);
+    nii_storeIntegerScaleFactor(scale, hdr);
+}
+
+
+void nii_scale16bitUnsigned(unsigned char *img, struct nifti_1_header *hdr){
+//lossless scaling of UINT16 data: e.g. input with range 0...3200 and scl_slope=1
+//  will be stored as 0...64000 with scl_slope 0.05
+    if (hdr->datatype != DT_UINT16) return;
+    int dim3to7 = 1;
+    for (int i = 3; i < 8; i++)
+        if (hdr->dim[i] > 1) dim3to7 = dim3to7 * hdr->dim[i];
+    int nVox = hdr->dim[1]*hdr->dim[2]* dim3to7;
+    if (nVox < 1) return;
+    uint16_t * img16 = (uint16_t*) img;
+    uint16_t max16 = img16[0];
+    for (int i=0; i < nVox; i++)
+        if (img16[i] > max16)
+            max16 = img16[i];
+    int kMx = 64000; //actually 65535 - maybe a bit of padding for interpolation ringing
+    int scale = kMx / (int)max16;
+	if (scale < 2) return; //already uses dynamic range
+	hdr->scl_slope = hdr->scl_slope/ scale;
+	for (int i=0; i < nVox; i++)
+    	img16[i] = img16[i] * scale;
+    printMessage("Maximizing 16-bit range: raw max %d is%d\n", max16, scale);
+    nii_storeIntegerScaleFactor(scale, hdr);
+}
+
 void nii_check16bitUnsigned(unsigned char *img, struct nifti_1_header *hdr){
     //default NIfTI 16-bit is signed, set to unusual 16-bit unsigned if required...
     if (hdr->datatype != DT_UINT16) return;
@@ -2889,9 +2992,14 @@ int saveDcm2NiiCore(int nConvert, struct TDCMsort dcmSort[],struct TDICOMdata dc
 	nii_SaveText(pathoutname, dcmList[dcmSort[0].indx], opts, &hdr0, nameList->str[indx]);
 	int numADC = 0;
     int * volOrderIndex = nii_SaveDTI(pathoutname,nConvert, dcmSort, dcmList, opts, sliceDir, dti4D, &numADC);
-    if ((hdr0.datatype == DT_UINT16) &&  (!dcmList[dcmSort[0].indx].isSigned)) nii_check16bitUnsigned(imgM, &hdr0);
-    printMessage( "Convert %d DICOM as %s (%dx%dx%dx%d)\n",  nConvert, pathoutname, hdr0.dim[1],hdr0.dim[2],hdr0.dim[3],hdr0.dim[4]);
     PhilipsPrecise(&dcmList[dcmSort[0].indx], opts.isPhilipsFloatNotDisplayScaling, &hdr0, opts.isVerbose);
+    if ((opts.isMaximize16BitRange) && (hdr0.datatype == DT_INT16)) {
+    	nii_scale16bitSigned(imgM, &hdr0); //allow INT16 to use full dynamic range
+    } else if ((opts.isMaximize16BitRange) && (hdr0.datatype == DT_UINT16) &&  (!dcmList[dcmSort[0].indx].isSigned)) {
+    	nii_scale16bitUnsigned(imgM, &hdr0); //allow UINT16 to use full dynamic range
+    } else if ((!opts.isMaximize16BitRange) && (hdr0.datatype == DT_UINT16) &&  (!dcmList[dcmSort[0].indx].isSigned))
+    	nii_check16bitUnsigned(imgM, &hdr0); //save UINT16 as INT16 if we can do this losslessly
+    printMessage( "Convert %d DICOM as %s (%dx%dx%dx%d)\n",  nConvert, pathoutname, hdr0.dim[1],hdr0.dim[2],hdr0.dim[3],hdr0.dim[4]);
     //~ if (!dcmList[dcmSort[0].indx].isSlicesSpatiallySequentialPhilips)
     //~ 	nii_reorderSlices(imgM, &hdr0, dti4D);
     if (hdr0.dim[3] < 2)
@@ -3747,7 +3855,12 @@ void setDefaultOpts (struct TDCMopts *opts, const char * argv[]) { //either "set
     opts->isGz = false;
     opts->isSave3D = false;
     opts->dirSearchDepth = 5;
-    opts->gzLevel = MZ_DEFAULT_LEVEL; //-1;
+    #ifdef myDisableZLib
+    	opts->gzLevel = 6;
+    #else
+    	opts->gzLevel = MZ_DEFAULT_LEVEL; //-1;
+    #endif
+    opts->isMaximize16BitRange = false; //e.g. if INT16 image has range 0..500 scale to be 0..50000 with hdr.scl_slope =  hdr.scl_slope * 0.01
     opts->isFlipY = true; //false: images in raw DICOM orientation, true: image rows flipped to cartesian coordinates
     opts->isRGBplanar = false; //false for NIfTI (RGBRGB...), true for Analyze (RRR..RGGG..GBBB..B)
     opts->isCreateBIDS =  true;
@@ -3780,9 +3893,9 @@ void saveIniFile (struct TDCMopts opts) {
 	}
 	printMessage("Saving defaults to registry\n");
 	DWORD dwValue    = opts.isGz;
-	//RegSetValueEx(hKey,"isGZ", 0, REG_DWORD,reinterpret_cast<BYTE *>(&dwValue),sizeof(dwValue));
-	//RegSetValueExA(hKey, "isGZ", 0, REG_DWORD, (LPDWORD)&dwValue, sizeof(dwValue));
 	RegSetValueExA(hKey, "isGZ", 0, REG_DWORD, reinterpret_cast<BYTE *>(&dwValue), sizeof(dwValue));
+	dwValue    = opts.isMaximize16BitRange;
+	RegSetValueExA(hKey, "isMaximize16BitRange", 0, REG_DWORD, reinterpret_cast<BYTE *>(&dwValue), sizeof(dwValue));
 	RegSetValueExA(hKey,"filename",0, REG_SZ,(LPBYTE)opts.filename, strlen(opts.filename)+1);
 	RegCloseKey(hKey);
 } //saveIniFile()
@@ -3803,6 +3916,8 @@ void readIniFile (struct TDCMopts *opts, const char * argv[]) {
     //if(RegQueryValueExA(hKey,"isGZ", 0, (LPDWORD )&dwDataType, (&dwValue), &vSize) == ERROR_SUCCESS)
     if(RegQueryValueExA(hKey,"isGZ", 0, (LPDWORD )&dwDataType, reinterpret_cast<BYTE *>(&dwValue), &vSize) == ERROR_SUCCESS)
     	opts->isGz = dwValue;
+    if(RegQueryValueExA(hKey,"isMaximize16BitRange", 0, (LPDWORD )&dwDataType, reinterpret_cast<BYTE *>(&dwValue), &vSize) == ERROR_SUCCESS)
+    	opts->isMaximize16BitRange = dwValue;
     vSize = 512;
     char buffer[512];
     if(RegQueryValueExA(hKey,"filename", 0,NULL,(LPBYTE)buffer,&vSize ) == ERROR_SUCCESS )
@@ -3826,6 +3941,8 @@ void readIniFile (struct TDCMopts *opts, const char * argv[]) {
         //printMessage(">%s<->'%s'\n",Setting,Value);
         if ( strcmp(Setting,"isGZ") == 0 )
             opts->isGz = atoi(Value);
+        if ( strcmp(Setting,"isMaximize16BitRange") == 0 )
+            opts->isMaximize16BitRange = atoi(Value);
         else if ( strcmp(Setting,"isBIDS") == 0 )
             opts->isCreateBIDS = atoi(Value);
         else if ( strcmp(Setting,"filename") == 0 )
@@ -3840,6 +3957,7 @@ void saveIniFile (struct TDCMopts opts) {
     if (fp == NULL) return;
     printMessage("Saving defaults file %s\n", opts.optsname);
     fprintf(fp, "isGZ=%d\n", opts.isGz);
+    fprintf(fp, "isMaximize16BitRange=%d\n", opts.isMaximize16BitRange);
     fprintf(fp, "isBIDS=%d\n", opts.isCreateBIDS);
     fprintf(fp, "filename=%s\n", opts.filename);
     fclose(fp);

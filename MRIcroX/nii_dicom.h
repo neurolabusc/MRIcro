@@ -17,13 +17,18 @@ extern "C" {
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
+ #if defined(myEnableJPEGLS) || defined(myEnableJPEGLS1)
+   #define kLSsuf " (JP-LS:CharLS)"
+ #else
+   #define kLSsuf ""
+ #endif
  #ifdef myEnableJasper
-  #define kDCMsuf " (JasPer build)"
+  #define kJP2suf " (JP2:JasPer)"
  #else
   #ifdef myDisableOpenJPEG
-    #define kDCMsuf ""
+    #define kJP2suf ""
   #else
-    #define kDCMsuf " (OpenJPEG build)"
+    #define kJP2suf " (JP2:OpenJPEG)"
   #endif
  #endif
 #if defined(__ICC) || defined(__INTEL_COMPILER)
@@ -38,7 +43,7 @@ extern "C" {
 	#define kCCsuf " CompilerNA" //unknown compiler!
 #endif
 
-#define kDCMvers "v1.0.20180518" kDCMsuf kCCsuf
+#define kDCMvers "v1.0.20180614" kJP2suf kLSsuf kCCsuf
 
 static const int kMaxEPI3D = 1024; //maximum number of EPI images in Siemens Mosaic
 static const int kMaxDTI4D = 18000; //maximum number of DTI directions for 4D (Philips) images, also maximum number of 3D slices for Philips 3D and 4D images
@@ -78,7 +83,17 @@ static const int kCompressYes = 1;
 static const int kCompressC3 = 2; //obsolete JPEG lossless
 static const int kCompress50 = 3; //obsolete JPEG lossy
 static const int kCompressRLE = 4; //run length encoding
-static const int kCompressPMSCT_RLE1 = 5; //see rel2img: Philips/ELSCINT1 run-length compression 07a1,1011= PMSCT_RLE1
+static const int kCompressPMSCT_RLE1 = 5; //see rle2img: Philips/ELSCINT1 run-length compression 07a1,1011= PMSCT_RLE1
+static const int kCompressJPEGLS = 5; //LoCo JPEG-LS
+#ifdef myEnableJasper
+    static const int kCompressSupport = kCompressYes; //JASPER for JPEG2000
+#else
+    #ifdef myDisableOpenJPEG
+        static const int kCompressSupport = kCompressNone; //no decompressor
+    #else
+        static const int kCompressSupport = kCompressYes; //OPENJPEG for JPEG2000
+    #endif
+#endif
 
 // Maximum number of dimensions for .dimensionIndexValues, i.e. possibly the
 // number of axes in the output .nii.
@@ -158,7 +173,7 @@ static const uint8_t MAX_NUMBER_OF_DIMENSIONS = 8;
     int isSameFloatGE (float a, float b);
     struct TDICOMdata readDICOMv(char * fname, int isVerbose, int compressFlag, struct TDTI4D *dti4D);
     struct TDICOMdata readDICOM(char * fname);
-    struct TDICOMdata clear_dicom_data();
+    struct TDICOMdata clear_dicom_data(void);
     struct TDICOMdata  nii_readParRec (char * parname, int isVerbose, struct TDTI4D *dti4D, bool isReadPhase);
     unsigned char * nii_flipY(unsigned char* bImg, struct nifti_1_header *h);
     unsigned char * nii_flipZ(unsigned char* bImg, struct nifti_1_header *h);

@@ -311,10 +311,9 @@ int xx(FSLIO* fslio) {
         for (int i=0; i<len; i++)
             if (((THIS_UINT8 *)(inbuf)+i) != 0)
                 ret += 1;
-
     return ret;
-
 }
+
 int  convertBufferToScaled(SCALED_IMGDATA *outbuf, void *inbuf, long len, float slope, float inter, int nifti_datatype ) {
 //adapted from fslio.c "convertBufferToScaledDouble" library that was placed in the public domain
     long i;
@@ -627,12 +626,26 @@ int nii_unify_datatype(FSLIO* fslio)
         printf("nii_unify: voxels not loaded!");
         return EXIT_FAILURE;
     }
-
 //don't convert a format that is natively supported...
     if ( fslio->niftiptr->datatype == DT_RGB24) return convertRGB2RGBA(fslio); //24-bit RGBA must convert to 32-bit RGBA
     if ( fslio->niftiptr->datatype == DT_RGBA32) return EXIT_SUCCESS; //32-bit RGBA bit format is supported!
     if ( fslio->niftiptr->datatype == NIFTI_TYPE_UINT8) return EXIT_SUCCESS; //unsigned 8 bit format is supported!
     if ( fslio->niftiptr->datatype ==NIFTI_TYPE_INT16) return EXIT_SUCCESS;//signed 16 bit format is supported!
+    #define UINT16_TO_INT16
+    #ifdef UINT16_TO_INT16
+    //convet unsigned 16-bit as signed 16-bit. Requires less RAM than converting to FLOAT32
+    if ( fslio->niftiptr->datatype == NIFTI_TYPE_UINT16) {
+        fslio->niftiptr->datatype = NIFTI_TYPE_INT16;
+        fslio->niftiptr->scl_inter += 32768*fslio->niftiptr->scl_slope;
+        THIS_UINT16 * in_ui16 = (THIS_UINT16 *) fslio->niftiptr->data;
+        THIS_INT16 * out_i16 = (THIS_INT16 *) fslio->niftiptr->data;
+        for (long i=0; i<(long)(fslio->niftiptr->nvox); i++)
+            out_i16[i] = (THIS_INT16)(((long)in_ui16[i])-32768);
+        fslio->niftiptr->isINT16_was_UINT16 = true;
+        return EXIT_SUCCESS;
+    }
+    #endif
+    
     //rescale image
     float slope = fslio->niftiptr->scl_slope;
     float inter = fslio->niftiptr->scl_inter;
@@ -3541,11 +3554,11 @@ void closeOverlays (NII_PREFS* prefs)
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:[@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]] ];
     [alert runModal];*/
-    NSBeginAlertSheet(@"Unable to open image", @"OK",NULL,NULL, [[NSApplication sharedApplication] keyWindow], self,
-                      NULL, NULL, NULL,
-                      @"%@"
-                      , [@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]]);
-     return result; //no access*/
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    NSBeginAlertSheet(@"Unable to open image", @"OK",NULL,NULL, [[NSApplication sharedApplication] keyWindow], self,NULL, NULL, NULL,@"%@", [@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]]);
+#pragma clang diagnostic pop
+    return result; //no access*/
 }
 
 -(BOOL) checkSandAccess2: (NSString *)file_name

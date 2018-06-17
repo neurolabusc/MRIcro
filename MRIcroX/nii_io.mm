@@ -200,10 +200,13 @@ bool checkSandAccessX (NSString *file_name) {
     [openPanel runModal];
     result = (!access([file_name UTF8String], R_OK) );
     if (result) return result; //already have access
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     NSBeginAlertSheet(@"Unable to open image", @"OK",NULL,NULL, [[NSApplication sharedApplication] keyWindow], NULL,//self,
                       NULL, NULL, NULL,
                       @"%@"
                       , [@"You do not have access to the file " stringByAppendingString:[file_name lastPathComponent]]);
+#pragma clang diagnostic pop
     return result; //no access
 }
 
@@ -867,7 +870,6 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
         gzBytes = K_gzBytes_skipRead;
         //dicomImg = nii_readTIFF(fname,  &niiHdr, &gzBytes, &swapEndian);
     }
-
     if (OK == EXIT_FAILURE) { //if all else fails, assume DICOM
         char fnameC[1024] = {""};
         strcat(fnameC,[fname cStringUsingEncoding:1]);
@@ -881,10 +883,13 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             }
         } else {
             d.isValid = false;
-            if (isDICOMfile(fnameC) > 0)
-                d =readDICOM(fnameC);
+            //if (isDICOMfile(fnameC) > 0)
+            //    d =readDICOM(fnameC);
+            if (isDICOMfile(fnameC) > 0) {
+                TDTI4D unused;
+                d= readDICOMv(fnameC, false, kCompressSupport, &unused);
+            }
             if (!d.isValid) NSLog(@"DICOM failed: %@", imgname);
-
             if (d.isValid)
                 isDICOM = TRUE;
             /*if (dicomWarn) {
@@ -905,7 +910,8 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
 
         }
         if (d.isValid) {
-            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0, NULL);
+            //dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0, NULL);
+            dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressSupport, 0, NULL);
             gzBytes = K_gzBytes_skipRead;
             OK = EXIT_SUCCESS;
         } else
@@ -941,6 +947,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
     nim->nv = nim->dim[6] = 1;
     nim->nw = nim->dim[7] = 1;
     nim->isDICOM = false;
+    nim->isINT16_was_UINT16 = false;
     nim->nvox = nim->dim[1]*nim->dim[2]*nim->dim[3]*loadVol;
     fslio->niftiptr = nim;
     #ifdef MY_DEBUG //from nii_io.h

@@ -1352,7 +1352,7 @@ int nii_readEcat7(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndi
         r31[4];
     } ecat_list_hdr;
     * swapEndian = false;
-    size_t n;
+    size_t n = 0;
     FILE *f;
     ecat_main_hdr mhdr;
     f = fopen([fname fileSystemRepresentation], "rb");
@@ -2340,11 +2340,14 @@ NSString* promptModality(NSMutableArray * list)  {
 NSString* promptModality(NSMutableArray * list)  {
     NSString *prompt = [@"Enter desired modality. Your options are: " stringByAppendingString:  listString(list) ];
     NSString *defaultValue =  (NSString *)[list objectAtIndex: 0];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     NSAlert *alert = [NSAlert alertWithMessageText: prompt
                                      defaultButton:@"OK"
                                    alternateButton:@"Cancel"
                                        otherButton:nil
                          informativeTextWithFormat:@""];
+#pragma clang diagnostic pop
     //NSArray * langChoices = [[NSArray alloc] initWithObjects:@"English", @"French", @"German", @"Spanish", nil];
     NSPopUpButton * tmpPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 200, 24)];
     [tmpPopup addItemsWithTitles:list];
@@ -2353,12 +2356,15 @@ NSString* promptModality(NSMutableArray * list)  {
     //[input setStringValue:defaultValue];
     //[alert setAccessoryView:input];
     NSInteger button = [alert runModal];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     if (button == NSAlertDefaultReturn) {
         //NSLog(@"--->%ld", (long)tmpPopup.indexOfSelectedItem);
         return (NSString *)[list objectAtIndex: tmpPopup.indexOfSelectedItem];
         //[input validateEditing];
         //return [input stringValue];
     }
+#pragma clang diagnostic pop
     return defaultValue;
 }// promptModality()
 
@@ -2395,8 +2401,11 @@ unsigned char * nii_readMat(NSString * fname, struct nifti_1_header *nhdr)
 
     //NSUInteger flags = [[NSApp currentEvent] modifierFlags];
     //bool specialKeys = ((flags & NSCommandKeyMask) == NSCommandKeyMask) || ((flags & NSControlKeyMask) == NSControlKeyMask) ;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     bool specialKeys = (flags & NSCommandKeyMask) == NSCommandKeyMask;
     bool altKey = (flags & NSAlternateKeyMask) == NSAlternateKeyMask;
+#pragma clang diagnostic pop
     //NSLog(@"%lu -> %d", flags, altKey);
 
     //NSLog(@"%lu -> %d", flags, specialKeys);

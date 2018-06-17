@@ -69,8 +69,11 @@ GraphStruct gGraph;
     [savePanel setNameFieldStringValue:@""];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:NSHomeDirectory() ]];
     NSInteger user_choice =  [savePanel runModal];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     if(NSOKButton == user_choice)
         [self saveTabFromFileName:[[savePanel URL] path]];
+#pragma clang diagnostic pop
 }
 
 - (void)savePDFFromFileName:(NSString *)fname
@@ -92,10 +95,13 @@ GraphStruct gGraph;
     [savePanel setNameFieldStringValue:@""];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:NSHomeDirectory() ]];
     NSInteger user_choice =  [savePanel runModal];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     if(NSOKButton == user_choice)
     {
         [self savePDFFromFileName:[[savePanel URL] path]];
     }
+#pragma clang diagnostic pop
 }
 
 - (void)rightMouseDown:(NSEvent *)event
@@ -109,7 +115,7 @@ GraphStruct gGraph;
     if (self) {
         // Initialization code here.
          //[super setImageAlignment:NSImageAlignBottomLeft]; //NSImageAlignCenter;
-        [self setImageScaling:NSScaleProportionally]; //NSScaleNone or NSScaleToFit or NSScaleProportionally
+        [self setImageScaling:NSImageScaleProportionallyDown]; //NSScaleNone or NSScaleToFit or NSScaleProportionally
         //NSScaleToFit does not respect aspect ratio, see http://stackoverflow.com/questions/13750234/confused-about-nsimageview-scaling
     }
     return self;
@@ -274,7 +280,10 @@ void setColor (int lineIndex)
         NSColor *currentColor = [NSColor colorWithCalibratedRed:0.9f green:0.0f blue:0.3f alpha:0.55f];
         [currentColor set];
         //NSRectFill( currentRect ); //<- this is always opaque, regardless of color
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         NSRectFillUsingOperation(currentRect, NSCompositeSourceOver);
+#pragma clang diagnostic pop
     }
     //draw vertical ticks and labels
     if (a.tickSpacing > 0.0) {
