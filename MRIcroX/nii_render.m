@@ -141,31 +141,6 @@ const char *kSobelShaderFrag =
 "  gl_FragColor = gradientSample;\n"\
 "}";
 
-
-/*
- const char *kSobelShaderFrag =
- "uniform float coordZ, dX, dY, dZ;" \
- "uniform sampler3D intensityVol;" \
- "void main(void) {\n " \
- "  vec3 vx = vec3(gl_TexCoord[0].xy, coordZ);\n"\
- "  float TAR = texture3D(intensityVol,vx+vec3(+dX,+dY,+dZ)).a;\n"\
- "  float TAL = texture3D(intensityVol,vx+vec3(+dX,+dY,-dZ)).a;\n"\
- "  float TPR = texture3D(intensityVol,vx+vec3(+dX,-dY,+dZ)).a;\n"\
- "  float TPL = texture3D(intensityVol,vx+vec3(+dX,-dY,-dZ)).a;\n"\
- "  float BAR = texture3D(intensityVol,vx+vec3(-dX,+dY,+dZ)).a;\n"\
- "  float BAL = texture3D(intensityVol,vx+vec3(-dX,+dY,-dZ)).a;\n"\
- "  float BPR = texture3D(intensityVol,vx+vec3(-dX,-dY,+dZ)).a;\n"\
- "  float BPL = texture3D(intensityVol,vx+vec3(-dX,-dY,-dZ)).a;\n"\
- "  vec4 gradientSample = vec4 (0.0, 0.0, 0.0, 0.0);\n"\
- "  gradientSample.r =   BAR+BAL+BPR+BPL -TAR-TAL-TPR-TPL;\n"\
- "  gradientSample.g =  TPR+TPL+BPR+BPL -TAR-TAL-BAR-BAL;\n"\
- "  gradientSample.b =  TAL+TPL+BAL+BPL -TAR-TPR-BAR-BPR;\n"\
- "  gradientSample.a = (abs(gradientSample.r)+abs(gradientSample.g)+abs(gradientSample.b))*0.5;\n"\
- "  gradientSample.rgb = normalize(gradientSample.rgb);\n"\
- "  gradientSample.rgb =  (gradientSample.rgb * 0.5)+0.5;\n"\
- "  gl_FragColor = gradientSample;\n"\
- "}";*/
-
 GLuint bindBlankGL(NII_PREFS* prefs) { //creates an empty texture in VRAM without requiring memory copy from RAM
     //later run glDeleteTextures(1,&oldHandle);
     GLuint handle;
@@ -395,9 +370,12 @@ const char *vert_default =
 " gl_Position = ftransform();\n"
 "}";
 
-//http://kbi.theelude.eu/?p=101
-//#pragma optionNV(unroll count=#)
-//#pragma optionNV(unroll none)
+//Volume rendering can be done as one or two passes
+// One pass requires two frame buffers, one pass requires an extra step in the fragment shader
+//  http://prideout.net/blog/?p=64\n"
+#define TWO_PASS
+#ifdef TWO_PASS
+
 const char *frag_advanced =
 "uniform int overlays;\n"
 "uniform float clipPlaneDepth,  stepSize, sliceSize, viewWidth, viewHeight;\n"
@@ -564,145 +542,6 @@ const char *frag_advanced =
 " gl_FragColor = colAcc;\n"
 "}\n";
 
-//Changed Dec 20 2014 to reduce glisten in clip plane
-/*const char *frag_advanced =
-"uniform int overlays;\n"
-"uniform float clipPlaneDepth, stepSize, sliceSize, viewWidth, viewHeight;\n"
-"uniform vec3 clearColor,lightPosition, clipPlane;\n"
-"uniform sampler3D intensityVol, gradientVol, overlayVol, overlayGradientVol;\n"
-"uniform sampler2D backFace;\n"
-"void main() { \n"
-" const float specular = 0.2;\n"
-" const float shininess = 10.0;\n"
-" const float edgeThresh = 0.01;\n"
-" const float edgeExp = 0.5;\n"
-" const float backAlpha = 1.0;\n"
-" const float overDistance = 0.3;\n"
-" const float overAlpha = 1.2;\n"
-" float overAlphaFrac = 1.0;\n"
-" vec3 backPosition = texture2D(backFace,vec2(gl_FragCoord.x/viewWidth,gl_FragCoord.y/viewHeight)).xyz;\n"
-" vec3 start = gl_TexCoord[1].xyz;\n"
-" vec3 dir = backPosition - start;\n"
-" float len = length(dir);\n"
-" dir = normalize(dir);\n"
-" float clipStart = 0.0;\n"
-" float clipEnd = len;\n"
-" if (clipPlaneDepth > -0.5) { \n"
-"  gl_FragColor.rgb = vec3(1.0,0.0,0.0);\n"
-"  bool frontface = (dot(dir , clipPlane) > 0.0);\n"
-"  float dis = dot(dir,clipPlane);\n"
-"  if (dis != 0.0  )  dis = (-clipPlaneDepth - dot(clipPlane, start.xyz - 0.5)) / dis;\n"
-"  if (frontface) clipStart = dis;\n"
-"  if (!frontface)  clipEnd = dis;\n"
-" }\n"
-" vec3 deltaDir = dir * stepSize;\n"
-" vec4 overAcc = vec4(0.0,0.0,0.0,0.0);\n"
-" vec4 ocolorSample,colorSample,gradientSample,colAcc = vec4(0.0,0.0,0.0,0.0);\n"
-" float lengthAcc = 0.0;\n"
-" float overAtten = 0.0;\n"
-" int overDepth = 0;\n"
-" int backDepthEnd = 0;\n"
-" int backDepthStart = 2147483647;\n"
-" vec3 samplePos = start.xyz + deltaDir * (fract(sin(gl_FragCoord.x * 12.9898 + gl_FragCoord.y * 78.233) * 43758.5453));\n"
-" vec4 prevNorm = vec4(0.0,0.0,0.0,0.0);\n"
-" vec4 oprevNorm = vec4(0.0,0.0,0.0,0.0);\n"
-" float opacityCorrection = stepSize/sliceSize;\n"
-" vec3 lightDirHeadOn =  normalize(gl_ModelViewMatrixInverse * vec4(0.0,0.0,1.0,0.0)).xyz ;\n"
-" float stepSizex2 = clipStart + (stepSize * 2.5);\n"
-" for(int i = 0; i < int(len / stepSize); i++) { \n"
-"  if ((lengthAcc <= clipStart) || (lengthAcc > clipEnd)) { \n"
-"   colorSample.a = 0.0;\n"
-"  } else { \n"
-"   colorSample = texture3D(intensityVol,samplePos);\n"
-"   if ((lengthAcc <= stepSizex2) && (colorSample.a > 0.01) )  colorSample.a = sqrt(colorSample.a);\n"
-"   colorSample.a = 1.0-pow((1.0 - colorSample.a), opacityCorrection);\n"
-"   if ((colorSample.a > 0.01) && (lengthAcc > stepSizex2)  ) {  \n"
-"    if (backDepthStart == 2147483647) backDepthStart = i;\n"
-"    backDepthEnd = i;  \n"
-"    gradientSample= texture3D(gradientVol,samplePos);\n"
-"    gradientSample.rgb = normalize(gradientSample.rgb*2.0 - 1.0);\n"
-"    if (gradientSample.a < prevNorm.a) \n"
-"     gradientSample.rgb = prevNorm.rgb;\n"
-"    prevNorm = gradientSample;\n"
-"    float lightNormDot = dot(gradientSample.rgb, lightDirHeadOn);\n"
-"    float edgeVal = pow(1.0 - abs(lightNormDot),edgeExp) * pow(gradientSample.a,0.3);\n"
-"    if (edgeVal >= edgeThresh)  \n"
-"     colorSample.rgb = mix(colorSample.rgb, vec3(0.0,0.0,0.0), pow((edgeVal-edgeThresh)/(1.0-edgeThresh),4.0));\n"
-"    lightNormDot = dot(gradientSample.rgb, lightPosition);\n"
-"    if (lightNormDot > 0.0) \n"
-"     colorSample.rgb +=   specular * pow(max(dot(reflect(lightPosition, gradientSample.rgb), dir), 0.0), shininess);\n"
-"   }\n"
-"  }\n"
-"  if ( overlays > 0 ) { \n"
-"   gradientSample= texture3D(overlayGradientVol,samplePos);\n"
-"   if (gradientSample.a > 0.01) {\n"
-"    if (gradientSample.a < oprevNorm.a)\n"
-"     gradientSample.rgb = oprevNorm.rgb;\n"
-"    oprevNorm = gradientSample;\n"
-"    gradientSample.rgb = normalize(gradientSample.rgb*2.0 - 1.0);\n"
-"    ocolorSample = texture3D(overlayVol,samplePos);\n"
-"    ocolorSample.a *= gradientSample.a;\n"
-"    ocolorSample.a *= overAlphaFrac;\n"
-"    ocolorSample.a = sqrt(ocolorSample.a);\n"
-"    float lightNormDot = dot(gradientSample.rgb, lightDirHeadOn);\n"
-"    float edgeVal = pow(1.0-abs(lightNormDot),edgeExp) * pow(gradientSample.a,0.3);\n"
-"    if (edgeVal >= edgeThresh)  \n"
-"     ocolorSample.rgb = mix(ocolorSample.rgb, vec3(0.0,0.0,0.0), pow((edgeVal-edgeThresh)/(1.0-edgeThresh),4.0));\n"
-"    lightNormDot = dot(gradientSample.rgb, lightPosition);\n"
-"    if (lightNormDot > 0.0) \n"
-"     ocolorSample.rgb +=   specular * pow(max(dot(reflect(lightPosition, gradientSample.rgb), dir), 0.0), shininess);\n"
-"    if ( ocolorSample.a > 0.2) { \n"
-"     if (overDepth == 0) overDepth = i;\n"
-"     float overRatio = colorSample.a/(ocolorSample.a);\n"
-"     if (colorSample.a > 0.02) \n"
-"      colorSample.rgb = mix( colorSample.rgb, ocolorSample.rgb, overRatio);\n"
-"     else \n"
-"      colorSample.rgb = ocolorSample.rgb;\n"
-"     colorSample.a = max(ocolorSample.a, colorSample.a);\n"
-"    }\n"
-"    ocolorSample.a = 1.0-pow((1.0 - ocolorSample.a), opacityCorrection);\n"
-"    overAcc= (1.0 - overAcc.a) * ocolorSample + overAcc;\n"
-"   }\n"
-"  }\n"
-"  colorSample.rgb *= colorSample.a;  \n"
-"  colAcc= (1.0 - colAcc.a) * colorSample + colAcc;\n"
-"  samplePos += deltaDir;\n"
-"  lengthAcc += stepSize;\n"
-"  if ( lengthAcc >= len  )\n"
-"   break;\n"
-" }\n"
-" colAcc *= backAlpha;\n"
-" if ((overAcc.a > 0.01) && (overAlpha > 1.0))  { \n"
-"  colAcc.a=max(colAcc.a,overAcc.a);\n"
-"  if ( (overDistance > 0.0) && (overDepth > backDepthStart) && (backDepthEnd > backDepthStart)) { \n"
-"   if (overDepth > backDepthEnd) overDepth = backDepthStart;\n"
-"   float dx = float(overDepth-backDepthStart)/ float(backDepthEnd - backDepthStart);\n"
-"   dx = pow(1.0-dx, overDistance);\n"
-"   dx = pow(dx, 2.0);\n"
-"   overAcc *= dx;\n"
-"  }\n"
-"  overAlphaFrac = overAcc.a * (overAlpha - 1.0);\n"
-"  if (overAcc.a > 0.0) \n"
-"   colAcc.rgb=mix(colAcc.rgb, overAcc.rgb,  overAlphaFrac);\n"
-" }\n"
-" if ( colAcc.a < 1.0 ) \n"
-"  colAcc.rgb = mix(clearColor,colAcc.rgb,colAcc.a);\n"
-" if (len == 0.0) colAcc.rgb = clearColor;\n"
-" gl_FragColor = colAcc;\n"
-"}";*/
-
-/* --- 1.4 advanced renderer:
-  */
-/*const char *frag_default =
-"uniform float stepSize, sliceSize, viewWidth, viewHeight;\n"
-"uniform sampler3D intensityVol;\n"
-"uniform sampler2D backFace;\n"
-"uniform vec3 clearColor,lightPosition, clipPlane;\n"
-"uniform float clipPlaneDepth;\n"
-"void main() {\n"
-" vec4 colorSample,colAcc = vec4(1.0,0.0,0.0,1.0);\n"
-" gl_FragColor = colAcc;\n"
-"}";*/
 const char *frag_default =
 "uniform float stepSize, sliceSize, viewWidth, viewHeight;\n"
 "uniform sampler3D intensityVol;\n"
@@ -758,6 +597,252 @@ const char *frag_default =
 " gl_FragColor = colAcc;\n"
 "}\n";
 
+#else //if TWO_PASS else one pass volume rendering
+
+const char *frag_advanced =
+"uniform int overlays;\n"
+"uniform float clipPlaneDepth,  stepSize, sliceSize, viewWidth, viewHeight;\n"
+"uniform vec3 clearColor,lightPosition, clipPlane;\n"
+"uniform sampler3D intensityVol, gradientVol, overlayVol, overlayGradientVol;\n"
+"vec3 GetBackPosition (vec3 startPosition) { //when does ray exit unit cube http://prideout.net/blog/?p=64\n"
+"    vec3 rayDir =  normalize(gl_ModelViewProjectionMatrixInverse * vec4(0.0,0.0,1.0,0.0)).xyz;\n"
+"    vec3 invR = 1.0 / rayDir;\n"
+"    vec3 tbot = invR * (vec3(0.0)-startPosition);\n"
+"    vec3 ttop = invR * (vec3(1.0)-startPosition);\n"
+"    vec3 tmax = max(ttop, tbot);\n"
+"    vec2 t = min(tmax.xx, tmax.yz);\n"
+"    return startPosition + (rayDir * min(t.x, t.y));\n"
+"}\n"
+"void main() {\n"
+" float specular = 0.5;\n"
+" float diffuse = 0.2;\n"
+" float shininess= 20.0;\n"
+" float backAlpha = 0.95;\n"
+" float overShade = 0.3;\n"
+" float overAlpha = 1.6;\n"
+" float overDistance = 0.3;\n"
+" float edgeThresh = 0.01;\n"
+" float edgeExp = 0.5;\n"
+" bool overClip = false;\n"
+" float overAlphaFrac = overAlpha;\n"
+" if (overAlphaFrac > 1.0) overAlphaFrac = 1.0;\n"
+" float overLight = 0.5;\n"
+" float diffuseDiv = diffuse / 4.0;\n"
+" vec2 pixelCoord = gl_FragCoord.st;\n"
+" pixelCoord.x /= viewWidth;\n"
+" pixelCoord.y /= viewHeight; \n"
+" vec3 start = gl_TexCoord[1].xyz;\n"
+" vec3 backPosition = GetBackPosition (start);\n"
+" vec3 dir = backPosition - start;\n"
+" float len = length(dir);\n"
+" dir = normalize(dir);\n"
+" float clipStart = 0.0;\n"
+" float stepSizex2 = -1.0;\n"
+" float clipEnd = len;\n"
+" if (clipPlaneDepth > -0.5) {\n"
+"  gl_FragColor.rgb = vec3(1.0,0.0,0.0);\n"
+"  bool frontface = (dot(dir , clipPlane) > 0.0);\n"
+"  float disBackFace = 0.0;\n"
+"  float dis = dot(dir,clipPlane);\n"
+"  if (dis != 0.0  )  disBackFace = (-(clipPlaneDepth-1.0) - dot(clipPlane, start.xyz-0.5)) / dis;\n"
+"  if (dis != 0.0  )  dis = (-clipPlaneDepth - dot(clipPlane, start.xyz-0.5)) / dis;\n"
+"  if (overClip) {\n"
+"   if (!frontface) {\n"
+"    float swap = dis;\n"
+"    dis = disBackFace;\n"
+"    disBackFace = swap;\n"
+"   }\n"
+"   if (dis >= len) len = 0.0;\n"
+"   backPosition =  start + dir * disBackFace;\n"
+"   if (dis < len) {\n"
+"    if (dis > 0.0)\n"
+"    start = start + dir * dis;\n"
+"    dir = backPosition - start;\n"
+"    len = length(dir);\n"
+"    dir = normalize(dir);  \n"
+"   } else\n"
+"    len = 0.0;\n"
+"  } else {\n"
+"   if (frontface) {\n"
+"    clipStart = dis;\n"
+"    clipEnd = disBackFace;\n"
+"   }\n"
+"   if (!frontface) {\n"
+"    clipEnd = dis;\n"
+"    clipStart = disBackFace;\n"
+"   }\n"
+"   stepSizex2 = clipStart + ( sliceSize * 3.0);\n"
+"  }\n"
+" }  \n"
+" vec3 deltaDir = dir * stepSize;\n"
+" vec4 overAcc = vec4(0.0,0.0,0.0,0.0);\n"
+" vec4 ocolorSample,colorSample,gradientSample,colAcc = vec4(0.0,0.0,0.0,0.0);\n"
+" float lengthAcc = 0.0;\n"
+" float overAtten = 0.0;\n"
+" int overDepth = 0;\n"
+" int loops = int(len / stepSize);\n"
+" int backDepthEnd, backDepthStart = loops;\n"
+" vec3 samplePos = start.xyz + deltaDir* (fract(sin(gl_FragCoord.x * 12.9898 + gl_FragCoord.y * 78.233) * 43758.5453));\n"
+" vec4 prevNorm = vec4(0.0,0.0,0.0,0.0);\n"
+" vec4 oprevNorm = vec4(0.0,0.0,0.0,0.0);\n"
+" float opacityCorrection = stepSize/sliceSize;\n"
+" vec3 lightDirHeadOn =  normalize(gl_ModelViewMatrixInverse * vec4(0.0,0.0,1.0,0.0)).xyz ;\n"
+" //float stepSizex2 = clipStart + ( sliceSize * 3.0);\n"
+" for(int i = 0; i < loops; i++) {\n"
+"  if ((lengthAcc <= clipStart) || (lengthAcc > clipEnd)) {\n"
+"   colorSample.a = 0.0;\n"
+"  } else {\n"
+"   colorSample = texture3D(intensityVol,samplePos);\n"
+"   if ((lengthAcc <= stepSizex2) && (colorSample.a > 0.01) )  colorSample.a = sqrt(colorSample.a);\n"
+"   colorSample.a = 1.0-pow((1.0 - colorSample.a), opacityCorrection);\n"
+"   if ((colorSample.a > 0.01) && (lengthAcc > stepSizex2)  ) { \n"
+"    if (backDepthStart == loops) backDepthStart = i;\n"
+"    backDepthEnd = i; \n"
+"    gradientSample= texture3D(gradientVol,samplePos);\n"
+"    gradientSample.rgb = normalize(gradientSample.rgb*2.0 - 1.0);\n"
+"    if (gradientSample.a < prevNorm.a)\n"
+"     gradientSample.rgb = prevNorm.rgb;\n"
+"    prevNorm = gradientSample;\n"
+"    float lightNormDot = dot(gradientSample.rgb, lightDirHeadOn);\n"
+"    float edgeVal = pow(1.0-abs(lightNormDot),edgeExp) * pow(gradientSample.a,0.3);\n"
+"    if (edgeVal >= edgeThresh) \n"
+"     colorSample.rgb = mix(colorSample.rgb, vec3(0.0,0.0,0.0), pow((edgeVal-edgeThresh)/(1.0-edgeThresh),4.0));\n"
+"    lightNormDot = dot(gradientSample.rgb, lightPosition);\n"
+"    if (lightNormDot > 0.0) {\n"
+"     colorSample.rgb += (lightNormDot * diffuse) - diffuseDiv;\n"
+"     colorSample.rgb +=   specular * pow(max(dot(reflect(lightPosition, gradientSample.rgb), dir), 0.0), shininess);\n"
+"    } else\n"
+"     colorSample.rgb -= diffuseDiv;\n"
+"   };\n"
+"  }\n"
+"  if ( overlays > 0 ) {\n"
+"   gradientSample= texture3D(overlayGradientVol,samplePos); \n"
+"   if (gradientSample.a > 0.01) {   \n"
+"    if (gradientSample.a < oprevNorm.a)\n"
+"     gradientSample.rgb = oprevNorm.rgb;\n"
+"    oprevNorm = gradientSample;\n"
+"    gradientSample.rgb = normalize(gradientSample.rgb*2.0 - 1.0);\n"
+"    ocolorSample = texture3D(overlayVol,samplePos);\n"
+"    ocolorSample.a *= gradientSample.a;\n"
+"    ocolorSample.a = sqrt(ocolorSample.a);\n"
+"    float lightNormDot = dot(gradientSample.rgb, lightDirHeadOn);\n"
+"    float edgeVal = pow(1.0-abs(lightNormDot),edgeExp) * pow(gradientSample.a,overShade);\n"
+"    ocolorSample.a = pow(ocolorSample.a, 1.0 -edgeVal);\n"
+"    ocolorSample.rgb = mix(ocolorSample.rgb, vec3(0.0,0.0,0.0), edgeVal);\n"
+"    lightNormDot = dot(gradientSample.rgb, lightPosition);\n"
+"    if (lightNormDot > 0.0)\n"
+"     ocolorSample.rgb +=   overLight * specular * pow(max(dot(reflect(lightPosition, gradientSample.rgb), dir), 0.0), shininess);\n"
+"    ocolorSample.a *= overAlphaFrac;\n"
+"    if ( ocolorSample.a > 0.2) {\n"
+"     if (overDepth == 0) overDepth = i;\n"
+"     float overRatio = colorSample.a/(ocolorSample.a);\n"
+"     if (colorSample.a > 0.02)\n"
+"      colorSample.rgb = mix( colorSample.rgb, ocolorSample.rgb, overRatio);\n"
+"     else\n"
+"      colorSample.rgb = ocolorSample.rgb;\n"
+"     colorSample.a = max(ocolorSample.a, colorSample.a);\n"
+"    }\n"
+"    ocolorSample.a = 1.0-pow((1.0 - ocolorSample.a), opacityCorrection);  \n"
+"    overAcc= (1.0 - overAcc.a) * ocolorSample + overAcc;\n"
+"   }\n"
+"  }\n"
+"  colorSample.rgb *= colorSample.a; \n"
+"  colAcc= (1.0 - colAcc.a) * colorSample + colAcc;\n"
+"  samplePos += deltaDir;\n"
+"  lengthAcc += stepSize;\n"
+"  if ( lengthAcc >= len  )\n"
+"   break;\n"
+" }\n"
+" colAcc.a*=backAlpha;\n"
+" if ((overAcc.a > 0.01) && (overAlpha > 1.0))  {\n"
+"  colAcc.a=max(colAcc.a,overAcc.a);\n"
+"  if ( (overDistance > 0.0) && (overDepth > backDepthStart) && (backDepthEnd > backDepthStart)) {\n"
+"   if (overDepth > backDepthEnd) overDepth = backDepthStart; \n"
+"   float dx = float(overDepth-backDepthStart)/ float(backDepthEnd - backDepthStart);\n"
+"   dx = pow(1.0-dx, overDistance);\n"
+"   dx = pow(dx, 2.0);\n"
+"   overAcc *= dx;\n"
+"  }\n"
+"  overAlphaFrac = overAcc.a * (overAlpha - 1.0);\n"
+"  if (overAcc.a > 0.0)\n"
+"  colAcc.rgb=mix(colAcc.rgb, overAcc.rgb,  overAlphaFrac);\n"
+" }\n"
+" if ( colAcc.a < 1.0 )\n"
+"  colAcc.rgb = mix(clearColor,colAcc.rgb,colAcc.a);\n"
+" if (len == 0.0) colAcc.rgb = clearColor;\n"
+" gl_FragColor = colAcc;\n"
+"}\n";
+
+const char *frag_default =
+"uniform float stepSize, sliceSize, viewWidth, viewHeight;\n"
+"uniform sampler3D intensityVol;\n"
+"uniform vec3 clearColor,lightPosition, clipPlane;\n"
+"uniform float clipPlaneDepth;\n"
+"vec3 GetBackPosition (vec3 startPosition) { //when does ray exit unit cube http://prideout.net/blog/?p=64\n"
+"    vec3 rayDir =  normalize(gl_ModelViewProjectionMatrixInverse * vec4(0.0,0.0,1.0,0.0)).xyz;\n"
+"    vec3 invR = 1.0 / rayDir;\n"
+"    vec3 tbot = invR * (vec3(0.0)-startPosition);\n"
+"    vec3 ttop = invR * (vec3(1.0)-startPosition);\n"
+"    vec3 tmax = max(ttop, tbot);\n"
+"    vec2 t = min(tmax.xx, tmax.yz);\n"
+"    return startPosition + (rayDir * min(t.x, t.y));\n"
+"}\n"
+"void main() {\n"
+" vec2 pixelCoord = gl_FragCoord.st;\n"
+" pixelCoord.x /= viewWidth;\n"
+" pixelCoord.y /= viewHeight;\n"
+" vec3 start = gl_TexCoord[1].xyz;\n"
+" //uncomment to show ray entry\n"
+" // gl_FragColor = vec4(start, 1.0); return;\n"
+" vec3 backPosition = GetBackPosition (start);\n"
+" //uncomment to show ray exit\n"
+" // gl_FragColor = vec4(backPosition, 1.0); return;\n"
+" vec3 dir = backPosition - start;\n"
+" float len = length(dir);\n"
+" dir = normalize(dir);\n"
+" if (clipPlaneDepth > -0.5) {\n"
+"  gl_FragColor.rgb = vec3(1.0,0.0,0.0);\n"
+"  bool frontface = (dot(dir , clipPlane) > 0.0);\n"
+"  float dis = dot(dir,clipPlane);\n"
+"  if (dis != 0.0  )  dis = (-clipPlaneDepth - dot(clipPlane, start.xyz-0.5)) / dis;\n"
+"  if ((frontface) && (dis > len)) len = 0.0;\n"
+"  if ((!frontface) && (dis < 0.0)) len = 0.0;\n"
+"  if ((dis > 0.0) && (dis < len)) {\n"
+"   if (frontface) {\n"
+"    start = start + dir * dis;\n"
+"   } else {\n"
+"    backPosition =  start + dir * (dis);\n"
+"   }\n"
+"   dir = backPosition - start;\n"
+"   len = length(dir);\n"
+"  dir = normalize(dir);\n"
+"  }\n"
+" }\n"
+" vec3 deltaDir = dir * stepSize;\n"
+" vec4 colorSample,colAcc = vec4(0.0,0.0,0.0,0.0);\n"
+" float lengthAcc = 0.0;\n"
+" float opacityCorrection = stepSize/sliceSize;\n"
+" vec3 samplePos = start.xyz + deltaDir* (fract(sin(gl_FragCoord.x * 12.9898 + gl_FragCoord.y * 78.233) * 43758.5453));\n"
+" for(int i = 0; i < int(len / stepSize); i++) {\n"
+"  colorSample = texture3D(intensityVol,samplePos);\n"
+"  if ((lengthAcc <= stepSize) && (colorSample.a > 0.01) ) colorSample.a = sqrt(colorSample.a);\n"
+"  colorSample.a = 1.0-pow((1.0 - colorSample.a), opacityCorrection);\n"
+"  colorSample.rgb *= colorSample.a;\n"
+"  colAcc= (1.0 - colAcc.a) * colorSample + colAcc;\n"
+"  samplePos += deltaDir;\n"
+"  lengthAcc += stepSize;\n"
+"  if ( lengthAcc >= len || colAcc.a > 0.95 )\n"
+"   break;\n"
+" }\n"
+" colAcc.a = colAcc.a/0.95;\n"
+" if ( colAcc.a < 1.0 )\n"
+"  colAcc.rgb = mix(clearColor,colAcc.rgb,colAcc.a);\n"
+" gl_FragColor = colAcc;\n"
+"}\n";
+
+#endif
+
+
 void initShaderWithFile (NII_PREFS* prefs) {
     if (prefs->glslprogramInt != 0) glDeleteShader(prefs->glslprogramInt);
     #ifdef  MY_USE_ADVANCED_GLSL
@@ -784,19 +869,7 @@ void drawUnitQuad ()
         glTexCoord2f(0.0, 1.0);
         glVertex2f(0.0, 1.0);
     glEnd();
-    //glEnable(GL_DEPTH_TEST);
 }
-
-/*void reshapeOrtho(int l, int b, int w, int h)
-{
-    if (h == 0)  h = 1;
-    glViewport(l, b,w,h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1, 0, 1,-10, 10);//gluOrtho2D(0.0, 1.0, 0.0, 1.0);
-    //glOrtho(whratio*-0.5*scale,whratio*0.5*scale,-0.5*scale,0.5*scale, 0.01, kMaxDistance);
-    glMatrixMode(GL_MODELVIEW);
-}*/
 
 void resize(int wx, int hx, NII_PREFS* prefs)
 {
@@ -809,10 +882,6 @@ void resize(int wx, int hx, NII_PREFS* prefs)
     glViewport(0,0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    //    if (prefs->perspective) {
-    //        gluPerspective(40.0, w/h, 0.01, kMaxDistance);
-    //    }else {
-    //prefs->renderDistance = 0.5;
     if (prefs->renderDistance == 0) {
         scale = 1.0;
     } else {
@@ -829,32 +898,20 @@ void resize(int wx, int hx, NII_PREFS* prefs)
 // display the final image on the screen
 void renderBufferToScreen (NII_PREFS* prefs)
 {
-    //glClearColor(1.0f, 0.1f, 0.0f, 1.0f );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glLoadIdentity();
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D,prefs->finalImage);
-    //use next line instead of previous to illustrate one-pass rendering
-    //glBindTexture(GL_TEXTURE_2D,prefs->backFaceBuffer);
-    //reshapeOrtho(prefs->renderLeft, prefs->renderBottom, prefs->renderWid, prefs->renderHt);
-    //reshapeOrtho(prefs->renderLeft - prefs->scrnOffsetX, prefs->renderBottom - prefs->scrnOffsetY, prefs->renderWid, prefs->renderHt);
-    
-    
-    //reshapeOrtho(prefs->renderLeft, prefs->renderBottom, prefs->renderWid, prefs->renderHt);
     glViewport(prefs->scrnOffsetX+prefs->renderLeft, prefs->scrnOffsetY+prefs->renderBottom, prefs->renderWid, prefs->renderHt);
-    //glViewport(prefs->renderLeft, prefs->renderBottom, prefs->renderWid, prefs->renderHt);
-    
-    //glViewport(prefs->renderLeft+prefs->renderLeft, prefs->renderBottom-200,prefs->renderWid,prefs->renderHt);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, 1, 0, 1,-10, 10);//gluOrtho2D(0.0, 1.0, 0.0, 1.0);
-    //glOrtho(whratio*-0.5*scale,whratio*0.5*scale,-0.5*scale,0.5*scale, 0.01, kMaxDistance);
     glMatrixMode(GL_MODELVIEW);
-    
     drawUnitQuad();
     glDisable(GL_TEXTURE_2D);
 }
 
+#ifdef TWO_PASS
 // render the backface to the offscreen buffer backFaceBuffer
 void renderBackFace(NII_PREFS* prefs)
 {
@@ -867,6 +924,7 @@ void renderBackFace(NII_PREFS* prefs)
     drawQuads(1.0,1.0,1.0);
     glDisable(GL_CULL_FACE);
 }
+#endif
 
 float lerp (float p1, float p2, float frac)
 {
@@ -955,19 +1013,19 @@ void lightUniforms (NII_PREFS* prefs)
      // lMgl: array[0..15] of  GLfloat;
     //sph2cartDeg90x(0,80,1,&lX,&lY,&lZ);//0,80 are azimuth and elevation of light source
     sph2cartDeg90x(90,20,1,&lX,&lY,&lZ);//0,80 are azimuth and elevation of light source
-    if (true) { //gPrefs.RayCastViewCenteredLight
-        //Could be done in GLSL with following lines of code, but would be computed once per pixel, vs once per volume
-        //vec3 lightPosition =  normalize(gl_ModelViewMatrixInverse * vec4(lightPosition,0.0)).xyz ;
-        GLfloat lMgl[16];
-        float lB,lC;
-        glGetFloatv(GL_TRANSPOSE_MODELVIEW_MATRIX, lMgl);
-        lA = lY;
-        lB = lZ;
-        lC = lX;
-        lX = defuzz(lA*lMgl[0]+lB*lMgl[4]+lC*lMgl[8]);
-        lY = defuzz(lA*lMgl[1]+lB*lMgl[5]+lC*lMgl[9]);
-        lZ = defuzz(lA*lMgl[2]+lB*lMgl[6]+lC*lMgl[10]);
-    }
+    //Light position
+    //Could be done in GLSL with following lines of code
+    // but would be computed once per pixel, vs once per volume
+    //   vec3 lightPosition =  normalize(gl_ModelViewMatrixInverse * vec4(lightPosition,0.0)).xyz ;
+    GLfloat lMgl[16];
+    float lB,lC;
+    glGetFloatv(GL_TRANSPOSE_MODELVIEW_MATRIX, lMgl);
+    lA = lY;
+    lB = lZ;
+    lC = lX;
+    lX = defuzz(lA*lMgl[0]+lB*lMgl[4]+lC*lMgl[8]);
+    lY = defuzz(lA*lMgl[1]+lB*lMgl[5]+lC*lMgl[9]);
+    lZ = defuzz(lA*lMgl[2]+lB*lMgl[6]+lC*lMgl[10]);
     lA = sqrt(lX*lX+lY*lY+lZ*lZ);
     if (lA > 0.0) { //normalize
         lX = lX/lA;
@@ -989,68 +1047,15 @@ void clipUniforms (NII_PREFS* prefs)
     uniform1f( "clipPlaneDepth", lD, prefs);
 }
 
-/*void drawFrame(float x, float y, float z)
-//x,y,z typically 1.
-// useful for clipping
-// If x=0.5 then only left side of texture drawn
-// If y=0.5 then only posterior side of texture drawn
-// If z=0.5 then only inferior side of texture drawn
-{
-    glColor4f(1,1,1,1);
-    glBegin(GL_LINE_STRIP);
-    // Back side
-    drawVertex(0.0, 0.0, 0.0);
-    drawVertex(0.0, y, 0.0);
-    drawVertex(x, y, 0.0);
-    drawVertex(x, 0.0, 0.0);
-    glEnd();
-    glBegin(GL_LINE_STRIP);
-    // Front side
-    drawVertex(0.0, 0.0, z);
-    drawVertex(x, 0.0, z);
-    drawVertex(x, y, z);
-    drawVertex(0.0, y, z);
-    glEnd();
-    glBegin(GL_LINE_STRIP);
-    // Top side
-    drawVertex(0.0, y, 0.0);
-    drawVertex(0.0, y, z);
-    drawVertex(x, y, z);
-    drawVertex(x, y, 0.0);
-    glEnd();
-    glColor4f(0.2,0.2,0.2,0);
-    glBegin(GL_LINE_STRIP);
-    // Bottom side
-    drawVertex(0.0, 0.0, 0.0);
-    drawVertex(x, 0.0, 0.0);
-    drawVertex(x, 0.0, z);
-    drawVertex(0.0, 0.0, z);
-    glEnd();
-    glColor4f(0,1,0,0);
-    glBegin(GL_LINE_STRIP);
-    // Left side
-    drawVertex(0.0, 0.0, 0.0);
-    drawVertex(0.0, 0.0, z);
-    drawVertex(0.0, y, z);
-    drawVertex(0.0, y, 0.0);
-    glEnd();
-    glColor4f(1,0,0,0);
-    glBegin(GL_LINE_STRIP);
-    // Right side
-    drawVertex(x, 0.0, 0.0);
-    drawVertex(x, y, 0.0);
-    drawVertex(x, y, z);
-    drawVertex(x, 0.0, z);
-    glEnd();
-}*/
-
 void rayCasting (NII_PREFS* prefs) {
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, prefs->finalImage, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glUseProgram(prefs->glslprogramInt);
     // glUseProgramObjectARB(prefs->glslprogram);
+    #ifdef TWO_PASS
     glActiveTexture( GL_TEXTURE0 );
     glBindTexture(GL_TEXTURE_2D, prefs->backFaceBuffer);
+    #endif
     glActiveTexture( GL_TEXTURE1);
     #ifdef  MY_USE_ADVANCED_GLSL
     if (prefs->advancedRender) {
@@ -1099,8 +1104,6 @@ void MakeCube(float sz)
     float sz2;
     sz2 = sz;
     glColor4f(0.2,0.2,0.2,1);
-    //GLuint idx = glGenLists(1);
-    //glNewList(idx, GL_COMPILE);
     glBegin(GL_QUADS);
     // Bottom side
     glVertex3f(-sz, -sz, -sz2);
@@ -1148,18 +1151,12 @@ void MakeCube(float sz)
     glVertex3f(sz2, sz, sz);
     glVertex3f(sz2, -sz, sz);
     glEnd();
-    //glEndList();
-    //glCallList(idx);
-    //glDeleteLists(idx, 1);
 }
-
 
 void DrawCube (NII_PREFS* prefs)//Enter2D = reshapeGL
 {
     glDisable(GL_DEPTH_TEST);
-    //    glViewport(0, 0, width, height);
     glViewport(prefs->scrnOffsetX, prefs->scrnOffsetY, prefs->scrnWid, prefs->scrnHt);
-     
     glEnable(GL_CULL_FACE);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -1171,31 +1168,12 @@ void DrawCube (NII_PREFS* prefs)//Enter2D = reshapeGL
     float mx = prefs->renderWid;
     if (mx > prefs->renderHt) mx = prefs->renderWid;
     mx = mx *0.04f;
-    //glTranslatef(1.8*mx,1.8*mx,0.5);
     glTranslatef(prefs->renderLeft+ 1.8*mx,1.8*mx,0.5);
     glRotatef(90-prefs->renderElevation,-1,0,0);
     glRotatef(prefs->renderAzimuth,0,0,1);
     MakeCube(mx);
     glDisable(GL_CULL_FACE);
-
-    //glDisable(GL_DEPTH_TEST);
 }
-
-/*void DrawCube (NII_PREFS* prefs)
-{
-    glEnable(GL_CULL_FACE);
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity ();
-    glOrtho (0, prefs->renderWid,0, prefs->renderHt,-100,100);
-    glEnable(GL_DEPTH_TEST);
-    glDisable (GL_LIGHTING);
-    glDisable (GL_BLEND);
-    glTranslatef(36,36,0.5);
-    glRotatef(90-prefs->renderElevation,-1,0,0);
-    glRotatef(prefs->renderAzimuth,0,0,1);
-    MakeCube(20);
-    glDisable(GL_CULL_FACE);
-}*/
 
 int getMaxInt(int v1, int v2, int v3)
 {
@@ -1226,7 +1204,9 @@ void  createRender (NII_PREFS* prefs)  //InitGL
     initShaderWithFile(prefs);
     // Create the to FBO's one for the backside of the volumecube and one for the finalimage rendering
     glGenFramebuffersEXT(1, &prefs->frameBuffer);
+    #ifdef TWO_PASS
     glGenTextures(1, &prefs->backFaceBuffer);
+    #endif
     glGenTextures(1, &prefs->finalImage);
     glGenRenderbuffersEXT(1, &prefs->renderBuffer);
 }
@@ -1257,14 +1237,18 @@ void  setupRender (NII_PREFS* prefs)  //InitGL
 {
     // Load the vertex and fragment raycasting programs
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,prefs->frameBuffer);
+    #ifdef TWO_PASS
     glBindTexture(GL_TEXTURE_2D, prefs->backFaceBuffer);
+    #endif
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA16F_ARB, prefs->renderWid, prefs->renderHt, 0, GL_RGBA, GL_FLOAT, nil);
+    #ifdef TWO_PASS
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, prefs->backFaceBuffer, 0);
+    #endif
     glBindTexture(GL_TEXTURE_2D, prefs->finalImage);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1296,7 +1280,13 @@ void redrawRender (NII_PREFS* prefs)  //DisplayGL
     glRotatef(90-prefs->renderElevation,-1,0,0);
     glRotatef(prefs->renderAzimuth,0,0,1);
     glTranslatef(-prefs->TexScale[1]/2,-prefs->TexScale[2]/2,-prefs->TexScale[3]/2);
+    #ifdef TWO_PASS
     renderBackFace(prefs);
+    #else
+    glMatrixMode(GL_MODELVIEW);
+    glScalef(prefs->TexScale[1],prefs->TexScale[2],prefs->TexScale[3]);
+    drawQuads(1.0,1.0,1.0);
+    #endif
     rayCasting(prefs);
     glActiveTexture( GL_TEXTURE0 ); //this can be called in rayCasting, but MUST be called before 2D can be done
     disableRenderBuffers();
@@ -1311,7 +1301,6 @@ void redrawRender (NII_PREFS* prefs)  //DisplayGL
 
 void initTRayCast (NII_PREFS* prefs)
 {
-    prefs->perspective = FALSE;
     prefs->TexScale[1] = 1;
     prefs->TexScale[2] = 1;
     prefs->TexScale[3] = 1;
@@ -1337,8 +1326,12 @@ void initTRayCast (NII_PREFS* prefs)
     prefs->finalImage = 0;
     prefs->renderBuffer = 0;
     prefs->frameBuffer = 0;
+    #ifdef TWO_PASS
     prefs->backFaceBuffer = 0;
+    #endif
     prefs->renderLeft = 0;
     prefs->renderBottom = 0;
     prefs->displayModeGL = GL_2D_AND_3D; //options: GL_2D_AND_3D GL_2D_ONLY GL_3D_ONLY
 }//initTRayCast
+
+

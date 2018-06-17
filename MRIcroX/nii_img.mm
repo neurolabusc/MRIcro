@@ -2539,13 +2539,15 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
     enter2D(prefs->scrnWid,prefs->scrnHt, prefs->scrnOffsetX, prefs->scrnOffsetY);
     glDisable (GL_BLEND); //ignore Alpha for 2D slices...
     glEnable (GL_TEXTURE_3D);
-    #ifdef MY_SHOW_GRADIENTS //defined in nii_render.h
-    if (prefs->advancedRender)
-        glBindTexture(GL_TEXTURE_3D, prefs->gradientTexture3D);
-    else
+    #ifdef NII_IMG_RENDER
+        #ifdef MY_SHOW_GRADIENTS //defined in nii_render.h
+        if (prefs->advancedRender)
+            glBindTexture(GL_TEXTURE_3D, prefs->gradientTexture3D);
+        else
+            glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
+        #else
         glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
-    #else
-    glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
+        #endif
     #endif
     //glBindTexture(GL_TEXTURE_RECTANGLE_EXT, prefs->intensityTexture3D);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -2623,9 +2625,10 @@ double  defuzzz(double x) {
 
 -(void) mosaicPrepGL: (int) width Height:(int)height; {
     recalcGL(fslio, prefs);//2015 <- make sure we bind textures later
-    //doShaderBlurSobel (prefs);
+    #ifdef NII_IMG_RENDER
     prefs->glslUpdateGradientsBG = false;
     prefs->glslUpdateGradientsOverlay = false;
+    #endif
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2],0.5);
     glClear(GL_COLOR_BUFFER_BIT);
     //enter2D(width,height);
@@ -2918,15 +2921,13 @@ double  defuzzz(double x) {
     }
     //we will create 3D volumes specific for this context...
     GLuint intensityOverlay3D = prefs->intensityOverlay3D;
-    GLuint gradientOverlay3D = prefs->gradientOverlay3D;
     GLuint intensityTexture3D = prefs->intensityTexture3D;
+    GLuint gradientOverlay3D = prefs->gradientOverlay3D;
     GLuint gradientTexture3D = prefs->gradientTexture3D;
     prefs->intensityOverlay3D = 0;
     prefs->gradientOverlay3D = 0;
     prefs->intensityTexture3D = 0;
     prefs->gradientTexture3D = 0;
-
-
     //create the mosaic
     [self mosaicPrepGL:  width Height:height];
     [self redrawMosaic: mos];
@@ -3012,65 +3013,11 @@ double  defuzzz(double x) {
     return true;
 }
 
-
-
-/*int setZeros(FSLIO* fslio, NII_PREFS* prefs) {
-    if (fslio->niftiptr->datatype != SCALED_IMGDATA_TYPE) return EXIT_FAILURE;
-    if (prefs->fullMin <= -1000) return EXIT_FAILURE; //not for Hounsfield units
-    if ((prefs->fullMin >= 0) || (prefs->fullMax < 0)) return EXIT_FAILURE; //only for images with positive and negative values
-    long len3d = (long)  prefs->numVox3D;
-    if ( len3d < 1) return EXIT_FAILURE;
-    size_t volOffset = prefs->currentVolume;
-    if ((volOffset < 1) || (volOffset > prefs->numVolumes))
-        volOffset = 1;
-    volOffset = prefs->numVox3D * (volOffset-1);
-    SCALED_IMGDATA *img = (SCALED_IMGDATA *)fslio->niftiptr->data;
-    //make sure a reasonable proportion of data is zero
-    long nZero = 0;
-    for (long vx = 0; vx < len3d; vx++)
-        if (img[volOffset+vx] == 0) nZero ++;
-    if (nZero < (len3d >> 4)) return EXIT_FAILURE; //at least 6.25% of voxels must be zero 1/(2^4) = 1/16
-    //allocate mask memory
-    SCALED_IMGDATA mn = prefs->fullMin;
-    SCALED_IMGDATA *mask = (SCALED_IMGDATA *) malloc((size_t) len3d * sizeof(SCALED_IMGDATA));
-    SCALED_IMGDATA *mask2 = (SCALED_IMGDATA *) malloc((size_t) len3d * sizeof(SCALED_IMGDATA));
-    //create mask
-    for (long vx = 0; vx < len3d; vx++)
-        mask[vx] = img[volOffset+vx];
-    //dilate mask
-    long dx = 1;
-    for (long vx = 0; vx < dx; vx++)
-        mask2[vx] = 0;
-    for (long vx = dx; vx < len3d; vx++)
-        mask2[vx] = mask[vx-dx]; //left
-    for (long vx = 0; vx < (len3d-dx); vx++)
-        mask2[vx] += mask[vx+dx]; //right
-    dx = prefs->voxelDim[1];
-    for (long vx = dx; vx < len3d; vx++)
-        mask2[vx] += mask[vx-dx]; //anterior
-    for (long vx = 0; vx < (len3d-dx); vx++)
-        mask2[vx] += mask[vx+dx]; //posterior
-    dx = prefs->voxelDim[1]*prefs->voxelDim[2];
-    for (long vx = dx; vx < len3d; vx++)
-        mask2[vx] += mask[vx-dx]; //below
-    for (long vx = 0; vx < (len3d-dx); vx++)
-        mask2[vx] += mask[vx+dx]; //above
-    //apply mask
-    for (long vx = 0; vx < len3d; vx++)
-        if (mask2[vx] == 0.0)
-            img[volOffset+vx] = mn;
-    //release mask
-    free(mask);
-    free(mask2);
-    return EXIT_SUCCESS;
-} //setZeros */
-
 -(bool) removeHaze{
     if (prefs->numVox3D < 2) return FALSE; //only for volumes
     //if (prefs->numVolumes > 1) return FALSE; //only for 3D data - not 4D
     if (fslio->niftiptr->datatype == DT_RGBA32) return FALSE; //not for RGB data
     if (prefs->numVox3D != (prefs->voxelDim[1]*prefs->voxelDim[2]*prefs->voxelDim[3])) NSLog(@"Haze: We have a problem");
-    //setZeros(fslio, prefs); // <- this was only for float images
     THIS_UINT8 *mask8bit = (THIS_UINT8 *) malloc(prefs->numVox3D);
     size_t volOffset = prefs->currentVolume;
     if ((volOffset < 1) || (volOffset > prefs->numVolumes))
@@ -3679,44 +3626,6 @@ void closeOverlays (NII_PREFS* prefs)
 -(int)  setLoadImage: (NSString *) file_name;
 {
     return [self setLoadImage2: file_name IsOverlay: false];
-
-/*
-    if (![self checkSandAccess2: file_name]) return EXIT_FAILURE;
-    [self freePrefs];
-     //fslio = FslInit();
-    prefs->busyGL = TRUE;
-    //strcpy( prefs->nii_prefs_fname, "" );//called in nii_setup
-    //prefs->nii_prefs_fname ="";
-    //if ([file_name isEqualToString:@""]) return setLoadDummy(fslio, prefs);
-    if (([file_name length] < 1) || ([@"~" isEqualToString: file_name]) )
-        return setLoadDummy(fslio, prefs);
-    if (![[NSFileManager defaultManager] fileExistsAtPath:file_name]) {
-        NSLog(@"Unable to find file : %@",file_name);
-        return setLoadDummy(fslio, prefs);
-    }
-    char fname[ [file_name length]+1];
-    [file_name getCString:fname maxLength:sizeof(fname)/sizeof(*fname) encoding:NSUTF8StringEncoding];
-    int maxVols = INT_MAX;
-    if (prefs->loadFewVolumes) maxVols = 32;
-    if (prefs->loadOverlay) maxVols = 1;
-    void *buffer = FslReadAllVolumes(fslio,fname,maxVols, prefs->dicomWarn);
-    if (buffer == NULL) {
-        fprintf(stderr, "Error opening and reading %s.\n",fname);
-        return setLoadDummy(fslio, prefs);
-    }
-    nii_setup(fslio, prefs);
-    NSString* theFileName = [[file_name lastPathComponent] stringByDeletingPathExtension];
-    if ([[theFileName pathExtension] rangeOfString:@"NII" options:NSCaseInsensitiveSearch].location != NSNotFound)
-        theFileName = [theFileName stringByDeletingPathExtension]; //remove both .nii and .gz from .nii.gz
-
-    [self setLoadBVec: file_name];
-    strcpy( prefs->nii_prefs_fname, [theFileName UTF8String] );
-    if ( (fslio->niftiptr->intent_code == NIFTI_INTENT_LABEL) && (fslio->niftiptr->iname_offset >400)
-        && ( (fslio->niftiptr->iname_offset % 16) == 0))
-        readLabels (file_name, 352, round(fslio->niftiptr->iname_offset-352), labelArray);
-    //prefs->nii_prefs_fname = theFileName;//[[file_name lastPathComponent] stringByDeletingPathExtension];//666 file_name;
-    prefs->busyGL = FALSE;
-    return EXIT_SUCCESS;*/
 }
 
 -(FSLIO *) getFSLIO;
@@ -3831,7 +3740,6 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->xBarGap = 3;
         prefs->overlayFrac = 0.5;
         prefs->colorBarBorderPx = 2; // 1/2%
-
         //x prefs->colorBarBorder = 0.002; // 1/2%
         prefs->busyGL = FALSE; //prepared for drawing
         prefs->updatedTimeline = FALSE;
@@ -3844,7 +3752,6 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->advancedRender = false;
         prefs->loadFewVolumes = true;
         prefs->viewRadiological = false;
-
         for (int i = 0; i < MAX_OVERLAY; i++) prefs->overlays[i].datatype = DT_NONE; //all slots empty
         #ifdef NII_IMG_RENDER
         initTRayCast(prefs);

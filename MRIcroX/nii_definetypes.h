@@ -76,19 +76,20 @@ extern "C" {
         float overlayFrac; //, colorBarBorder;
         int colorBarBorderPx;
         NII_OVERLAY overlays[MAX_OVERLAY];
+        GLuint intensityOverlay3D, intensityTexture3D;
         #ifdef NII_IMG_RENDER //from nii_definetypes.h
-        GLuint glslprogramInt, renderBuffer, frameBuffer,backFaceBuffer, finalImage,intensityOverlay3D, gradientOverlay3D,intensityTexture3D, gradientTexture3D; //, transferTexture1;
-        float TexScale[4], lut_bias;
-        //GLhandleARB glslprogram;
-        //GLhandleARB glslprogramBlur;
+        GLuint backFaceBuffer; //backFace only used in 2Pass
+        GLuint glslprogramInt, renderBuffer, frameBuffer, finalImage, gradientOverlay3D, gradientTexture3D;
+        float TexScale[4];
         GLuint glslprogramIntBlur;
-        //GLhandleARB glslprogramSobel;
         GLuint glslprogramIntSobel;
         bool glslUpdateGradientsBG, glslUpdateGradientsOverlay;
-        float renderDistance;
-        int renderAzimuth, renderElevation, renderSlices, clipAzimuth,clipElevation,clipDepth, rayCastQuality1to10, renderWid, renderHt, renderLeft, renderBottom, displayModeGL;
-        bool showCube, perspective, rayCastViewCenteredLight;
+        int renderAzimuth, renderElevation, renderSlices, renderWid, renderHt, renderLeft, renderBottom;
         #endif
+        float renderDistance;
+        int rayCastQuality1to10,  clipDepth, clipAzimuth, clipElevation, displayModeGL;
+        float lut_bias;
+        bool showCube;
         int numDtiV;
         float dtiV[MAX_DTIvectors][3];
         float histo[MAX_HISTO_BINS];
