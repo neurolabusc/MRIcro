@@ -165,6 +165,10 @@ Since DICOM images are inherently limited to 2gb, dcm2niix will keep using v1.15
 #ifndef MINIZ_HEADER_INCLUDED
 #define MINIZ_HEADER_INCLUDED
 
+//silence warning https://github.com/richgel999/miniz/issues/91
+#pragma clang diagnostic ignored "-Wcomma"
+
+
 #include <stdlib.h>
 
 // Defines to completely disable specific portions of miniz.c:

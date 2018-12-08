@@ -218,7 +218,8 @@
 NSArray * niiFileTypes () {
     NSArray *fileTypes = [NSArray arrayWithObjects:
                           @"dcm", @"nii", @"MAT",@"NII",@"hdr", @"HDR",  @"GZ", @"gz",@"voi", @"MGH", @"mgh",  @"MGZ", @"mgz", @"MHA", @"mha",  @"MHD", @"mhd",@"HEAD", @"head", @"nrrd", @"nhdr", nil];
-    fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageFileTypes]];
+    //fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageFileTypes]];
+    fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageTypes]];
     return fileTypes;
 }
 
@@ -244,8 +245,10 @@ NSArray * niiFileTypes () {
     [openPanel setAllowedFileTypes:fileTypes];*/
     [openPanel setAllowedFileTypes:niiFileTypes()];
     
+    
+    
     NSInteger result    = [openPanel runModal];
-    if(result != NSOKButton) return;
+    if(result != NSModalResponseOK) return;
     //if (![self checkSandAccess: [[openPanel URL] path]]) return;
     [self openOverlayFromFileNameGL:[[openPanel URL] path]];
     [self drawFrame];
@@ -473,7 +476,7 @@ NSArray * niiFileTypes () {
     [savePanel setNameFieldStringValue:@""];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:NSHomeDirectory() ]];
     NSInteger user_choice =  [savePanel runModal];
-    if(NSOKButton == user_choice)
+    if(NSModalResponseOK == user_choice)
         [self saveScreenshotFromFileName:[[savePanel URL] path]];
 }
 

@@ -255,10 +255,19 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
         return;
     }
     if (niiTimeline.bounds.size.height < 2) {
-        NSBeginAlertSheet(@"Error", @"OK",NULL,NULL,theWindow, self,
+        /*NSBeginAlertSheet(@"Error", @"OK",NULL,NULL,theWindow, self,
                           NULL, NULL, NULL,
                           @"%@", @"You must display the timeline before saving to disk (pull the split panel at the bottom of the window).");
-        ;
+        ;*/
+        NSString *str = [NSString stringWithFormat:@"You must display the timeline before saving to disk (pull the split panel at the bottom of the window)."];
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Insufficient video memory"];
+        [alert setInformativeText:str];
+        [alert addButtonWithTitle:@"OK"];
+        [[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+        [alert runModal];
+
+        
         NSView* upperView = [[theSplitter subviews] objectAtIndex:0];
         if (upperView.frame.size.height > 300)
             [theSplitter setPosition:upperView.frame.size.height-100 ofDividerAtIndex:0];
@@ -336,7 +345,7 @@ bool containsString (NSString *string, NSString *substring) {
     if( iflags == NSCommandKeyMask ){
         NSLog(@"xxxxx");
     }*/
-    
+    NSLog(@"Perform drag");
     
     //NSUInteger iflags = [NSEvent modifierFlags] & NSDeviceIndependentModifierFlagsMask;
     //bool specialKeys = (iflags == NSControlKeyMask);
@@ -357,8 +366,8 @@ bool containsString (NSString *string, NSString *substring) {
                 || containsString(ext, @"DCM")) {*/
             [self stopEverything];
             [niiGL openDocumentFromFileNameGL:  [files objectAtIndex:0]];
-            /*NSLog(@"MAT --->%@", ext);
-            NSString *ext = [[[files objectAtIndex:0] pathExtension] uppercaseString];
+            NSLog(@"drag %@", [files objectAtIndex:0]);
+            /*NSString *ext = [[[files objectAtIndex:0] pathExtension] uppercaseString];
             if (containsString(ext, @"MAT")) {
                 NSLog(@"MAT --->%d", specialKeys);
                 //[[NSUserDefaults standardUserDefaults] setObject:tagModality  forKey:@"matlabBackground"];
@@ -401,14 +410,19 @@ bool containsString (NSString *string, NSString *substring) {
     //[theWindow setContentMinSize : NSMakeSize(10.0, 10.0)];
 }
 
+
+
 - (void)windowWillClose:(NSNotification *)notification {
     [self stopTimer];
     [niiGL deallocGL];
     //NSLog(@"windowWillClose %d\n", (int)[ [[NSApp sharedApplication] window] count]);
     //[ [[NSApplication sharedApplication] delegate] ]
     //[windowArray removeObjectIdenticalTo: self  ];
-    //2018 MRIcroXAppDelegate *delegate = [NSApp delegate];
-    //2018 [delegate windowWillCloseX:self];
+    //MRIcroXAppDelegate *delegate = [self delegate];
+    //MRIcroXAppDelegate *delegate = [NSApp delegate];
+    //MRIcroXAppDelegate *delegate = [NSApp delegate];
+    MRIcroXAppDelegate *delegate = (MRIcroXAppDelegate*)[NSApp delegate];
+    [delegate windowWillCloseX:self];
 }
 
 - (IBAction) changeBackgroundColor: (id) sender {

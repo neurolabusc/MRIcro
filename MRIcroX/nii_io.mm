@@ -1,6 +1,7 @@
 #include "nii_foreignx.h"
 #include "nii_io.h"
 #include "nifti1.h"
+#include "nifti2.h"
 #import "nifti1_io_core.h"
 #include <stdio.h>
 #import <Foundation/Foundation.h>
@@ -69,7 +70,6 @@ int nifti_short_order(void)   // determine this CPU's byte order
 }
 
 #define REVERSE_ORDER(x) (3-(x))    // convert MSB_FIRST <--> LSB_FIRST
-
 
 void swap_nifti2_header( struct nifti_2_header *h ){
     //https://nifti.nimh.nih.gov/pub/dist/src/nifti2/nifti2_io.c

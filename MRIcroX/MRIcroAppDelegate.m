@@ -15,7 +15,6 @@
 @synthesize yokeMenu;
 @synthesize importMenu;
 
-
 -(NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender
 {
 #ifndef STRIP_DCM2NII // /BuildSettings/PreprocessorMacros/STRIP_DCM2NII
@@ -46,8 +45,6 @@
     [windowArray removeObjectIdenticalTo: sender  ];
 }
 
-
-
 -(void) openImageInActiveWindowIfPossible:(NSString *)file
 {
     //NSLog(@"AppDel openImageInActiveWindowIfPossible %@", file);
@@ -65,13 +62,12 @@
             [[ windowArray  objectAtIndex: i] openDocumentFromFileName: file ];//self was sender
             return;
         }
-    [[ windowArray  objectAtIndex: 0] openDocumentFromFileName: file ];//none of the windows was key -send to first
+        [[ windowArray  objectAtIndex: 0] openDocumentFromFileName: file ];//none of the windows was key -send to first
 }
 
 - (BOOL)processFile:(NSString *)file
 { //load named document - e.g. drag and drop
     //NSLog(@"AppDel processFile %@", file);
-    
     BOOL isDir;
     if ([[NSFileManager defaultManager] fileExistsAtPath:file isDirectory:&isDir]) {
         if (isDir) return NO; //file exists but is directory
@@ -82,10 +78,8 @@
     //[self createNewDocument: self];
     return  YES; //success!
 }
-
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
 { //load named document
-    //NSLog(@"AppDel openFile");
     return [self processFile:filename];
 }
 
@@ -172,22 +166,6 @@
 }
 
 - (NSColor *)colorForKey:(NSString *)key {
-    //xxx setFloat
-    
-    
-    
-    //NSData  *data = [[NSUserDefaults standardUserDefaults] objectForKey:key];
-    //return (NSColor *)[NSKeyedUnarchiver unarchiveObjectWithData: data];
-    
-    //return [NSKeyedUnarchiver unarchiveObjectWithData:data];
-    //return [NSColor blackColor];
-    //NSData *colorData = [[NSUserDefaults standardUserDefaults] objectForKey:key];
-    //if (colorData == nil) return [NSColor blackColor];
-    
-    //return [NSKeyedUnarchiver unarchiveObjectWithData:colorData];
-    
-    //2018
-    
     NSData  *data = [[NSUserDefaults standardUserDefaults] objectForKey:key];
     if (data == nil)
         return nil;

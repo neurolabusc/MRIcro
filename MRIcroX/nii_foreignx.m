@@ -1435,6 +1435,114 @@ int nii_readEcat7(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndi
     return EXIT_SUCCESS;
 }
 
+int  nii_readhnd(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndian) {
+    //https://github.com/SimonRit/RTK/blob/907b0f55e26d16364500816aceac69f484b70c07/src/rtkHndImageIO.cxx
+    /*=========================================================================
+     *
+     *  Copyright RTK Consortium
+     *
+     *  Licensed under the Apache License, Version 2.0 (the "License");
+     *  you may not use this file except in compliance with the License.
+     *  You may obtain a copy of the License at
+     *
+     *         http://www.apache.org/licenses/LICENSE-2.0.txt
+     *
+     *  Unless required by applicable law or agreed to in writing, software
+     *  distributed under the License is distributed on an "AS IS" BASIS,
+     *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     *  See the License for the specific language governing permissions and
+     *  limitations under the License.
+     *
+     *=========================================================================*/
+    typedef struct __attribute__((packed)) {
+        char sFileType[32];
+        unsigned int FileLength;
+        char sChecksumSpec[4];
+        unsigned int nCheckSum;
+        char sCreationDate[8];
+        char sCreationTime[8];
+        char sPatientID[16];
+        unsigned int nPatientSer;
+        char sSeriesID[16];
+        unsigned int nSeriesSer;
+        char sSliceID[16];
+        unsigned int nSliceSer;
+        unsigned int SizeX;
+        unsigned int SizeY;
+        double dSliceZPos;
+        char sModality[16];
+        unsigned int nWindow;
+        unsigned int nLevel;
+        unsigned int nPixelOffset;
+        char sImageType[4];
+        double dGantryRtn;
+        double dSAD;
+        double dSFD;
+        double dCollX1;
+        double dCollX2;
+        double dCollY1;
+        double dCollY2;
+        double dCollRtn;
+        double dFieldX;
+        double dFieldY;
+        double dBladeX1;
+        double dBladeX2;
+        double dBladeY1;
+        double dBladeY2;
+        double dIDUPosLng;
+        double dIDUPosLat;
+        double dIDUPosVrt;
+        double dIDUPosRtn;
+        double dPatientSupportAngle;
+        double dTableTopEccentricAngle;
+        double dCouchVrt;
+        double dCouchLng;
+        double dCouchLat;
+        double dIDUResolutionX;
+        double dIDUResolutionY;
+        double dImageResolutionX;
+        double dImageResolutionY;
+        double dEnergy;
+        double dDoseRate;
+        double dXRayKV;
+        double dXRayMA;
+        double dMetersetExposure;
+        double dAcqAdjustment;
+        double dCTProjectionAngle;
+        double dCTNormChamber;
+        double dGatingTimeTag;
+        double dGating4DInfoX;
+        double dGating4DInfoY;
+        double dGating4DInfoZ;
+        double dGating4DInfoTime;
+    } Hnd_header;
+    size_t n;
+    FILE *f;
+    * swapEndian = false; //ALWAYS little endian
+    Hnd_header hhdr;
+    f = fopen([fname fileSystemRepresentation], "rb");
+    if (f)
+        n = fread(&hhdr, sizeof(hhdr), 1, f);
+    if(!f || n!=1) {
+        printf("Problem reading HND file!\n");
+        fclose(f);
+        return EXIT_FAILURE;
+    }
+    nhdr->dim[0]=3;//3D
+    nhdr->dim[1]=hhdr.SizeX;
+    nhdr->dim[2]=hhdr.SizeY;
+    nhdr->dim[3]=1;
+    nhdr->dim[4]=1;
+    nhdr->pixdim[1]=hhdr.dIDUResolutionX;
+    nhdr->pixdim[2]=hhdr.dIDUResolutionY;
+    nhdr->pixdim[3]=1.0;
+    nhdr->datatype = DT_UINT32;
+    //SetOrigin(0, -0.5*(hnd.SizeX-1)*hnd.dIDUResolutionX); //SR: assumed centered
+    //SetOrigin(1, -0.5*(hnd.SizeY-1)*hnd.dIDUResolutionY); //SR: assumed centered
+    //Has a simple but unusual compression - 2D slices, there are better tools for this!
+    NSLog(@"Please decompress hnd image with RTK (Reconstruction Toolkit) pix %d*%d mm %g*%g @ %g\n",hhdr.SizeX,hhdr.SizeY, hhdr.dIDUResolutionX, hhdr.dIDUResolutionY, hhdr.dSliceZPos );
+    return EXIT_FAILURE;
+}
 
 int nii_readpic(NSString * fname, struct nifti_1_header *nhdr, bool * swapEndian) {
     //https://github.com/jefferis/pic2nifti/blob/master/libpic2nifti.c
@@ -2489,6 +2597,8 @@ unsigned char * nii_readForeignx(NSString * fname, struct nifti_1_header *niiHdr
         OK = nii_readEcat7(fname, niiHdr, &swapEndian);
     else if ([ext rangeOfString:@"DV" options:NSCaseInsensitiveSearch].location != NSNotFound)
         OK = nii_readDeltaVision(fname, niiHdr, &swapEndian);
+    else if ([ext rangeOfString:@"HND" options:NSCaseInsensitiveSearch].location != NSNotFound)
+        OK = nii_readhnd(fname, niiHdr, &swapEndian);
     else if ([ext rangeOfString:@"PIC" options:NSCaseInsensitiveSearch].location != NSNotFound)
         OK = nii_readpic(fname, niiHdr, &swapEndian);
     else if (([ext rangeOfString:@"MHA" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([ext rangeOfString:@"MHD" options:NSCaseInsensitiveSearch].location != NSNotFound))
