@@ -603,8 +603,6 @@ int nii_unify_datatype(FSLIO* fslio)
         fslio->niftiptr->scl_slope = 1.0;
         fslio->niftiptr->scl_inter = 0.0;
     }
-
-
     if ( fslio->niftiptr->datatype == NIFTI_TYPE_FLOAT32) {
         ZeroNaN32(fslio->niftiptr->data, fslio->niftiptr->nvox);
         clipInf32(fslio->niftiptr->data, fslio->niftiptr->nvox);
@@ -645,7 +643,7 @@ int nii_unify_datatype(FSLIO* fslio)
         return EXIT_SUCCESS;
     }
     #endif
-    
+
     //rescale image
     float slope = fslio->niftiptr->scl_slope;
     float inter = fslio->niftiptr->scl_inter;
@@ -1396,9 +1394,9 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
     [self magnifyRender : -delta];
 }
 
--(bool) setScrollWheel:  (float) x Y: (float) delta;
+-(bool) setScrollWheel:  (float) x Y: (float) delta mouseX: (float) mx mouseY: (float) my;
 {
-    //NSLog(@" scroll %d",  delta);
+    
     if ((x == 0) && (delta == 0)) return false; //nothing to do
     int deltaDx = 1;
     if (delta < 0) deltaDx = -1;
@@ -1419,7 +1417,18 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
     int numOverlay = 0;
     for (int i = 0; i < MAX_OVERLAY; i++)
         if (prefs->overlays[i].datatype != DT_NONE) numOverlay++; //filled slot
-    int sect = sectionNumber(prefs->mouseX, prefs->mouseY, FALSE, prefs);
+    //int sect = sectionNumber(prefs->mouseX, prefs->mouseY, FALSE, prefs);
+    int sect = sectionNumber(mx, my, FALSE, prefs);
+    if ((numOverlay == 0) && (sect >= 1) && (sect <= 3)) {
+        if (sect == 2) //AXIAL
+            [self  changeXYZvoxel:0 Y: 0 Z: deltaDx];
+        if (sect == 3) //CORONAL
+            [self  changeXYZvoxel:0 Y: deltaDx Z: 0];
+        if (sect == 1) //SAGITTAL
+            [self  changeXYZvoxel:deltaDx Y: 0 Z: 0];
+        return true;
+    }
+    //NSLog(@" scroll %g mouse %g %g -> %d",  delta, mx, my, sect);
     if ((sect <1) || (sect >3) || ((prefs->numVolumes < 2) == (numOverlay == 0))) //not on one of the canonical slices - adjust rendering
     {
         [self changeClipPlane: x Y: delta];
@@ -2030,12 +2039,10 @@ void fix_sform (FSLIO* fslio)
 }
 
 void nii_setOrthoFSL (FSLIO* f){
-
     if (f->niftiptr->sform_code == NIFTI_XFORM_UNKNOWN) {
         return;
     }
     if (isMat44Canonical( f->niftiptr->sto_xyz)) {
-        //NSLog( @" already canonical");
         return;
     }
     //copy fsl header to nifti header

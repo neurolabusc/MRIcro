@@ -698,7 +698,10 @@ NSArray * niiFileTypes () {
 - (void)scrollWheel:(NSEvent *)event
 {
     if ((event.deltaY == 0) && (event.deltaX == 0)) return;
-    if ([gNiiImg setScrollWheel: event.deltaX Y: event.deltaY]) [self drawFrame];
+    NSPoint location = [self convertPointX:[event locationInWindow] fromView:nil];
+    
+    //NSLog(@" scrollWheel %g %g",  location.x, location.y);
+    if ([gNiiImg setScrollWheel: event.deltaX Y: event.deltaY mouseX: location.x mouseY: location.y]) [self drawFrame];
 }
 
 - (void) rotateWithEvent:(NSEvent *)event;

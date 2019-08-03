@@ -85,7 +85,7 @@ void showHelp(const char * argv[], struct TDCMopts opts) {
     #else
      #define kQstr ""
     #endif
-    printf("  -f : filename (%%a=antenna  (coil) number, %%b=basename, %%c=comments, %%d=description, %%e=echo number, %%f=folder name, %%i=ID of patient, %%j=seriesInstanceUID, %%k=studyInstanceUID, %%m=manufacturer, %%n=name of patient, %%p=protocol,%s %%r=instance number, %%s=series number, %%t=time, %%u=acquisition number, %%v=vendor, %%x=study ID; %%z=sequence name; default '%s')\n", kQstr, opts.filename);
+    printf("  -f : filename (%%a=antenna (coil) name, %%b=basename, %%c=comments, %%d=description, %%e=echo number, %%f=folder name, %%i=ID of patient, %%j=seriesInstanceUID, %%k=studyInstanceUID, %%m=manufacturer, %%n=name of patient, %%p=protocol,%s %%r=instance number, %%s=series number, %%t=time, %%u=acquisition number, %%v=vendor, %%x=study ID; %%z=sequence name; default '%s')\n", kQstr, opts.filename);
     printf("  -g : generate defaults file (y/n/o/i [o=only: reset and write defaults; i=ignore: reset defaults], default n)\n");
     printf("  -h : show help\n");
     printf("  -i : ignore derived, localizer and 2D images (y/n, default n)\n");
@@ -108,14 +108,14 @@ void showHelp(const char * argv[], struct TDCMopts opts) {
     if (opts.isGz) gzCh = 'y';
     #ifdef myDisableZLib
 		if (strlen(opts.pigzname) > 0)
-			printf("  -z : gz compress images (y/n/3, default %c) [y=pigz, n=no, 3=no,3D]\n", gzCh);
+			printf("  -z : gz compress images (y/n/3, default %c) [y=pigz, o=optimal pigz, n=no, 3=no,3D]\n", gzCh);
 		else
-			printf("  -z : gz compress images (y/n/3, default %c)  [y=pigz(MISSING!), n=no, 3=no,3D]\n", gzCh);
+			printf("  -z : gz compress images (y/n/3, default %c)  [y=pigz(MISSING!), o=optimal(requires pigz), n=no, 3=no,3D]\n", gzCh);
     #else
     	#ifdef myDisableMiniZ
-    	printf("  -z : gz compress images (y/i/n/3, default %c) [y=pigz, i=internal:zlib, n=no, 3=no,3D]\n", gzCh);
+    	printf("  -z : gz compress images (y/i/n/3, default %c) [y=pigz, o=optimal pigz, i=internal:zlib, n=no, 3=no,3D]\n", gzCh);
 		#else
-		printf("  -z : gz compress images (y/i/n/3, default %c) [y=pigz, i=internal:miniz, n=no, 3=no,3D]\n", gzCh);
+		printf("  -z : gz compress images (y/i/n/3, default %c) [y=pigz, o=optimal pigz, i=internal:miniz, n=no, 3=no,3D]\n", gzCh);
 		#endif
     #endif
 
@@ -274,7 +274,7 @@ int main(int argc, const char * argv[])
                     isSaveIni = true;
                 if (((argv[i][0] == 'i') || (argv[i][0] == 'I')) && (!isResetDefaults)) {
                     isResetDefaults = true;
-                    printf("Defaults reset\n");
+                    printf("Defaults ignored\n");
                     setDefaultOpts(&opts, argv);
                     i = 0; //re-read all settings for this pass, e.g. "dcm2niix -f %p_%s -d o" should save filename as "%p_%s"
                 }
@@ -306,8 +306,11 @@ int main(int argc, const char * argv[])
                 if (invalidParam(i, argv)) return 0;
                 if ((argv[i][0] == 'n') || (argv[i][0] == 'N')  || (argv[i][0] == '0'))
                     opts.isForceStackSameSeries = false;
-                else
+                if ((argv[i][0] == 'y') || (argv[i][0] == 'Y')  || (argv[i][0] == '1'))
                     opts.isForceStackSameSeries = true;
+                if ((argv[i][0] == 'o') || (argv[i][0] == 'O'))
+                    opts.isForceStackDCE = false;
+
             } else if ((argv[i][1] == 'p') && ((i+1) < argc)) {
                 i++;
                 if (invalidParam(i, argv)) return 0;
@@ -380,6 +383,8 @@ int main(int argc, const char * argv[])
                     opts.isGz = false;
                 else
                     opts.isGz = true;
+                if (argv[i][0] == 'o')
+                    opts.isPipedGz = true; //pipe to pigz without saving uncompressed to disk
             } else if ((argv[i][1] == 'f') && ((i+1) < argc)) {
                 i++;
                 strcpy(opts.filename,argv[i]);

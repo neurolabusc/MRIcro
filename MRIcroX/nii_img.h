@@ -36,7 +36,9 @@
 -(bool) isBackgroundRGB;
 -(void) setMouseDown: (int) x Y: (int) y;
 //-(bool) setScrollWheel: (int) delta;
--(bool) setScrollWheel:  (float) x Y: (float) delta;
+//-(bool) setScrollWheel:  (float) x Y: (float) delta;
+-(bool) setScrollWheel:  (float) x Y: (float) delta mouseX: (float) mx mouseY: (float) my;
+
 -(void) changeClipDepth: (float) x;
 -(void) setMagnify: (float) delta;
 -(bool) magnifyRender: (float) delta;

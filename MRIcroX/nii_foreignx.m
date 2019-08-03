@@ -68,6 +68,8 @@ int THD_daxes_to_NIFTI(struct nifti_1_header *nhdr, vec3 xyzDelta, vec3 xyzOrigi
 }
 
 void clearNifti(struct nifti_1_header  *nhdr) {
+    nhdr->scl_inter = 0;
+    nhdr->scl_slope = 1;
     for (int i=1; i<8; i++)
         nhdr->dim[i] = 1;
 }
@@ -78,8 +80,8 @@ void convertForeignToNifti(struct nifti_1_header  *nhdr)
             nhdr->sform_code = NIFTI_XFORM_UNKNOWN;
     nhdr->qform_code = NIFTI_XFORM_UNKNOWN;
     nhdr->sizeof_hdr = 348; //used to signify header does not need to be byte-swapped
-    nhdr->scl_inter = 0;
-    nhdr->scl_slope = 1;
+    //nhdr->scl_inter = 0;
+    //nhdr->scl_slope = 1;
     nhdr->cal_max = -1;
     nhdr->cal_min = 0;
     nhdr->magic[0]='n';
@@ -398,7 +400,7 @@ AA.m[2][0]=a31 , AA.m[2][1]=a32 , AA.m[2][2]=a33  )
                 LOAD_MAT33(mat, transformMatrix[0],transformMatrix[1],transformMatrix[2],
                            transformMatrix[3],transformMatrix[4],transformMatrix[5],
                            transformMatrix[6],transformMatrix[7],transformMatrix[8]);
-            
+
         } else if ([array[0] rangeOfString:@"Offset" options:NSCaseInsensitiveSearch].location != NSNotFound) {
             if (nItems > 3) nItems = 3;
             nOffset = nItems;
@@ -430,7 +432,7 @@ AA.m[2][0]=a31 , AA.m[2][1]=a32 , AA.m[2][2]=a33  )
                 LOAD_MAT33(matOrient, transformMatrix[0],transformMatrix[1],transformMatrix[2],
                            transformMatrix[3],transformMatrix[4],transformMatrix[5],
                            transformMatrix[6],transformMatrix[7],transformMatrix[8]);
-            
+
         } else if ([array[0] rangeOfString:@"ElementSpacing" options:NSCaseInsensitiveSearch].location != NSNotFound) {
             if (nItems > 4) nItems = 4;
             for (int i=0; i<nItems; i++)
@@ -516,7 +518,7 @@ AA.m[2][0]=a31 , AA.m[2][1]=a32 , AA.m[2][2]=a33  )
         LOAD_MAT33(d, elementSpacing[0],0,0,
                    0,elementSpacing[1],0,
                    0,0,elementSpacing[2]);
-        
+
         if (matElements >= 9)
             t = nifti_mat33_mul( d, mat);
         else
@@ -550,7 +552,7 @@ AA.m[2][0]=a31 , AA.m[2][1]=a32 , AA.m[2][2]=a33  )
         //NSLog(@"ElementDataFile %@",*imgname);
         if (compressedDataSize < 1)
             *gzBytes = K_gzBytes_headeruncompressed;
-        
+
         else
             *gzBytes = compressedDataSize;
     }
@@ -818,7 +820,10 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
     long nonSpatialDim = -1;
     long headerSize = 0;
     bool detachedFile = false;
-    mat33 mat;//float transformMatrix[9] = { 1,0,0, 0,1,0, 0,0,1  };
+    double oldMin = 32767;
+    double oldMax = -32768;
+    
+    mat33 mat, rot33;//float transformMatrix[9] = { 1,0,0, 0,1,0, 0,0,1  };
     long matElements = 0;
     int  nItems;
     float offset[3];
@@ -835,6 +840,7 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
         NSLog(@"NRRD headers should start with the text 'NRRD'");
         return EXIT_FAILURE;
     }
+    LOAD_MAT33(rot33, -1,0,0, 0,-1,0, 0,0,1);
     do {
         if( fgets (str, kMaxStr, fp)==NULL )
             break;
@@ -855,6 +861,14 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
             if ([tagName rangeOfString:@"dimension" options:NSCaseInsensitiveSearch].location == 0) {
                 nDims = [[f numberFromString: array[0]] intValue];
                 //NSLog(@"dim  %ld",nDims);
+            } else if ([tagName rangeOfString:@"oldmin" options:NSCaseInsensitiveSearch].location == 0) {
+                    oldMin = [[f numberFromString: array[0]] floatValue];
+            } else if ([tagName rangeOfString:@"old min" options:NSCaseInsensitiveSearch].location == 0) {
+                oldMin = [[f numberFromString: array[0]] floatValue];
+            } else if ([tagName rangeOfString:@"oldmax" options:NSCaseInsensitiveSearch].location == 0) {
+                oldMax = [[f numberFromString: array[0]] floatValue];
+            } else if ([tagName rangeOfString:@"old max" options:NSCaseInsensitiveSearch].location == 0) {
+                oldMax = [[f numberFromString: array[0]] floatValue];
             } else if ([tagName rangeOfString:@"spacings" options:NSCaseInsensitiveSearch].location == 0) {
                 if (nItems > 6) nItems = 6;
                 for (int i=0; i<nItems; i++) {
@@ -912,7 +926,8 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                 else if (([array[0] caseInsensitiveCompare:@"unsigned"] == NSOrderedSame)
                          && (nItems > 1) && ([array[1] caseInsensitiveCompare:@"short"] == NSOrderedSame))
                     nhdr->datatype = DT_UINT16; //DT_UINT16
-
+                else if ([array[0] caseInsensitiveCompare:@"uint16"] == NSOrderedSame)
+                    nhdr->datatype = DT_UINT16; //DT_UINT16
                 else if (([array[0] caseInsensitiveCompare:@"unsigned"] == NSOrderedSame) &&
                          (nItems > 1) && ([array[1] caseInsensitiveCompare:@"int"] == NSOrderedSame))
                     nhdr->datatype = DT_INT32; //
@@ -990,7 +1005,7 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                     }
                     if ( [[NSFileManager defaultManager] fileExistsAtPath:fnm] )
                         *imgname = fnm;
-                    
+
                 }
                 //NSLog(@">>%@<<",*imgname);
                 if(([array[0] lastPathComponent].length == 4 ) && ([[array[0] lastPathComponent] rangeOfString:@"LIST" options:NSCaseInsensitiveSearch].location != NSNotFound) )  {
@@ -1005,9 +1020,15 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
                 }
                 //NSLog(@"Filename is %lu",(unsigned long)array.count);
                 detachedFile = true;
-            } /*else if ([tagName caseInsensitiveCompare:@"space"] == NSOrderedSame) {
+            } else if ([tagName caseInsensitiveCompare:@"space"] == NSOrderedSame) {
                NSLog(@"Space is %@", array[0]);
-               }*/
+            if (([array[0] rangeOfString:@"right-anterior-superior" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([array[0] rangeOfString:@"RAS" options:NSCaseInsensitiveSearch].location != NSNotFound))
+                LOAD_MAT33(rot33, 1,0,0, 0,1,0, 0,0,1); //native NIfTI, default identity transform
+             if (([array[0] rangeOfString:@"left-anterior-superior" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([array[0] rangeOfString:@"LAS" options:NSCaseInsensitiveSearch].location != NSNotFound))
+                    LOAD_MAT33(rot33, -1,0,0, 0,1,0, 0,0,1); //left-right swap relative to NIfTI
+                if (([array[0] rangeOfString:@"left-posterior-superior" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([array[0] rangeOfString:@"LPS" options:NSCaseInsensitiveSearch].location != NSNotFound))
+                    LOAD_MAT33(rot33, -1,0,0, 0,-1,0, 0,0,1); //left-right and anterior-posterior swap relative to NIfTI
+            }
         }
     } while (true);  //while ~readelementdatafile
     if ((headerSize == 0) && (!detachedFile)) headerSize = ftell (fp);
@@ -1024,20 +1045,39 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
         NSLog(@"This software is designed for 3D rather than 2D images like %@", fname);
     }
     if (matElements >= 9) {
-        //report_mat33(mat);
+        nhdr->sform_code = NIFTI_XFORM_SCANNER_ANAT;
+        //report_mat33(rot33);
+        if (rot33.m[0][0] < 0) offset[0] = -offset[0]; //origin L<->R
+        if (rot33.m[1][1] < 0) offset[1] = -offset[1]; //origin A<->P
+        if (rot33.m[2][2] < 0) offset[2] = -offset[2]; //origin S<->I
+
         // *mat33 t = nifti_mat33_mul( d, mat);
-        nhdr->srow_x[0]=-mat.m[0][0];
-        nhdr->srow_x[1]=-mat.m[1][0];
-        nhdr->srow_x[2]=-mat.m[2][0];
-        nhdr->srow_x[3]=-offset[0];
-        nhdr->srow_y[0]=-mat.m[0][1];
-        nhdr->srow_y[1]=-mat.m[1][1];
-        nhdr->srow_y[2]=-mat.m[2][1];
-        nhdr->srow_y[3]=-offset[1];
-        nhdr->srow_z[0]=mat.m[0][2];
-        nhdr->srow_z[1]=mat.m[1][2];
-        nhdr->srow_z[2]=mat.m[2][2];
-        nhdr->srow_z[3]=offset[2];
+        mat = nifti_mat33_mul( mat, rot33);
+        //mat33 t = nifti_mat33_mul( mat, rot33);
+/*        NSLog(@"t= [%g %g %g; %g %g %g; %g %g %g]",
+              t.m[0][0], t.m[0][1], t.m[0][2],
+              t.m[1][0], t.m[1][1], t.m[1][2],
+              t.m[2][0], t.m[2][1], t.m[2][2]
+              );*/
+
+        nhdr->srow_x[0] = mat.m[0][0];
+        nhdr->srow_x[1] = mat.m[1][0];
+        nhdr->srow_x[2] = mat.m[2][0];
+        nhdr->srow_x[3] = offset[0];
+        nhdr->srow_y[0] = mat.m[0][1];
+        nhdr->srow_y[1] = mat.m[1][1];
+        nhdr->srow_y[2] = mat.m[2][1];
+        nhdr->srow_y[3] = offset[1];
+        nhdr->srow_z[0] = mat.m[0][2];
+        nhdr->srow_z[1] = mat.m[1][2];
+        nhdr->srow_z[2] = mat.m[2][2];
+        nhdr->srow_z[3] = offset[2];
+        NSLog(@"t= [%g %g %g %g; %g %g %g %g; %g %g %g %g; 0 0 0 1]",
+              nhdr->srow_x[0], nhdr->srow_x[1], nhdr->srow_x[2], nhdr->srow_x[3],
+              nhdr->srow_y[0], nhdr->srow_y[1], nhdr->srow_y[2], nhdr->srow_y[3],
+              nhdr->srow_z[0], nhdr->srow_z[1], nhdr->srow_z[2], nhdr->srow_z[3]
+              );
+
         //warning: ITK does not generate a "spacings" tag - lets get this from the matrix...
         for (int dim=0; dim < 3; dim++) {
             float vSqr = 0.0f;
@@ -1060,6 +1100,21 @@ int nii_readnrrd(NSString * fname, NSString ** imgname, struct nifti_1_header *n
         nhdr->srow_z[3] = -nhdr->dim[3]/2;
     }
     convertForeignToNifti(nhdr);
+    if ((nhdr->datatype != DT_FLOAT32) && (nhdr->datatype != DT_FLOAT64) && (oldMax > oldMin)) {
+        double oldRange = oldMax - oldMin;
+        double dtMin = 0; //DT_UINT8, DT_RGB24, DT_UINT16
+        if (nhdr->datatype == DT_INT16) dtMin = -32768.0;
+        if (nhdr->datatype == DT_INT32) dtMin = -2147483648;
+        double dtMax = 255.00; //DT_UINT8, DT_RGB24
+        if (nhdr->datatype == DT_INT16) dtMax = 32767;
+        if (nhdr->datatype == DT_UINT16) dtMax = 65535.0;
+        if (nhdr->datatype == DT_INT32) dtMax = 2147483647.0;
+        double dtRange = dtMax - dtMin;
+        double dtScale = oldRange/dtRange;
+        nhdr->scl_slope = dtScale;
+        nhdr->scl_inter = oldMin - (dtMin*dtScale);
+        //NSLog(@"%g %g !!!!!", nhdr->scl_slope, nhdr->scl_inter);
+    }
     if (nonSpatialDim == 0) *isDimPermute2341 = true;
     if (nonSpatialDim > 0) NSLog(@"Warning non-numeric values in tag 'space directions'");
     /*NSLog(@"row_x = %g %g %g %g",nhdr->srow_x[0],nhdr->srow_x[1],nhdr->srow_x[2],nhdr->srow_x[3]);
@@ -1879,6 +1934,46 @@ unsigned char *  swapByteOrderX (unsigned char * img, struct nifti_1_header *nhd
     return img;
 }
 
+#define xincOut //does not matter if you increment by input or output....
+#ifdef incOut
+void dimPermute2341(struct nifti_1_header *nhdr, unsigned char *img) {
+    //slicer saves non-spatial dimension BEFORE spatial dimensions
+    //in Matlab: img = permute(img,[2 3 4 1]
+    size_t bpp = (nhdr->bitpix / 8); //bytes per pixel
+    if (bpp < 1) return;
+    size_t bytes4D = nhdr->dim[1]*nhdr->dim[2]*nhdr->dim[3]*nhdr->dim[4]*bpp;
+    size_t imgBytes = bytes4D;
+    nifti_1_header inhdr = *nhdr;
+    size_t tInc = 1; //first dimension
+    size_t xInc = inhdr.dim[1]; //2nd dimension
+    size_t yInc = inhdr.dim[2] * xInc;
+    size_t zInc = inhdr.dim[3] * yInc;
+    nhdr->dim[1] = inhdr.dim[2];
+    nhdr->dim[2] = inhdr.dim[3];
+    nhdr->dim[3] = inhdr.dim[4];
+    nhdr->dim[4] = inhdr.dim[1];
+    NSLog(@"xyzt = %d %d %d %d bpp= %zu", nhdr->dim[1], nhdr->dim[2],nhdr->dim[3], nhdr->dim[4], bpp);
+          
+    //NSLog(@"%d %d %d %d", nhdr->dim[1], nhdr->dim[2], nhdr->dim[3], nhdr->dim[4] );
+    //NSLog(@"%d %d %d %d", inhdr.dim[1], inhdr.dim[2], inhdr.dim[3], inhdr.dim[4] );
+    //See Slicer exmaples tensor.nrrd and tensor-mask.nrrd, the 4D files not only have dimensions permuted, but output X/Y also seem swapped
+    // Note the X/Y are also different in the SFOrm, so perhaps slicer ignores SForm. In any case, dimensions not consistent.
+    NSLog( @"Warning: swizzling dimensions. Please spatial orientation.");
+    THIS_UINT8 *inbuf = (THIS_UINT8 *) malloc(imgBytes);
+    memcpy(&inbuf[0], &img[0], imgBytes);
+    size_t outpos = 0;
+    for (int t = 0; t < nhdr->dim[4]; t++)
+        for (int z = 0; z < nhdr->dim[3]; z++) // <- changed for slicer compatibility
+            for (int y = 0; y < nhdr->dim[2]; y++) // <- changed for slicer compatibility
+                for (int x = 0; x < nhdr->dim[1]; x++){
+                    size_t inpos =  ((t*tInc)+(x*xInc)+(y*yInc)+(z*zInc) )* bpp;
+                    memcpy(&img[outpos], &inbuf[inpos], bpp);
+                    outpos += bpp;
+                }
+    free(inbuf);
+}
+
+#else
 void dimPermute2341(struct nifti_1_header *nhdr, unsigned char *img) {
     //slicer saves non-spatial dimension BEFORE spatial dimensions
     //in Matlab: img = permute(img,[2 3 4 1]
@@ -1902,10 +1997,8 @@ void dimPermute2341(struct nifti_1_header *nhdr, unsigned char *img) {
     memcpy(&inbuf[0], &img[0], imgBytes);
     size_t inpos = 0;
     for (int t = 0; t < inhdr.dim[4]; t++)
-        //for (int z = 0; z < inhdr.dim[3]; z++) // <- changed for slicer compatibility
-        for (int z = (inhdr.dim[3]-1); z >= 0; z--)
-            //for (int y = 0; y < inhdr.dim[2]; y++) // <- changed for slicer compatibility
-            for (int y = (inhdr.dim[2]-1); y >= 0; y--)
+        for (int z = 0; z < inhdr.dim[3]; z++) // <- changed for slicer compatibility
+            for (int y = 0; y < inhdr.dim[2]; y++) // <- changed for slicer compatibility
                 for (int x = 0; x < inhdr.dim[1]; x++){
                     size_t outpos = ( y + (z*outline) + (t*outslice) + (x*outvol)) * bpp;
                     memcpy(&img[outpos], &inbuf[inpos], bpp);
@@ -1913,6 +2006,7 @@ void dimPermute2341(struct nifti_1_header *nhdr, unsigned char *img) {
                 }
     free(inbuf);
 }
+#endif
 
 unsigned char * nii_readImg(NSString * imgname, struct nifti_1_header *nhdr, long gzBytes, bool swapEndian, int skipVol, int loadVol) {
     //load image data based on provided header
@@ -2615,8 +2709,11 @@ unsigned char * nii_readForeignx(NSString * fname, struct nifti_1_header *niiHdr
                 return 0;
             }
         }
-        //NSLog(@"%d %dx%dx%dx%d",niiHdr->sform_code, niiHdr->dim[1], niiHdr->dim[2], niiHdr->dim[3],  niiHdr->dim[4]);
-        unsigned char * img = nii_readImg(imgname, niiHdr, gzBytes, swapEndian, skipVol, loadVol);
+        unsigned char * img;
+        if (isDimPermute2341)
+            img = nii_readImg(imgname, niiHdr, gzBytes, swapEndian, skipVol, INT_MAX);
+        else
+            img = nii_readImg(imgname, niiHdr, gzBytes, swapEndian, skipVol, loadVol);
         if (isDimPermute2341) dimPermute2341(niiHdr, img);
         return img;
     }

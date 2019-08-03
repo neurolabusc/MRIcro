@@ -293,7 +293,7 @@
         if (img != NULL) {
             //NSLog(@"read %@", fname);
             const char * nf = [fname UTF8String];
-            nii_saveNII((char *) nf, niiHdr,img, opts);
+            nii_saveNIIx((char *) nf, niiHdr,img, opts);
             free(img);
         } //img loaded
     } //for each file
