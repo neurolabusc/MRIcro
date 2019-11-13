@@ -10,6 +10,7 @@
 #include "nii_io.h"
 #include "nii_definetypes.h"
 #import <OpenGL/glu.h>
+//#include <GLKit/GLKMatrix4.h>
 #import <Foundation/Foundation.h>
 
 GLuint initVertFrag(const char *vert, const char *frag)
@@ -196,6 +197,9 @@ void performBlurSobel(NII_PREFS* prefs, bool isOverlay) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluOrtho2D(0, 1, 0, 1);
+    //https://stackoverflow.com/questions/30361168/how-to-fix-my-deprecated-use-of-gluortho2d
+    //GLKMatrix4 orthoMat = GLKMatrix4MakeOrtho(0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+    //glLoadMatrix(orthoMat.m);
     glMatrixMode(GL_MODELVIEW);
     glDisable(GL_TEXTURE_2D);
     //STEP 1: run smooth program gradientTexture -> tempTex3D

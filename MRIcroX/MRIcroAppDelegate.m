@@ -279,7 +279,7 @@
     NSInteger isOKButton = [openDlg runModal];
     NSArray* files = [openDlg URLs];
     //NSString* outdir = @"";
-    if ((isOKButton != NSOKButton) || ([files count] < 1)) return;
+    if ((isOKButton != NSFileHandlingPanelOKButton) || ([files count] < 1)) return;
     for (int i = 0; i < files.count; i++){
         //NSLog(@"%lu", (unsigned long)files.count);
         //outdir = [[files objectAtIndex:0] path];
@@ -849,7 +849,7 @@
     NSInteger isOKButton = [openDlg runModal];
     NSArray* files = [openDlg URLs];
     NSString* outdir = @"";
-    if ((isOKButton == NSOKButton)  && ([files count] > 0))
+    if ((isOKButton == NSFileHandlingPanelOKButton)  && ([files count] > 0))
         outdir = [[files objectAtIndex:0] path];
     strcpy(opts.outdir, [outdir cStringUsingEncoding:1]);
     [self showPrefs];
@@ -906,7 +906,8 @@
         [openDlg setCanChooseFiles:NO];
         [openDlg setCanChooseDirectories:YES];
         [openDlg setPrompt:@"Select"];
-        if ([openDlg runModal] != NSOKButton ) return;
+        //CR2019 NSOKButton -> NSModalResponseOK https://github.com/google/google-api-objectivec-client/issues/76
+        if ([openDlg runModal] != NSModalResponseOK ) return;
         NSArray* files = [openDlg URLs];
         if ([files count] < 1) return;
         [self processDicomFile: [[files objectAtIndex:0] path] ];

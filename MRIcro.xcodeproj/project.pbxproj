@@ -71,6 +71,7 @@
 		4FCDFAEC18BCFD4700FB2F28 /* mricro.icns in Resources */ = {isa = PBXBuildFile; fileRef = 4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */; };
 		4FD0B0E518BEE67F0061FAD2 /* GLString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD0B0E418BEE67F0061FAD2 /* GLString.m */; };
 		4FD5883F1A9CE1A000D62F6A /* dcm2niiWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FE2EFC519E1C44900AA74C6 /* dcm2niiWindow.m */; };
+		83E45AB122F6EE030065DA40 /* libz.1.2.11.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 83E45AB022F6EE030065DA40 /* libz.1.2.11.tbd */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -142,6 +143,7 @@
 		4FE1562F1F38958600C33F3E /* print.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = print.h; sourceTree = "<group>"; };
 		4FE2EFC419E1C44900AA74C6 /* dcm2niiWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dcm2niiWindow.h; sourceTree = "<group>"; };
 		4FE2EFC519E1C44900AA74C6 /* dcm2niiWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = dcm2niiWindow.m; sourceTree = "<group>"; };
+		83E45AB022F6EE030065DA40 /* libz.1.2.11.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.1.2.11.tbd; path = usr/lib/libz.1.2.11.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +162,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83E45AB122F6EE030065DA40 /* libz.1.2.11.tbd in Frameworks */,
 				4F07BCC816160EE7000216B2 /* QuartzCore.framework in Frameworks */,
 				4F9A58B91609E963008ECBE2 /* OpenGL.framework in Frameworks */,
 				4F9A58971609E769008ECBE2 /* Cocoa.framework in Frameworks */,
@@ -193,6 +196,7 @@
 		4F9A58951609E769008ECBE2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				83E45AB022F6EE030065DA40 /* libz.1.2.11.tbd */,
 				4FBD92E120165A5600A240B1 /* libz.1.2.5.tbd */,
 				4F9A58B81609E963008ECBE2 /* OpenGL.framework */,
 				4F9A58961609E769008ECBE2 /* Cocoa.framework */,
@@ -327,12 +331,15 @@
 		4F9A58891609E769008ECBE2 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0730;
+				LastUpgradeCheck = 1030;
 				ORGANIZATIONNAME = "University of South Carolina";
 				TargetAttributes = {
 					4F12CE5B1A195DB000408A12 = {
 						DevelopmentTeam = 68BQDQS28R;
 						SystemCapabilities = {
+							com.apple.HardenedRuntime = {
+								enabled = 1;
+							};
 							com.apple.Sandbox = {
 								enabled = 0;
 							};
@@ -353,6 +360,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 4F9A58871609E769008ECBE2;
@@ -489,14 +497,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				CODE_SIGN_ENTITLEMENTS = MRIcro.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 68BQDQS28R;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_TEST_COVERAGE_FILES = NO;
@@ -505,6 +515,7 @@
 				GCC_PREFIX_HEADER = "MRIcroX/MRIcro-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					DEBUG,
+					myDisableOpenJPEG,
 					myDisableMiniZ,
 					"myErrorStdOut=1",
 				);
@@ -524,7 +535,7 @@
 					/usr/local/include,
 					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				OTHER_LDFLAGS = /usr/local/lib/libopenjp2.a;
 				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
 				PRODUCT_NAME = MRIcro;
@@ -537,26 +548,29 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				CODE_SIGN_ENTITLEMENTS = MRIcro.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_POSTPROCESSING = YES;
+				DEVELOPMENT_TEAM = 68BQDQS28R;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_TEST_COVERAGE_FILES = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MRIcroX/MRIcro-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					myDisableOpenJPEG,
 					myDisableMiniZ,
 					"myErrorStdOut=1",
 				);
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
 					myDisableMiniZ,
-					myErrorStdOut,
+					"myErrorStdOut=1",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -569,7 +583,7 @@
 					/usr/local/include/jasper,
 					/opt/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = /usr/local/lib/libopenjp2.a;
 				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
@@ -582,11 +596,22 @@
 		4F9A58AE1609E769008ECBE2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -612,11 +637,22 @@
 		4F9A58AF1609E769008ECBE2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -641,13 +677,13 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_OBJCPP_ARC_ABI = YES;
 				CODE_SIGN_ENTITLEMENTS = MRIcro.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 68BQDQS28R;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_TEST_COVERAGE_FILES = NO;
@@ -671,7 +707,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MRIcroX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				PRODUCT_BUNDLE_IDENTIFIER = mricro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
@@ -685,7 +721,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_OBJCPP_ARC_ABI = YES;
 				CODE_SIGN_ENTITLEMENTS = MRIcro.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -693,6 +728,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_POSTPROCESSING = YES;
+				DEVELOPMENT_TEAM = 68BQDQS28R;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_GENERATE_TEST_COVERAGE_FILES = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -708,7 +744,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MRIcroX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = mricro;
 				PRODUCT_NAME = MRIcro;

@@ -49,6 +49,7 @@
 #ifdef myEnableJasper
     #include <jasper/jasper.h>
 #endif
+#define myDisableOpenJPEG
 #ifndef myDisableOpenJPEG
     #include "openjpeg.h"
 

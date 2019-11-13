@@ -356,18 +356,18 @@ unsigned char *  nii_setOrtho(unsigned char* img, struct nifti_1_header *h) {
         #endif
         return img;
     }
-    bool is24 = false;
+    //bool is24 = false;
     if (h->bitpix == 24 ) { //RGB stored as planar data. treat as 3 8-bit slices
         return img;
-        is24 = true;
+        /*is24 = true;
         h->bitpix = 8;
-        h->dim[3] = h->dim[3] * 3;
+        h->dim[3] = h->dim[3] * 3;*/
     }
     img = reOrient(img, h,orientVec, orient, minMM);
-    if (is24 ) {
+    /*if (is24 ) {
         h->bitpix = 24;
         h->dim[3] = h->dim[3] / 3;
-    }
+    }*/
     #ifdef MY_DEBUG
     printMessage("NewRotation= %d %d %d\n", orientVec.v[0],orientVec.v[1],orientVec.v[2]);
     printMessage("MinCorner= %.2f %.2f %.2f\n", minMM.v[0],minMM.v[1],minMM.v[2]);

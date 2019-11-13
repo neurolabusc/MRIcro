@@ -69,7 +69,7 @@ GraphStruct gGraph;
     [savePanel setNameFieldStringValue:@""];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:NSHomeDirectory() ]];
     NSInteger user_choice =  [savePanel runModal];
-    if(NSOKButton == user_choice)
+    if(NSFileHandlingPanelOKButton == user_choice)
         [self saveTabFromFileName:[[savePanel URL] path]];
 }
 
@@ -92,7 +92,7 @@ GraphStruct gGraph;
     [savePanel setNameFieldStringValue:@""];
     [savePanel setDirectoryURL:[NSURL fileURLWithPath:NSHomeDirectory() ]];
     NSInteger user_choice =  [savePanel runModal];
-    if(NSOKButton == user_choice)
+    if(NSFileHandlingPanelOKButton == user_choice)
     {
         [self savePDFFromFileName:[[savePanel URL] path]];
     }
@@ -109,7 +109,8 @@ GraphStruct gGraph;
     if (self) {
         // Initialization code here.
          //[super setImageAlignment:NSImageAlignBottomLeft]; //NSImageAlignCenter;
-        [self setImageScaling:NSScaleProportionally]; //NSScaleNone or NSScaleToFit or NSScaleProportionally
+        //[self setImageScaling:NSScaleProportionally]; //2019 deprecated
+        [self setImageScaling:NSImageScaleProportionallyDown];
         //NSScaleToFit does not respect aspect ratio, see http://stackoverflow.com/questions/13750234/confused-about-nsimageview-scaling
     }
     return self;
