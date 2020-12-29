@@ -52,7 +52,7 @@
 #define myDisableOpenJPEG
 #ifndef myDisableOpenJPEG
     #include "openjpeg.h"
-
+xxx
 #ifdef myEnableJasper
   ERROR: YOU CAN NOT COMPILE WITH myEnableJasper AND NOT myDisableOpenJPEG OPTIONS SET SIMULTANEOUSLY
 #endif

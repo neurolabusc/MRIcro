@@ -245,7 +245,8 @@
 		} else {
 			glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, GL_RGBA, texSize.width, texSize.height, 0, [bitmap hasAlpha] ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, [bitmap bitmapData]);
+            //glTexImage2D (target, level, internalformat, width, height, border, format, type, *pixels)
+            glTexImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, GL_RGBA, texSize.width, texSize.height, 0, [bitmap hasAlpha] ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, [bitmap bitmapData]);
 		}
 		glPopAttrib();
 	} else
@@ -339,6 +340,9 @@
 - (void) drawAtPoint:(NSPoint)point
 {
     //float ht = texSize.height/retinaScaleFactor;
+#if __ARM_ARCH
+    return;
+#else
     if (requiresUpdate)
         [self genTexture]; // ensure size is calculated for bounds
     if (texName) // if successful
@@ -346,6 +350,7 @@
         //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)];
         [self drawWithBounds:NSMakeRect (point.x, point.y, frameSizeScaled.x, frameSizeScaled.y)];
         //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width / retinaScaleFactor, texSize.height / retinaScaleFactor)];
+#endif
     //NSLog(@" %gx%g %gx%g %g",texSize.width, texSize.height, frameSize.width,frameSize.height, retinaScaleFactor);
 }
 
