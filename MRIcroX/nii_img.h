@@ -36,14 +36,14 @@
 -(bool) isBackgroundRGB;
 -(void) setMouseDown: (int) x Y: (int) y;
 //-(bool) setScrollWheel: (int) delta;
--(bool) setScrollWheel:  (float) x Y: (float) delta;
+//-(bool) setScrollWheel:  (float) x Y: (float) delta;
+-(bool) setScrollWheel:  (float) x Y: (float) delta locX: (float) mouseX locY: (float) mouseY;
 -(void) changeClipDepth: (float) x;
 -(void) setMagnify: (float) delta;
 -(bool) magnifyRender: (float) delta;
 -(void) setSwipe: (float) x Y: (float) y;
 -(void) makeMosaic:(NSString *)mosStr;
 -(void) setMouseDrag: (int) x Y: (int) y;
-
 -(void) setRightMouseDragXY: (int) x Y: (int) y isMag: (bool) mag isSwipe: (bool) swipe;
 //-(void) setRightMouseDragX: (int) x;
 //-(void) setRightMouseDragY: (int) y;

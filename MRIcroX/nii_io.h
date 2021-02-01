@@ -119,6 +119,8 @@ typedef struct {                /*!< Image storage struct **/
 static const int K_gzBytes_skipRead = -3 ;
 static const int K_gzBytes_headercompressed = -2 ;
 static const int K_gzBytes_headeruncompressed = -1 ;
+static const int K_bz2Bytes_headeruncompressed = -4 ;
+
     
 typedef struct 
 {

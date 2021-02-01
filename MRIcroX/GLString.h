@@ -66,16 +66,17 @@
 	NSSize texSize;
 	
 	NSAttributedString * string;
+    CGFloat retinaScaleFactor;
 	NSColor * textColor; // default is opaque white
 	NSColor * boxColor; // default transparent or none
 	NSColor * borderColor; // default transparent or none
 	BOOL staticFrame; // default in NO
 	BOOL antialias;	// default to YES
-	NSSize marginSize; // offset or frame size, default is 4 width 2 height
+    NSSize marginSize; // offset or frame size, default is 4 width 2 height
 	NSSize frameSize; // offset or frame size, default is 4 width 2 height
     NSPoint frameSizeScaled;
 	float	cRadius; // Corner radius, if 0 just a rectangle. Defaults to 4.0f
-    float retinaScaleFactor;
+    //float retinaScaleFactor;
 	
 	BOOL requiresUpdate;
 }
@@ -110,9 +111,9 @@
 - (void) drawWithBounds:(NSRect)bounds; // will update the texture if required due to change in settings (note context should be setup to be orthographic scaled to per pixel scale)
 - (void) drawAtPoint:(NSPoint)point;
 - (void) drawAboveLeftOfPoint:(NSPoint)point;
-- (void) drawLeftOfPoint:(NSPoint)point;
+- (float) drawLeftOfPoint:(NSPoint)point;
 - (void) drawRightOfPoint:(NSPoint)point;
-- (void) drawBelowPoint:(NSPoint)point;
+- (float) drawBelowPoint:(NSPoint)point;
 
 // these will force the texture to be regenerated at the next draw
 - (void) setMargins:(NSSize)size; // set offset size and size to fit with offset
@@ -121,11 +122,11 @@
 
 - (void) setString:(NSAttributedString *)attributedString; // set string after initial creation
 - (void) setString:(NSString *)aString withAttributes:(NSDictionary *)attribs; // set string after initial creation
-
+- (void) setScale:(float)scale;
 - (void) setTextColor:(NSColor *)color; // set default text color
 - (void) setBoxColor:(NSColor *)color; // set default text color
 - (void) setBorderColor:(NSColor *)color; // set default text color
-- (void) setScale:(float)scale; // set retina scaling
+//- (void) setScale:(float)scale; // set retina scaling
 - (BOOL) antialias;
 - (void) setAntialias:(bool)request;
 

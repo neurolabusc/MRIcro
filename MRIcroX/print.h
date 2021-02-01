@@ -47,6 +47,6 @@
 		// #define printWarning(...) ({printMessage("Warning: "); printMessage(__VA_ARGS__);})
 		// #define printError(...) ({ printMessage("Error: "); printMessage(__VA_ARGS__);})
 		#define printWarning(...) do {printMessage("Warning: "); printMessage(__VA_ARGS__);} while(0)
-
+        #define printProgress(frac) do { printMessage("Progress: %g\n", frac);} while(0)
 	#endif //HAVE_R
 #endif //_R_PRINT_H_

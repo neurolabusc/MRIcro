@@ -11,7 +11,8 @@
 #import "nii_definetypes.h"
 #import <OpenGL/OpenGL.h>
 #import <OpenGL/gl.h>
-
+#import <Foundation/Foundation.h>
+//#include <stdio.h>
 
 
 int const kTextNoArrow = 0;
@@ -537,7 +538,6 @@ int colorBarPos(TUnitRect lU)
     return result;
 }
 
-
 float nicenum(float x, float round) {
     //see http://tog.acm.org/resources/GraphicsGems/gems/Label.c
     float nf;//nice, rounded fraction
@@ -602,9 +602,10 @@ float nicenum(float x, float round) {
     glLoadIdentity();
 }*/
 
-void drawColorBarText(float lMin, float lMax, TUnitRect lU, float lBorder, NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib)
+int drawColorBarText(float lMin, float lMax, TUnitRect lU, float lBorder, NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib)
 {
     #define NTICK 5			// desired number of tick marks
+    int TxtMin = INT_MAX;
     int lOrient,lPower,lSteps,lStep,lDecimals,lStepPosScrn;
     float lBarLength,lScrnL,lScrnT,lStepPos,l1stStep,lRange,lStepSize;
     sortSingle(&lU.L,&lU.R);
@@ -613,8 +614,8 @@ void drawColorBarText(float lMin, float lMax, TUnitRect lU, float lBorder, NII_P
     sortSingle(&lMin,&lMax);
     //next: compute increment
     lRange = fabs(lMax - lMin);
-    if (lRange < 0.000001) return;
-    if ((lRange > DBL_MAX) || (lRange == INFINITY)) return; //avoid infinite loop for while lStepSize 
+    if (lRange < 0.000001) return TxtMin;
+    if ((lRange > DBL_MAX) || (lRange == INFINITY)) return TxtMin; //avoid infinite loop for while lStepSize
     //lStepSize = (lRange / NTICK);
     lStepSize = nicenum(lRange, NTICK);
     lStepSize = (lStepSize / NTICK);
@@ -648,20 +649,29 @@ void drawColorBarText(float lMin, float lMax, TUnitRect lU, float lBorder, NII_P
     //NSLog(@"Colorbar %f..%f range %f stepsize %f steps %d",lMin,lMax, lRange, lStepSize, lSteps);
     if ((lOrient == kVertTextLeft) || (lOrient == kVertTextRight)) //vertical bars
         lBarLength = prefs->scrnHt * fabs(lU.B-lU.T);
-    else
+    else { //horizontal bar
         lBarLength = prefs->scrnWid * fabs(lU.L-lU.R);
+    }
+    float txtSize;
     for (lStep = 1; lStep <= lSteps; lStep++) {
         lStepPos = l1stStep+((lStep-1)*lStepSize);
         lStepPosScrn = round( fabs(lStepPos-lMin)/lRange*lBarLength);
-            NSString *formatString = [NSString stringWithFormat:@"%%.%df", lDecimals];
-            NSString * string = [NSString stringWithFormat:formatString, lStepPos];
-            [glStrTex setString:string withAttributes:stanStrAttrib];
-            if ((lOrient == kVertTextLeft) || (lOrient == kVertTextRight))
-                [glStrTex drawLeftOfPoint:NSMakePoint (lScrnL-2-(lBorder* prefs->scrnWid),lScrnT+ lStepPosScrn)];
-            else
-                [glStrTex drawBelowPoint:NSMakePoint (lScrnL+ lStepPosScrn,lScrnT)];
+        NSString *formatString = [NSString stringWithFormat:@"%%.%df", lDecimals];
+        NSString * string = [NSString stringWithFormat:formatString, lStepPos];
+        [glStrTex setString:string withAttributes:stanStrAttrib];
+        if ((lOrient == kVertTextLeft) || (lOrient == kVertTextRight)) {
+            float L = lScrnL-2-(lBorder* prefs->scrnWid);
+            txtSize = [glStrTex drawLeftOfPoint:NSMakePoint (L,lScrnT+ lStepPosScrn)];
+            TxtMin = MIN(TxtMin , round(L - txtSize));
+        } else {
+            txtSize = [glStrTex drawBelowPoint:NSMakePoint (lScrnL+ lStepPosScrn,lScrnT)];
+            TxtMin = MIN(TxtMin , lScrnT - txtSize);
+
+        }
     }
     glLoadIdentity();
+    //NSLog(@" %d px", TxtMin);
+    return TxtMin;
 }
 
 void setRGBColor (uint32_t clr)
@@ -742,12 +752,13 @@ TUnitRect uOffset (TUnitRect lU, float lX, float lY)
     return lU;
 }
 
-void drawCLUT(TUnitRect lU, NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib)
+int drawCLUT(TUnitRect lU, NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib)
 {
     TUnitRect lU2;
     float lBorder = 0;//xxx prefs->colorBarBorder;
     float lX,lY,lMin,lMax;
     int openOverlays = 0;
+    int txtPos = INT_MAX;
     for (int i = 0; i < MAX_OVERLAY; i++) 
         if (prefs->overlays[i].datatype != DT_NONE) openOverlays++;
     //Enter2D;
@@ -757,9 +768,9 @@ void drawCLUT(TUnitRect lU, NII_PREFS* prefs, GLString * glStrTex, NSMutableDict
         drawBorder(lU,prefs);
         drawCLUTx(lU,prefs->lut, prefs);
         //if (TRUE) //lPrefs.ColorbarText then
-            drawColorBarText(prefs->viewMin,prefs->viewMax, lU,lBorder,prefs, glStrTex, stanStrAttrib);
+        txtPos = drawColorBarText(prefs->viewMin,prefs->viewMax, lU,lBorder,prefs, glStrTex, stanStrAttrib);
         glDisable (GL_BLEND);
-        return;
+        return txtPos;
     }
     if (fabs(lU.R-lU.L) > fabs(lU.B-lU.T)) { //wide bars
         lX = 0;
@@ -798,29 +809,111 @@ void drawCLUT(TUnitRect lU, NII_PREFS* prefs, GLString * glStrTex, NSMutableDict
 
     //if (FALSE) return;
     lU2 = lU;
+    int txtPosM = txtPos;
     for (int i = 0; i < MAX_OVERLAY; i++) { 
         if (prefs->overlays[i].datatype != DT_NONE) {
             lMin = prefs->overlays[i].viewMin;
             lMax = prefs->overlays[i].viewMax;
             sortSingle(&lMin,&lMax);
-            drawColorBarText(lMin,lMax, lU2,lBorder,prefs, glStrTex, stanStrAttrib);
+            txtPosM = drawColorBarText(lMin,lMax, lU2,lBorder,prefs, glStrTex, stanStrAttrib);
+            txtPos = MIN(txtPosM, txtPos);
             lU2 = uOffset(lU2,lX,lY);
         }
     }
     glDisable (GL_BLEND);
+    return txtPos;
 }
 
-void drawColorBarTex(NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib)
+
+    
+void drawRuler (TUnitRect lU, int scrnWid, int scrnHt, int pos, double mmPerPix, CGFloat XColor[4])
+//prefs->scrnWid,prefs->scrnHt
+//draws 10cm ruler
+{
+    if (mmPerPix <= 0) return;
+    double pix10cm = 100.0 * mmPerPix;
+    //NSLog(@" %g mm/px 10cm = %g px", mmPerPix, pix10cm);
+    
+    int lineWidth = pix10cm / 75;
+    lineWidth = MAX(lineWidth, 1);
+    lineWidth = MIN(lineWidth, 5);
+    float margin = round(pix10cm / 50);
+    margin = MAX(margin, 2);
+    if ((lineWidth % 2) == 1)
+        margin += 0.5;
+    //NSLog(@"ruler %g %d", margin, lineWidth);
+    int tickHeight = lineWidth * 2;
+    
+    glDisable (GL_TEXTURE_3D);
+    glDisable (GL_BLEND);
+    glLineWidth(lineWidth);
+    glColor4f(XColor[0],XColor[1],XColor[2],1.0f);
+    if (fabs(lU.R-lU.L) > fabs(lU.B-lU.T)) { //horizontal ruler
+        //
+        //float scrnx = margin;
+        float scrnx = round((scrnWid-pix10cm) * 0.5);
+        if ((lineWidth % 2) == 1)
+            scrnx += 0.5;
+        float scrny = round(lU.B * scrnHt) - margin;
+        if (pos < INT_MAX)
+            scrny = pos - margin;
+        glBegin(GL_LINES); //draw crosshairs...
+        glVertex3f(scrnx, scrny, 0.0);
+        glVertex3f(scrnx+round(pix10cm), scrny, 0.0);
+        for (int i = 0; i < 11; i++) {
+            float x = scrnx + round((double)i/10.0 * pix10cm);
+            float yLine = scrny;
+            float y = scrny - tickHeight;
+            if ((i % 5) == 0) {
+                yLine += tickHeight;
+                y -= tickHeight;
+            }
+            glVertex3f(x, yLine, 0.0);
+            glVertex3f(x, y, 0.0);
+            
+        }
+        glEnd();
+    } else { //vertical ruler
+        //int scrnx = margin;
+        float scrnx = round(lU.L * scrnWid) - margin;
+        if (pos < INT_MAX)
+            scrnx = pos - margin;
+        //float scrny = round(lU.T * scrnHt) - margin;
+        float scrny = round((scrnHt-pix10cm) * 0.5);
+        if ((lineWidth % 2) == 1)
+            scrny += 0.5;
+        glBegin(GL_LINES); //draw crosshairs...
+        glVertex3f(scrnx, scrny, 0.0);
+        glVertex3f(scrnx, scrny+round(pix10cm), 0.0);
+        for (int i = 0; i < 11; i++) {
+            float x = scrnx;
+            float y = scrny + round((double)i/10.0 * pix10cm);
+            float xLine = scrnx - tickHeight;
+            if ((i % 5) == 0) {
+                xLine -= tickHeight;
+                x += tickHeight;
+            }
+            glVertex3f(x, y, 0.0);
+            glVertex3f(xLine, y, 0.0);
+            
+        }
+        glEnd();
+    }
+}
+
+void drawColorBarTex(NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib, bool showRuler)
 {
     TUnitRect lU;
     lU.L = prefs->colorBarPos[0];
     lU.T = prefs->colorBarPos[1];
     lU.R = prefs->colorBarPos[2];
     lU.B = prefs->colorBarPos[3];
-    drawCLUT(lU,  prefs, glStrTex, stanStrAttrib);
+    int pos = drawCLUT(lU,  prefs, glStrTex, stanStrAttrib);
+    if (!showRuler) return;
+    drawRuler(lU, prefs->scrnWid,prefs->scrnHt, pos, prefs->mmPerPix, prefs->xBarColor);
 }
 
-void drawColorBar(NII_PREFS* prefs)
+/*void drawColorBar(NII_PREFS* prefs)
 {
     TUnitRect lU;
     lU.L = prefs->colorBarPos[0];
@@ -828,7 +921,7 @@ void drawColorBar(NII_PREFS* prefs)
     lU.R = prefs->colorBarPos[2];
     lU.B = prefs->colorBarPos[3];
     //drawCLUT(lU,  prefs, NULL, NULL);
-}
+}*/
 
 void drawHistogram(NII_PREFS* prefs, int Lft, int Wid, int Ht)
 {

@@ -21,6 +21,8 @@
 			<string>Viewer</string>
 			<key>NSDocumentClass</key>
 			<string>NIfTI Image</string>
+			<key>NSIsRelatedItemType</key>
+			<true/>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
@@ -40,6 +42,8 @@
 			<array>
 				<string>head</string>
 				<string>brik</string>
+				<string>brik.gz</string>
+				<string>gz</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>AFNI</string>
@@ -47,6 +51,8 @@
 			<string>Viewer</string>
 			<key>NSDocumentClass</key>
 			<string>AFNI Image</string>
+			<key>NSIsRelatedItemType</key>
+			<true/>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>

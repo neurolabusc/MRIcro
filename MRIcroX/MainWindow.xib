@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17140" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="17701" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17140"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="17701"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -22,29 +23,33 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" animationBehavior="default" id="1">
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" animationBehavior="default" tabbingMode="disallowed" id="1">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenPrimary="YES"/>
-            <rect key="contentRect" x="0.0" y="68" width="704" height="624"/>
+            <rect key="contentRect" x="0.0" y="68" width="920" height="624"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1055"/>
             <value key="minSize" type="size" width="300" height="200"/>
             <view key="contentView" id="2">
-                <rect key="frame" x="0.0" y="0.0" width="704" height="624"/>
+                <rect key="frame" x="0.0" y="0.0" width="920" height="624"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
-                    <splitView fixedFrame="YES" dividerStyle="paneSplitter" translatesAutoresizingMaskIntoConstraints="NO" id="90">
-                        <rect key="frame" x="0.0" y="0.0" width="704" height="624"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES"/>
+                    <splitView dividerStyle="paneSplitter" translatesAutoresizingMaskIntoConstraints="NO" id="90">
+                        <rect key="frame" x="0.0" y="0.0" width="920" height="624"/>
                         <subviews>
-                            <customView wantsLayer="YES" fixedFrame="YES" id="91">
-                                <rect key="frame" x="0.0" y="0.0" width="704" height="614"/>
+                            <customView wantsLayer="YES" id="91">
+                                <rect key="frame" x="0.0" y="0.0" width="920" height="614"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <subviews>
-                                    <openGLView wantsLayer="YES" fixedFrame="YES" samplingRate="8" useAuxiliaryDepthBufferStencil="NO" allowOffline="YES" translatesAutoresizingMaskIntoConstraints="NO" id="93" customClass="nii_GLView">
-                                        <rect key="frame" x="0.0" y="0.0" width="704" height="614"/>
-                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES" heightSizable="YES"/>
+                                    <openGLView wantsLayer="YES" samplingRate="8" useAuxiliaryDepthBufferStencil="NO" allowOffline="YES" wantsBestResolutionOpenGLSurface="YES" translatesAutoresizingMaskIntoConstraints="NO" id="93" customClass="nii_GLView">
+                                        <rect key="frame" x="0.0" y="0.0" width="920" height="614"/>
                                     </openGLView>
                                 </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="bottom" secondItem="93" secondAttribute="bottom" id="0yX-s5-oM9"/>
+                                    <constraint firstItem="93" firstAttribute="top" secondItem="91" secondAttribute="top" id="MEi-j8-SCD"/>
+                                    <constraint firstItem="93" firstAttribute="leading" secondItem="91" secondAttribute="leading" id="iwc-y3-rMY"/>
+                                    <constraint firstAttribute="trailing" secondItem="93" secondAttribute="trailing" id="q6Y-Ui-6aL"/>
+                                </constraints>
                             </customView>
                             <customView hidden="YES" fixedFrame="YES" id="92" customClass="nii_timelineView">
                                 <autoresizingMask key="autoresizingMask"/>
@@ -59,19 +64,23 @@
                         </connections>
                     </splitView>
                 </subviews>
+                <constraints>
+                    <constraint firstAttribute="bottom" secondItem="90" secondAttribute="bottom" id="Dnz-FQ-f6W"/>
+                    <constraint firstItem="90" firstAttribute="leading" secondItem="2" secondAttribute="leading" id="b6L-h0-39s"/>
+                    <constraint firstItem="90" firstAttribute="top" secondItem="2" secondAttribute="top" id="tR4-Sh-ihC"/>
+                    <constraint firstAttribute="trailing" secondItem="90" secondAttribute="trailing" id="y3F-aw-ce1"/>
+                </constraints>
             </view>
-            <toolbar key="toolbar" implicitIdentifier="AD120F56-D41B-426C-B87B-189020273771" displayMode="iconAndLabel" sizeMode="small" id="3">
+            <toolbar key="toolbar" implicitIdentifier="AD120F56-D41B-426C-B87B-189020273771" displayMode="iconAndLabel" sizeMode="regular" id="3">
                 <allowedToolbarItems>
                     <toolbarItem implicitItemIdentifier="NSToolbarSeparatorItem" id="6"/>
                     <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="8"/>
                     <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="9"/>
-                    <toolbarItem implicitItemIdentifier="D7A7F734-4701-4C20-8A82-666D0BAAD3C5" label="Darkest" paletteLabel="Darkest" id="14">
+                    <toolbarItem implicitItemIdentifier="D7A7F734-4701-4C20-8A82-666D0BAAD3C5" label="Darkest" paletteLabel="Darkest" sizingBehavior="auto" id="14">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="96" height="22"/>
-                        <size key="maxSize" width="96" height="22"/>
                         <textField key="view" verticalHuggingPriority="750" id="11">
-                            <rect key="frame" x="0.0" y="14" width="96" height="22"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <rect key="frame" x="0.0" y="14" width="96" height="21"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="11" drawsBackground="YES" id="12">
                                 <numberFormatter key="formatter" formatterBehavior="default10_4" positiveFormat="#,##0.###" negativeFormat="#,##0.###" numberStyle="decimal" paddingCharacter="*" minimumIntegerDigits="1" maximumIntegerDigits="309" maximumFractionDigits="3" decimalSeparator="." groupingSeparator="," currencyDecimalSeparator="." plusSign="+" minusSign="-" notANumberSymbol="NaN" perMillSymbol="‰" percentSymbol="%" exponentSymbol="E" positivePrefix="" positiveSuffix="" negativePrefix="-" negativeSuffix="" id="13"/>
                                 <font key="font" metaFont="system"/>
@@ -83,13 +92,11 @@
                             </connections>
                         </textField>
                     </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="EC45AD43-ECBC-4891-9C4E-0C169DCF821F" label="Brightest" paletteLabel="Brightest" id="20">
+                    <toolbarItem implicitItemIdentifier="EC45AD43-ECBC-4891-9C4E-0C169DCF821F" label="Brightest" paletteLabel="Brightest" sizingBehavior="auto" id="20">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="96" height="22"/>
-                        <size key="maxSize" width="96" height="22"/>
                         <textField key="view" verticalHuggingPriority="750" id="17">
-                            <rect key="frame" x="0.0" y="14" width="96" height="22"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <rect key="frame" x="0.0" y="14" width="96" height="21"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" title="122" drawsBackground="YES" id="18">
                                 <numberFormatter key="formatter" formatterBehavior="default10_4" positiveFormat="#,##0.###" negativeFormat="#,##0.###" numberStyle="decimal" paddingCharacter="*" minimumIntegerDigits="1" maximumIntegerDigits="309" maximumFractionDigits="3" decimalSeparator="." groupingSeparator="," currencyDecimalSeparator="." plusSign="+" minusSign="-" notANumberSymbol="NaN" perMillSymbol="‰" percentSymbol="%" exponentSymbol="E" positivePrefix="" positiveSuffix="" negativePrefix="-" negativeSuffix="" id="19"/>
                                 <font key="font" metaFont="system"/>
@@ -101,13 +108,11 @@
                             </connections>
                         </textField>
                     </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="6C58559D-9F09-4DBE-9990-0980CF8FC982" label="Layer" paletteLabel="Layer" id="29">
+                    <toolbarItem implicitItemIdentifier="6C58559D-9F09-4DBE-9990-0980CF8FC982" label="Layer" paletteLabel="Layer" sizingBehavior="auto" id="29">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="100" height="25"/>
-                        <size key="maxSize" width="147" height="25"/>
                         <popUpButton key="view" verticalHuggingPriority="750" id="23">
-                            <rect key="frame" x="0.0" y="14" width="130" height="25"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <rect key="frame" x="0.0" y="14" width="112" height="25"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <popUpButtonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="border" imageScaling="proportionallyDown" inset="2" autoenablesItems="NO" id="24">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="menu"/>
@@ -133,19 +138,17 @@
                             </connections>
                         </popUpButton>
                     </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="AFEFD5BD-EAA6-4247-ADD8-682A39F716F9" label="Color Scheme" paletteLabel="Color Scheme" id="38">
+                    <toolbarItem implicitItemIdentifier="AFEFD5BD-EAA6-4247-ADD8-682A39F716F9" label="Color Scheme" paletteLabel="Color Scheme" sizingBehavior="auto" id="38">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="100" height="25"/>
-                        <size key="maxSize" width="132" height="25"/>
                         <popUpButton key="view" verticalHuggingPriority="750" id="32">
-                            <rect key="frame" x="0.0" y="14" width="132" height="25"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                            <popUpButtonCell key="cell" type="roundTextured" title="Random" bezelStyle="texturedRounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="dux-Pz-wPb" id="33">
+                            <rect key="frame" x="0.0" y="14" width="110" height="25"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                            <popUpButtonCell key="cell" type="roundTextured" title="Black-white" bezelStyle="texturedRounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="35" id="33">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="menu"/>
                                 <menu key="menu" title="OtherViews" id="34">
                                     <items>
-                                        <menuItem title="Black-white" id="35"/>
+                                        <menuItem title="Black-white" state="on" id="35"/>
                                         <menuItem title="Hot" id="36"/>
                                         <menuItem title="Winter" id="37"/>
                                         <menuItem title="Warm" id="51">
@@ -184,7 +187,25 @@
                                         <menuItem title="Blue" id="lxR-eJ-xqA">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                         </menuItem>
-                                        <menuItem title="Random" state="on" id="dux-Pz-wPb">
+                                        <menuItem title="Random" id="dux-Pz-wPb">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT airways" id="Flh-bO-AuE">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT bones" tag="1" id="LFI-em-kua">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT head" id="05C-4e-xKh">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT kidneys" id="fGm-gl-uid">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT soft" id="kgr-gB-PTd">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="CT surface" id="Doo-Wz-10v">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                         </menuItem>
                                     </items>
@@ -195,13 +216,11 @@
                             </connections>
                         </popUpButton>
                     </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="7D734990-A542-4937-A648-59DFE71F30D1" label="View" paletteLabel="View" id="47">
+                    <toolbarItem implicitItemIdentifier="7D734990-A542-4937-A648-59DFE71F30D1" label="View" paletteLabel="View" sizingBehavior="auto" id="47">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="100" height="25"/>
-                        <size key="maxSize" width="142" height="25"/>
                         <popUpButton key="view" verticalHuggingPriority="750" id="41">
-                            <rect key="frame" x="0.0" y="14" width="114" height="25"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <rect key="frame" x="0.0" y="14" width="104" height="25"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <popUpButtonCell key="cell" type="roundTextured" title="2D and 3D" bezelStyle="texturedRounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" selectedItem="46" id="42">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                 <font key="font" metaFont="menu"/>
@@ -221,33 +240,29 @@
                             </connections>
                         </popUpButton>
                     </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="E9260F73-8A5A-4CE5-9CE8-86C1BAC9DF86" label="Header" paletteLabel="Header" image="NSInfo" id="79">
+                    <toolbarItem implicitItemIdentifier="55BE8A3E-FC3E-44CF-9D6B-A4CDAA7F801F" label="Gamma" paletteLabel="Gamma" sizingBehavior="auto" id="Fa0-eR-b7I">
                         <nil key="toolTip"/>
-                        <size key="minSize" width="24" height="25"/>
-                        <size key="maxSize" width="33" height="25"/>
+                        <slider key="view" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ha9-C1-TBc">
+                            <rect key="frame" x="0.0" y="14" width="120" height="28"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                            <sliderCell key="cell" state="on" alignment="left" minValue="0.20000000000000001" maxValue="0.80000000000000004" doubleValue="0.5" tickMarkPosition="below" sliderType="linear" id="1QX-Ae-Jjo"/>
+                        </slider>
+                        <connections>
+                            <action selector="gammaSlide:" target="-2" id="3tj-bH-huY"/>
+                        </connections>
+                    </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="E9260F73-8A5A-4CE5-9CE8-86C1BAC9DF86" label="Header" paletteLabel="Header" image="NSInfo" sizingBehavior="auto" id="79">
+                        <nil key="toolTip"/>
                         <button key="view" id="77">
-                            <rect key="frame" x="7" y="14" width="33" height="25"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                            <buttonCell key="cell" type="squareTextured" bezelStyle="texturedSquare" image="NSInfo" imagePosition="overlaps" alignment="center" controlSize="small" state="on" imageScaling="proportionallyDown" inset="2" id="78">
+                            <rect key="frame" x="7" y="14" width="32" height="32"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                            <buttonCell key="cell" type="squareTextured" bezelStyle="texturedSquare" image="NSInfo" imagePosition="overlaps" alignment="center" state="on" imageScaling="proportionallyDown" inset="2" id="78">
                                 <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                <font key="font" metaFont="smallSystem"/>
+                                <font key="font" metaFont="system"/>
                             </buttonCell>
                         </button>
                         <connections>
                             <action selector="infoClick:" target="-2" id="81"/>
-                        </connections>
-                    </toolbarItem>
-                    <toolbarItem implicitItemIdentifier="55BE8A3E-FC3E-44CF-9D6B-A4CDAA7F801F" label="Gamma" paletteLabel="Gamma" id="Fa0-eR-b7I">
-                        <nil key="toolTip"/>
-                        <size key="minSize" width="96" height="20"/>
-                        <size key="maxSize" width="96" height="25"/>
-                        <slider key="view" verticalHuggingPriority="750" id="Ha9-C1-TBc">
-                            <rect key="frame" x="0.0" y="14" width="96" height="25"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                            <sliderCell key="cell" state="on" alignment="left" minValue="0.20000000000000001" maxValue="0.80000000000000004" doubleValue="0.5" tickMarkPosition="below" numberOfTickMarks="11" allowsTickMarkValuesOnly="YES" sliderType="linear" id="1QX-Ae-Jjo"/>
-                        </slider>
-                        <connections>
-                            <action selector="gammaSlide:" target="-2" id="3tj-bH-huY"/>
                         </connections>
                     </toolbarItem>
                 </allowedToolbarItems>
@@ -258,7 +273,6 @@
                     <toolbarItem reference="20"/>
                     <toolbarItem reference="79"/>
                     <toolbarItem reference="6"/>
-                    <toolbarItem reference="9"/>
                     <toolbarItem reference="47"/>
                 </defaultToolbarItems>
             </toolbar>

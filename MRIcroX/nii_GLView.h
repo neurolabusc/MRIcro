@@ -20,7 +20,7 @@
   @private
     nii_img *gNiiImg;
     float screenShotScaleFactor;
-    float retinaScaleFactor;
+    //float retinaScaleFactor;
 }
 
 typedef struct   {
@@ -36,6 +36,7 @@ typedef struct   {
 -(GraphStruct) getTimelineGL;
 -(bool) isTimelineUpdateNeededGL;
 -(void)skipNumberOfVolumesGL: (int) skip;
+-(void) setAzimElevOrient: (int) orient;
 -(int) getNumberOfVolumesGL;
 -(void) setXYZmmGL: (float) x Y: (float) y Z: (float) z;
 -(void) changeXYZvoxelGL: (int) x Y: (int) y Z: (int) z;
@@ -49,7 +50,7 @@ typedef struct   {
 - (IBAction) openDiffusionGL: (id) sender;
 - (BOOL) openOverlayFromFileNameGL: (NSString *)file_name;
 //- (BOOL) checkSandAccess: (NSString *)file_name;
-- (IBAction) openDocumentGL: (id) sender;
+//- (IBAction) openDocumentGL: (id) sender;
 - (IBAction) copy: (id) sender;
 - (IBAction) saveDocumentAs: (id) sender;
 - (void)saveScreenshotFromFileName:(NSString *) file_name;
@@ -92,6 +93,8 @@ typedef struct   {
 - (void) setContrast:(NSPoint)value;
 -(void) makeMosaicGL:(NSString *)mosStr;
 -(void) setViewGamma: (float) gamma;
+-(void) setFontScale: (float) scale;
+//-(void) forceRecalc;
 -(void) setViewMinMaxForLayer: (double) min Max: (double) max Layer: (int) layer;
 -(void) resetClip;
 -(void) ShowAlert: (NSString *)theMessage Title: (NSString *) theTitle;

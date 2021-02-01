@@ -5,7 +5,56 @@
 #include <stdio.h>
 #import <Foundation/Foundation.h>
 #import "nii_dicom.h" //rgb planar
+//#define MY_BZ2
+#ifdef MY_BZ2
+//to build a universal binary
+// file /opt/local/lib/libbz2.dylib
+//Must support BOTH x86-64 and arm64
+// BuidPhases: Link Binary With Libraries: libbz2.tbd
+
+#import <bzlib.h>
+#endif
 #include <stdlib.h>  // for memory alloc/free
+//Open paired files, e.g. .HEAD/.BRIK
+//https://stackoverflow.com/questions/59566959/is-there-an-alternative-to-nsfilecoordinator-for-opening-related-files-in-a-sand/59580610#59580610
+#ifdef __APPLE__
+//#import <Foundation/Foundation.h>
+
+@interface SidecarPresenter : NSObject<NSFilePresenter>
+@property(readwrite, copy) NSURL* presentedItemURL;
+@property(readwrite, copy) NSURL* primaryPresentedItemURL;
+@property(readwrite, assign) NSOperationQueue* presentedItemOperationQueue;
+
+-(instancetype)initWithImageUrl:(NSURL*)imageUrl andHeaderName:(NSURL*)hdrUrl;
+@end
+
+@implementation SidecarPresenter
+
+- (instancetype)initWithImageUrl:(NSURL*)fileUrl andHeaderName:(NSURL*)hdrUrl
+{
+    self = [super init];
+
+    if (self)
+    {
+        [self setPrimaryPresentedItemURL:hdrUrl];
+        [self setPresentedItemURL:fileUrl];
+        //[self setPresentedItemURL:[[fileURL URLByDeletingPathExtension] URLByAppendingPathExtension:newExt]];
+        [self setPresentedItemOperationQueue:[NSOperationQueue mainQueue]];
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    //[_primaryPresentedItemURL release];
+    //[_presentedItemURL release];
+
+    //[super dealloc];
+}
+
+@end
+#endif
 
 
 int THD_daxes_to_NIFTI(struct nifti_1_header *nhdr, vec3 xyzDelta, vec3 xyzOrigin, ivec3 orientSpecific )
@@ -133,6 +182,20 @@ int afni_readhead(NSString * fname, NSString ** imgname,  struct nifti_1_header 
     if (![[NSFileManager defaultManager] fileExistsAtPath:*imgname]) {
         *imgname = NewFileExtX(fname, @".BRIK.gz");
         *gzBytes = K_gzBytes_headeruncompressed;
+    }
+#ifdef MY_BZ2
+    if (![[NSFileManager defaultManager] fileExistsAtPath:*imgname]) {
+        *imgname = NewFileExtX(fname, @".BRIK.bz2");
+        *gzBytes = K_bz2Bytes_headeruncompressed;
+    }
+#endif
+    if (![[NSFileManager defaultManager] fileExistsAtPath:*imgname]) {
+#ifdef MY_BZ2
+        NSLog(@"Unable to find .BRIK/.BRIK.gz/.BRIK.bz2 for AFNI image: %@", fname);
+#else
+        NSLog(@"Unable to find .BRIK/.BRIK.gz for AFNI image (BZ2 not supported): %@", fname);
+#endif
+        return EXIT_FAILURE;
     }
     *swapEndian = false;
     for(int ii=0 ; ii < 8 ; ii++)
@@ -1749,17 +1812,17 @@ unsigned char * nii_readBitmap(NSString * fname, struct nifti_1_header *nhdr)
     return img;
 } // nii_readBitmap()
 
-int numVox(struct nifti_1_header *nhdr ) {
-    int vx = nhdr->dim[1]*nhdr->dim[2]*nhdr->dim[3];
-    for (int i = 4; i < 8; i++)
-        if (nhdr->dim[i] > 1) vx = vx * nhdr->dim[i];
+size_t numVox(struct nifti_1_header *nhdr, size_t vols ) {
+    size_t vx = nhdr->dim[1]*nhdr->dim[2]*nhdr->dim[3]*vols;
+    //for (int i = 4; i < 8; i++)
+    //    if (nhdr->dim[i] > 1) vx = vx * nhdr->dim[i];
     return vx;
 }
 
-unsigned char *  swapByteOrderX (unsigned char * img, struct nifti_1_header *nhdr) {
-    if (nhdr->bitpix <= 8) return img; //byte order does not matter for one byte image
+unsigned char *  swapByteOrderX (unsigned char * img, struct nifti_1_header *nhdr, size_t vols ) {
+    if ((nhdr->bitpix <= 8) || (vols < 1)) return img; //byte order does not matter for one byte image
     if ((nhdr->datatype == DT_RGB24) || (nhdr->datatype == DT_RGBA32)) return img; //
-    size_t nvox = numVox(nhdr );
+    size_t nvox = numVox(nhdr, vols );
     if (nhdr->bitpix == 16)
         nifti_swap_2bytes(nvox,(void *) img);
     else if (nhdr->bitpix == 32)
@@ -1810,9 +1873,13 @@ unsigned char * nii_readImg(NSString * imgname, struct nifti_1_header *nhdr, lon
     //load image data based on provided header
     FILE *pFile = fopen([imgname fileSystemRepresentation], "rb");
     if (pFile == NULL) {
-        NSLog(@"Unable to find %@", imgname);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:imgname])
+            NSLog(@"Unable to load image data (permissions issue?) '%@'", imgname);
+        else
+            NSLog(@"Unable to find image data '%@'", imgname);
         return NULL;
     }
+    //NSLog(@"nii_readImg fopen worked");
     fseek (pFile, 0, SEEK_END); //int FileSz=ftell (ptr_myfile);
     int nVol = 1;
     for (int i = 4; i < 8; i++)
@@ -1854,6 +1921,29 @@ unsigned char * nii_readImg(NSString * imgname, struct nifti_1_header *nhdr, lon
         num = fread( outbuf, imgsz, 1, pFile);
         #pragma unused(num) //we need to increment the input file position, but we do not care what the value is
         fclose(pFile);
+    } else if (gzBytes == K_bz2Bytes_headeruncompressed) {
+#ifdef MY_BZ2
+        if (imgsz >= INT_MAX) {
+            NSLog(@"BZ2 reader does not (yet) support files >2Gb.");
+            return 0;
+        }
+        char bz2name[2048] = "";
+        strcpy(bz2name, [imgname cStringUsingEncoding:NSUTF8StringEncoding]);
+        int error;
+        FILE *f = fopen(bz2name, "rb");
+        BZFILE* b = BZ2_bzReadOpen(&error, f, 0, 0, NULL, 0);
+        // https://stackoverflow.com/questions/18718433/uncompressing-bzip2-in-an-ios-app
+        //const int MAXSIZE = 4096;    // Or some other decent size.
+        //char buffer[MAXSIZE];
+        //do {
+           BZ2_bzRead(&error, b, outbuf,(int) imgsz);
+        //} while(error != BZ_OK);
+        BZ2_bzReadClose(&error, b);
+        if (error != 0)
+            NSLog(@"BZ2 error %d: %s", error, bz2name);
+#else
+        NSLog(@"BZ2 supported");
+#endif
     } else {
         fclose(pFile);
         if ((gzBytes > 0) && (fsz < (skipBytes+gzBytes)) ) {
@@ -1878,9 +1968,54 @@ unsigned char * nii_readImg(NSString * imgname, struct nifti_1_header *nhdr, lon
             [data getBytes:outbuf range:NSMakeRange(skipBytes,imgsz)];
         }
     } //if image data gz compressed
-    if (swapEndian) outbuf = swapByteOrderX (outbuf, nhdr);
+    if (swapEndian) outbuf = swapByteOrderX (outbuf, nhdr, loadVol);
     return outbuf;
 }
+
+/*void nii_readImgY(unsigned char *ret, NSString * imgname, struct nifti_1_header *nhdr, long gzBytes, bool swapEndian, int skipVol, int loadVol) {
+    ret = nii_readImg(imgname, nhdr, gzBytes, swapEndian, skipVol, loadVol);
+    if (ret == NULL) NSLog(@"???>>>>>");
+}*/
+
+//http://www.stefanovettor.com/2015/08/29/osx-app-sandboxing-related-items-tutorial/
+unsigned char * nii_readImgPair(NSString * hdrname, NSString * imgname, struct nifti_1_header *nhdr, long gzBytes, bool swapEndian, int skipVol, int loadVol) {
+#ifdef __APPLE__
+    __block unsigned char * img = NULL;
+SidecarPresenter* presenter= [SidecarPresenter alloc];
+    presenter = [presenter initWithImageUrl:[NSURL fileURLWithPath:imgname] andHeaderName:[NSURL fileURLWithPath:hdrname]];
+
+[NSFileCoordinator addFilePresenter:presenter];
+//NSFileCoordinator* coordinator = [[[NSFileCoordinator alloc] initWithFilePresenter:presenter] autorelease];
+NSFileCoordinator* coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:presenter];
+
+NSError* error = nil;
+[coordinator coordinateReadingItemAtURL:presenter.presentedItemURL
+                                options:NSFileCoordinatorReadingWithoutChanges
+                                  error:&error
+                             byAccessor:^(NSURL* newURL)
+{
+    //NSLog(@"Hello World");
+    /*FILE *pFile = fopen([imgname fileSystemRepresentation], "rb");
+    if (pFile == NULL) {
+        if ([[NSFileManager defaultManager] fileExistsAtPath:imgname])
+            NSLog(@"Unable to load image data (permissions issue?) '%@'", imgname);
+        else
+            NSLog(@"Unable to find image data '%@'", imgname);
+    }
+    NSLog(@"++++Unable to find image data '%@'", imgname);
+    fclose(pFile);*/
+    //nii_readImgY(img, imgname, nhdr, gzBytes, swapEndian, skipVol, loadVol);
+    //if (img == NULL) NSLog(@">>>>>");
+    img = nii_readImg(imgname, nhdr, gzBytes, swapEndian, skipVol, loadVol);
+    
+}];
+
+[NSFileCoordinator removeFilePresenter:presenter];
+return img;
+
+#endif
+}
+
 
 void readTag(NSData *data, uint32_t* offset, uint32_t* itemType, uint32_t* itemBytes, uint32_t* itemOffset) {
     uint32_t *data32 = (uint32_t *)data.bytes;
@@ -2496,9 +2631,16 @@ unsigned char * nii_readForeignx(NSString * fname, struct nifti_1_header *niiHdr
                 return 0;
             }
         }
-        //NSLog(@"%d %dx%dx%dx%d",niiHdr->sform_code, niiHdr->dim[1], niiHdr->dim[2], niiHdr->dim[3],  niiHdr->dim[4]);
-        unsigned char * img = nii_readImg(imgname, niiHdr, gzBytes, swapEndian, skipVol, loadVol);
+        NSLog(@"foreign: %@ %d %dx%dx%dx%d",imgname, niiHdr->sform_code, niiHdr->dim[1], niiHdr->dim[2], niiHdr->dim[3],  niiHdr->dim[4]);
+        unsigned char * img = NULL;
+        if( !([fname caseInsensitiveCompare: imgname] == NSOrderedSame) ) {
+            NSLog(@"Filename changed (Sandbox may deny access): '%@' -> '%@'", fname, imgname);
+            img = nii_readImgPair(fname, imgname, niiHdr, gzBytes, swapEndian, skipVol, loadVol);
+        } else
+            img = nii_readImg(imgname, niiHdr, gzBytes, swapEndian, skipVol, loadVol);
+        //NSLog(@"ABA %@", imgname);
         if (isDimPermute2341) dimPermute2341(niiHdr, img);
+        //NSLog(@"ACA %@", imgname);
         return img;
     }
     if ( [ext caseInsensitiveCompare: @"MAT"] == NSOrderedSame )

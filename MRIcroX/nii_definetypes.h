@@ -54,7 +54,7 @@ extern "C" {
         double fieldOfViewMM[4]; //Field of View in mm for X(1), Y(2) and Z (3) dimensions - FOV[0] unused
         double sliceFrac[4];//crosshair location as a fraction of volume size
         int tempSliceVox[4];//current slice - used for mouse drags
-        double mm[4]; //crosshair location in MNI space
+        double mm[4], mmPerPix; //crosshair location in MNI space
         int scrnDim[4];//size of X,Y,Z in pixels
         int colorScheme; //index of current colorscheme 0=black&white, 2=hot... etc
         int xBarGap; //size of gap at center of cross-hairs (in pixels)
@@ -72,12 +72,14 @@ extern "C" {
         // force_refreshGL : rapid redraw of screen at next "doRedraw" timer - e.g. new origin selected
         // force_recalcGL : a slow recalculation is required at next "doRedraw" timer - e.g. rescale colors
         // busyGL : OpenGL is currently busy on an update, new "doRedraw" calls deferred until task is completed
-        bool retinaResolution, dicomWarn, force_refreshGL, force_recalcGL, busyGL, updatedTimeline, showInfo, showOrient, orthoOrient,loadFewVolumes,  advancedRender, viewRadiological;
+        //bool retinaResolution;
+        bool dicomWarn, force_refreshGL, force_recalcGL, busyGL, updatedTimeline, showInfo, showOrient, orthoOrient,loadFewVolumes,  advancedRender, viewRadiological, isSmooth2D;
         float overlayFrac; //, colorBarBorder;
         int colorBarBorderPx;
         NII_OVERLAY overlays[MAX_OVERLAY];
         #ifdef NII_IMG_RENDER //from nii_definetypes.h
-        GLuint glslprogramInt, renderBuffer, frameBuffer,backFaceBuffer, finalImage,intensityOverlay3D, gradientOverlay3D,intensityTexture3D, gradientTexture3D; //, transferTexture1;
+        //GLuint frameBuffer, finalImage, renderBuffer, backFaceBuffer;
+        GLuint dlBox3D, glslprogramCur, glslprogramMR, glslprogramCT,  intensityOverlay3D, gradientOverlay3D,intensityTexture3D, gradientTexture3D; //, transferTexture1;
         float TexScale[4], lut_bias;
         //GLhandleARB glslprogram;
         //GLhandleARB glslprogramBlur;
@@ -86,8 +88,8 @@ extern "C" {
         GLuint glslprogramIntSobel;
         bool glslUpdateGradientsBG, glslUpdateGradientsOverlay;
         float renderDistance;
-        int renderAzimuth, renderElevation, renderSlices, clipAzimuth,clipElevation,clipDepth, rayCastQuality1to10, renderWid, renderHt, renderLeft, renderBottom, displayModeGL;
-        bool showCube, perspective, rayCastViewCenteredLight;
+        int renderAzimuth, renderElevation, renderSlices, clipAzimuth,clipElevation,clipDepth, rayCastQuality1to4, renderWid, renderHt, renderLeft, renderBottom, displayModeGL;
+        bool showCube, rayCastViewCenteredLight;
         #endif
         int numDtiV;
         float dtiV[MAX_DTIvectors][3];

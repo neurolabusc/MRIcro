@@ -21,6 +21,8 @@
 			<string>Viewer</string>
 			<key>NSDocumentClass</key>
 			<string>NIfTI Image</string>
+			<key>NSIsRelatedItemType</key>
+			<true/>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
@@ -38,8 +40,12 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
-				<string>head</string>
-				<string>brik</string>
+				<string>HEAD</string>
+				<string>BRIK</string>
+				<string>BRIK.gz</string>
+				<string>gz</string>
+				<string>BRIK.bz2</string>
+				<string>bz2</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>AFNI</string>
@@ -47,6 +53,8 @@
 			<string>Viewer</string>
 			<key>NSDocumentClass</key>
 			<string>AFNI Image</string>
+			<key>NSIsRelatedItemType</key>
+			<true/>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
@@ -101,11 +109,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.8.9</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>189</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.medical</string>
 	<key>LSMinimumSystemVersion</key>

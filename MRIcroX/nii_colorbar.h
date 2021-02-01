@@ -19,7 +19,7 @@ extern "C" {
 #endif
     //void drawVolumeLabel(NII_PREFS* prefs);
     //void drawColorBar(NII_PREFS* prefs);
-    void drawColorBarTex(NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib);
+    void drawColorBarTex(NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib, bool showRuler);
     void drawHistogram(NII_PREFS* prefs, int Lft, int Wid, int Ht);
     //void drawVolumeLabelTex(NII_PREFS* prefs, GLString * glStrTex, NSMutableDictionary * stanStrAttrib);
     //void textArrow (float X, float Y, float Sz, char* NumStr, int orient , NII_PREFS* prefs);

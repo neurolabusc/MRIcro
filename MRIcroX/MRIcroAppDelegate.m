@@ -11,6 +11,7 @@
 #import <OpenGL/glext.h>
 #import <OpenGL/glu.h>
 
+
 @implementation MRIcroXAppDelegate
 @synthesize yokeMenu;
 @synthesize importMenu;
@@ -46,8 +47,6 @@
     [windowArray removeObjectIdenticalTo: sender  ];
 }
 
-
-
 -(void) openImageInActiveWindowIfPossible:(NSString *)file
 {
     //NSLog(@"AppDel openImageInActiveWindowIfPossible %@", file);
@@ -56,6 +55,7 @@
     //NSLog(@"++AppDel openImageInActiveWindowIfPossible %d", numWin );
     NSUInteger flags = [[NSApp currentEvent] modifierFlags];
     if  ((flags & NSShiftKeyMask) || (numWin < 1)) {
+        //NSLog(@"AppDel NewDocument %@", file);
         [self createNewDocument: self];//self was sender
         return;
     }
@@ -65,6 +65,25 @@
             return;
         }
     [[ windowArray  objectAtIndex: 0] openDocumentFromFileName: file ];//none of the windows was key -send to first
+}
+
+-(void) openImagesInActiveWindowIfPossible:(NSArray *)files
+{
+    //NSLog(@"AppDel openImageInActiveWindowIfPossible %@", file);
+    [[NSUserDefaults standardUserDefaults] setObject:[ files  objectAtIndex: 0] forKey:@"defaultFilename"];
+    int numWin = (int)[windowArray count];
+    //NSLog(@"++AppDel openImageInActiveWindowIfPossible %d", numWin );
+    NSUInteger flags = [[NSApp currentEvent] modifierFlags];
+    if  ((flags & NSShiftKeyMask) || (numWin < 1)) {
+        [self createNewDocument: self];//self was sender
+        return;
+    }
+    for (int i = 0; i < numWin; i++)
+        if ([[ windowArray  objectAtIndex: i] isActiveKey]) {
+            [[ windowArray  objectAtIndex: i] openDocumentFromFileNames: files ];//self was sender
+            return;
+        }
+    [[ windowArray  objectAtIndex: 0] openDocumentFromFileNames: files ];//none of the windows was key -send to first
 }
 
 - (BOOL)processFile:(NSString *)file
@@ -91,13 +110,16 @@
 - (void)application:(NSApplication *)sender openFiles:(NSArray *)filenames
 { //load named documents
     //NSLog(@"AppDel openFiles");
-    for (NSString *filename in filenames)
+    [self openImagesInActiveWindowIfPossible: filenames];
+    /*for (NSString *filename in filenames) {
+        NSLog(@"AppDel openFiles: %@", filename);
         [self application:sender openFile:filename];
+    }*/
 }
 
 -(IBAction) openDocument: (id) sender
 {
-    //NSLog(@"AppDel openDoc");
+    NSLog(@"AppDel openDoc");
     [self openImageInActiveWindowIfPossible:@"~"];
 }
 
@@ -136,6 +158,7 @@
 }
 
 - (IBAction)showAppPrefs:(id)sender {
+    
     //show application preferences window - if possible position immediately to the left of the active window
     NSPoint pos = {0,0};
     int numWin = (int)[windowArray count];
@@ -188,7 +211,7 @@
 }
 
 - (void) updateThemeMode {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"]) {
+ /*   if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"]) {
         self.prefWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
         self.dcm2niiWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
         self.theTextView.textColor = [NSColor blackColor];
@@ -198,12 +221,11 @@
         self.dcm2niiWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
         self.theTextView.textColor = [NSColor blackColor];
         self.theTextView.backgroundColor = [NSColor whiteColor];
-    }
+    }*/
 }
 
 -(void)setDefaults: (bool) forceReset
 {
-    
     //NSLog(@"%d", (unsigned long)NSBottomTabsBezelBorder);
     if (forceReset) {
         [[NSUserDefaults standardUserDefaults] setPersistentDomain:[NSDictionary dictionary] forName:[[NSBundle mainBundle] bundleIdentifier]];
@@ -225,8 +247,10 @@
         [NSNumber numberWithBool:YES], @"advancedRender",
         [NSNumber numberWithBool:YES], @"blackBackground",
         [NSNumber numberWithBool:YES], @"dicomWarn",
+        [NSNumber numberWithBool:YES], @"isSmooth2D",
         [NSNumber numberWithBool:YES], @"retinaResolution",
-        [NSNumber numberWithBool:YES], @"darkMode",
+        [NSNumber numberWithInt:-1], @"startupStandard",
+        [NSNumber numberWithInt:2], @"startupMode",
                                           nil];
     [[NSUserDefaults standardUserDefaults] registerDefaults:userDefaultsDefaults];
     [[NSUserDefaults standardUserDefaults]synchronize ];
@@ -248,11 +272,14 @@
     //_prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     _prefLoadFewVolumesCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     _prefRetinaCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
-    _prefDarkModeCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"];
     _prefRadiologicalCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"viewRadiological"];
     _prefAdvancedRenderCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"];
     _prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
     _prefDicomCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"];
+    //_prefDicomCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"];
+    
+    _pref2dSmoothCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"isSmooth2D"];
+    
     [self updateThemeMode];
 }
 
@@ -290,26 +317,145 @@
         if (img != NULL) {
             //NSLog(@"read %@", fname);
             const char * nf = [fname UTF8String];
-            nii_saveNII((char *) nf, niiHdr,img, opts);
+            nii_saveNIIx((char *) nf, niiHdr,img, opts);
             free(img);
         } //img loaded
     } //for each file
 #endif
 } //other2niiClick()
 
-- (void) addTemplatesToRecentFolder {
-    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
-    //NSLog(@"App Directory is: %@", appFolderPath);
-    NSString *templatePath = [[[[appFolderPath stringByDeletingLastPathComponent] stringByDeletingLastPathComponent]stringByDeletingLastPathComponent] stringByAppendingString: @"/Templates"];
-    //NSLog(@"App Parent is: %@", templatePath);
+/*
+- (IBAction)loadAtlas:(id)sender {
+    NSLog(@"atlas select");
+    NSMenuItem *itm = (NSMenuItem *)sender;
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/atlas"];
+    NSString *atlasURL = [[templatePath stringByAppendingString:@"/"] stringByAppendingString: itm.title];
+    NSLog(@"atlas selected is: %@", atlasURL);
+    [self openImageInActiveWindowIfPossible: atlasURL];
+}
+
+- (void) addAtlasToRecentFolder {
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/atlas"];
+    //NSLog(@"atlas directory is: %@", templatePath);
+    BOOL isDir = NO;
+    if (!([[NSFileManager defaultManager] fileExistsAtPath:templatePath isDirectory:&isDir] && isDir)) return;
+    //NSLog(@"atlas directory exists: %@", templatePath);
+    NSArray *dirFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:templatePath error:nil];
+    NSArray *niiFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self ENDSWITH '.nii.gz'"]];
+    NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
+    NSMenu  *fileMenu = [[mainMenu itemAtIndex:1] submenu];
+    //NSLog(@">>>: %@", fileMenu.title);
+    //NSMenuItem  *atlasMenu = [fileMenu itemAtIndex:3];
+    NSMenu  *atlasMenu = [[fileMenu itemAtIndex:3] submenu];
+    //NSLog(@">>>: %@", atlasMenu.title);
+    //NSLog(@">>>: %d", (int) niiFiles.count);
+    for (int i = 0; i < niiFiles.count; i++) {
+        //NSMenuItem *item=[[NSMenuItem alloc]initWithTitle:@"Tutorial" action:@selector(actionTutorial:) keyEquivalent:@"T"];
+        //NSMenuItem* item = [[NSMenuItem allocWithZone:[NSMenu menuZone]] initWithTitle:@"Random" action:@selector(menuSelected:) keyEquivalent:@"0"];
+        NSMenuItem *item=[[NSMenuItem alloc]initWithTitle:niiFiles[i] action:@selector(loadAtlas:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setTag:i];
+        [atlasMenu addItem:item];
+    }
+}
+
+- (IBAction)loadStandard:(id)sender {
+    //NSLog(@"atlas select");
+    NSMenuItem *itm = (NSMenuItem *)sender;
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/standard"];
+    NSString *atlasURL = [[templatePath stringByAppendingString:@"/"] stringByAppendingString: itm.title];
+    //NSLog(@"atlas selected is: %@", atlasURL);
+    [self openImageInActiveWindowIfPossible: atlasURL];
+}
+
+- (void) addStandardToRecentFolder {
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/standard"];
     BOOL isDir = NO;
     if (!([[NSFileManager defaultManager] fileExistsAtPath:templatePath isDirectory:&isDir] && isDir)) return;
     NSArray *dirFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:templatePath error:nil];
     NSArray *niiFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self ENDSWITH '.nii.gz'"]];
+    NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
+    NSMenu  *fileMenu = [[mainMenu itemAtIndex:1] submenu];
+    NSMenu  *atlasMenu = [[fileMenu itemAtIndex:4] submenu];
+    for (int i = 0; i < niiFiles.count; i++) {
+        NSMenuItem *item=[[NSMenuItem alloc]initWithTitle:niiFiles[i] action:@selector(loadStandard:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setTag:i];
+        [atlasMenu addItem:item];
+    }
+}*/
 
-    for (int i = 0; i < niiFiles.count; i++)
-        [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL: [NSURL fileURLWithPath:[[templatePath stringByAppendingString:@"/"] stringByAppendingString: niiFiles[i]]]];
+
+- (IBAction)loadTemplate:(id)sender {
+    //NSLog(@"atlas select");
+    NSMenuItem *itm = (NSMenuItem *)sender;
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/standard"];
+    if (itm.tag < 0)
+        templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/atlas"];
+    NSString *fnm = [[templatePath stringByAppendingString:@"/"] stringByAppendingString: itm.title];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:fnm]) {
+        NSLog(@"Unable to find file named: %@", fnm);
+        return;
+    }
+    if (![[NSFileManager defaultManager] isReadableFileAtPath:fnm] ) {
+        NSLog(@"Unable to read file named: %@", fnm);
+        return;
+    }
+    if (itm.tag >= 0) {
+        [[NSUserDefaults standardUserDefaults] setInteger:(int)itm.tag forKey:@"startupStandard"];
+        //NSLog(@"startupStandard: %d", (int)itm.tag);
+    }
+    [self openImageInActiveWindowIfPossible: fnm];
 }
+
+//-(void) setRightMouseDragXY: (int) x Y: (int) y isMag: (bool) mag isSwipe: (bool) swipe;
+
+- (void) populateTemplateMenus: (bool) isAtlas {
+    NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
+    NSMenu  *fileMenu = [[mainMenu itemAtIndex:1] submenu];
+    NSMenu  *atlasMenu = [[fileMenu itemAtIndex:4] submenu];
+    NSString *templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/standard"];
+    if (isAtlas) {
+        templatePath = [[[NSBundle mainBundle] resourcePath] stringByAppendingString: @"/atlas"];
+        atlasMenu = [[fileMenu itemAtIndex:3] submenu];
+    }
+    BOOL isDir = NO;
+    if (!([[NSFileManager defaultManager] fileExistsAtPath:templatePath isDirectory:&isDir] && isDir)) return;
+    NSArray *dirFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:templatePath error:nil];
+    NSArray *niiFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self ENDSWITH '.nii.gz'"]];
+    niiFiles = [niiFiles sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+    for (int i = 0; i < niiFiles.count; i++) {
+        NSMenuItem *item=[[NSMenuItem alloc]initWithTitle:niiFiles[i] action:@selector(loadTemplate:) keyEquivalent:@""];
+        [item setTarget:self];
+        if (isAtlas)
+            [item setTag:-1];
+        else
+            [item setTag:i];
+        [atlasMenu addItem:item];
+    }
+}
+
+/*- (void) addStandardToRecentFolder {
+    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+    //NSLog(@"app Directory is: %@", appFolderPath);
+    NSString *templatePath = [appFolderPath stringByAppendingString: @"/standard"];
+    //NSLog(@"standard directory is: %@", templatePath);
+    BOOL isDir = NO;
+    if (!([[NSFileManager defaultManager] fileExistsAtPath:templatePath isDirectory:&isDir] && isDir)) return;
+    //NSLog(@"standard directory exists: %@", templatePath);
+    NSArray *dirFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:templatePath error:nil];
+    NSArray *niiFiles = [dirFiles filteredArrayUsingPredicate:[NSPredicate predicateWithFormat:@"self ENDSWITH '.nii.gz'"]];
+    //niiFiles = [niiFiles sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+    NSSortDescriptor* sortOrder = [NSSortDescriptor sortDescriptorWithKey: @"self" ascending: NO];
+    niiFiles = [niiFiles sortedArrayUsingDescriptors: [NSArray arrayWithObject: sortOrder]];
+    //NSSortDescriptor *sort = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES];
+    //niiFiles=[niiFiles sortedArrayUsingDescriptors:@[sort]];
+    for (int i = 0; i < niiFiles.count; i++) {
+        //NSString *fnm = [[templatePath stringByAppendingString:@"/"] stringByAppendingString: niiFiles[i]];
+        //if (![[NSFileManager defaultManager] isReadableFileAtPath:fnm] ) continue;
+        [[NSDocumentController sharedDocumentController] noteNewRecentDocumentURL: [NSURL fileURLWithPath:[[templatePath stringByAppendingString:@"/"] stringByAppendingString: niiFiles[i]]]];
+    }
+}*/
 
 - (BOOL)applicationShouldOpenUntitledFile:(NSApplication *)sender;
 {
@@ -593,8 +739,29 @@
     return YES;
 }
 
+-(void)detectSandbox {
+    NSDictionary* environ = [[NSProcessInfo processInfo] environment];
+    BOOL inSandbox = (nil != [environ objectForKey:@"APP_SANDBOX_CONTAINER_ID"]);
+    //NSLog(@"%d", inSandbox);
+    if (inSandbox)
+        [importMenu setHidden:YES];
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     //[[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:[[NSApplication sharedApplication] delegate]] ;
+    /*
+    //Detect High-Definition Screen
+    NSArray<NSScreen *> * screens = [NSScreen screens];
+    
+    for ( NSScreen * screen in screens ) {
+        if ( [screen canRepresentDisplayGamut:NSDisplayGamutP3] )
+            NSLog(@"Display: P3 Capable");
+        else
+            NSLog(@"Display: P3 Not supported");
+        NSLog(@"Display scale %g", screen.backingScaleFactor);
+    }
+    */
+    [self detectSandbox];
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
     //[self imgLoad ];
     //NSString *niiFile = @"/Users/rorden/Downloads/comp/fubar/25943524";
@@ -635,7 +802,8 @@
 #else
     [importMenu setHidden: true];
 #endif
-    [self addTemplatesToRecentFolder];
+    [self populateTemplateMenus: TRUE];
+    [self populateTemplateMenus: FALSE];
     //Yuck - with XCode either a whole menu is auto enabled or not, you can not manually set a single item if the menu is automatic
     //NSMenu* fileMenu = [[[[NSApplication sharedApplication] mainMenu] itemWithTitle: @"File"] submenu];
     //[fileMenu setAutoenablesItems: NO];
@@ -668,7 +836,26 @@
     
     //NSInvocationOperation* op = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(openNewDocumentIfNeeded) object:nil];
     //[[NSOperationQueue mainQueue] addOperation: op];
+    NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
+    NSMenu  *fileMenu = [[mainMenu itemAtIndex:1] submenu];
+    NSMenu  *atlasMenu = [[fileMenu itemAtIndex:4] submenu];
+    if (atlasMenu == NULL) return;
+    if (atlasMenu.numberOfItems < 1) return;
+    int itm = (int) atlasMenu.numberOfItems - 1;
+    NSUserDefaults *defaults= [NSUserDefaults standardUserDefaults];
+    if([[[defaults dictionaryRepresentation] allKeys] containsObject:@"startupStandard"]){
+        //int itm2 = [[NSUserDefaults standardUserDefaults] boolForKey:@"startupStandard"];
+        int itm2 = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"startupStandard"];
+        if ((itm2 >= 0) && (itm2 < itm))
+            itm = itm2;
+    }
+    NSMenuItem *imgMenu = [atlasMenu itemAtIndex: itm];
+    if (imgMenu != NULL) {
+        //NSLog(@"loading startup template %@", imgMenu.title);
+        [self loadTemplate: imgMenu ];
+    }
 }
+
 
 - (IBAction)closePopupX
 {
@@ -685,6 +872,7 @@
     [NSTimer scheduledTimerWithTimeInterval: 4.5  target:self selector: @selector(closePopupX) userInfo:self repeats:NO];
 }
 
+
 - (IBAction)prefChange:(id)sender {
     //NSLog(@"Got it %ld", (long)_pref3dOrientCheck.state );
     //[[NSUserDefaults standardUserDefaults] setObject:@"~" forKey:@"defaultFilename"];
@@ -697,12 +885,13 @@
     bool prevRet = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     bool newRet = _prefRetinaCheck.state;
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRetinaCheck.state forKey:@"retinaResolution"];
-    [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefDarkModeCheck.state forKey:@"darkMode"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefRadiologicalCheck.state forKey:@"viewRadiological"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefAdvancedRenderCheck.state forKey:@"advancedRender"];
     [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefBlackBackgroundCheck.state forKey:@"blackBackground"];
     
-    [[NSUserDefaults standardUserDefaults] setBool:(bool)_prefDicomCheck.state forKey:@"dicomWarn"];
+    //[[NSUserDefaults standardUserDefaults] setBool:(bool)_prefDicomCheck.state forKey:@"dicomWarn"];
+    [[NSUserDefaults standardUserDefaults] setBool:(bool)_pref2dSmoothCheck.state forKey:@"isSmooth2D"];
+    
     //_prefBlackBackgroundCheck.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"];
     //NSLog(@"render %ld -> %ld",(long)_prefAdvancedRenderCheck.state,  (long)[[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"] );
     //NSLog(@"Got it %ld -> %ld",(long)_prefDicomCheck.state,  (long)[[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"] );
@@ -912,7 +1101,6 @@
         if ([files count] < 1) return;
         [self processDicomFile: [[files objectAtIndex:0] path] ];
 }
-
 
 @end
 

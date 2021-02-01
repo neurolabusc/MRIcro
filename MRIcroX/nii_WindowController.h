@@ -18,6 +18,7 @@
 
 
     IBOutlet NSWindow *theWindow;
+    IBOutlet NSWindow *dicomWindow;
     IBOutlet NSTextField *darkEdit;
     IBOutlet NSTextField *brightEdit;
     IBOutlet NSPopUpButton *layerDrop;
@@ -45,12 +46,13 @@
 - (IBAction) saveTimelineAsPDF: (id) sender;
 - (IBAction) saveTimelineAsText: (id) sender;
 - (IBAction) openDocument: (id) sender;
-- (IBAction)open:(id)sender;
+- (IBAction) addOverlay: (id) sender;
+//- (IBAction)open:(id)sender;
 - (BOOL) isActiveKey;
 - (BOOL) openDocumentFromFileName: (NSString *)file_name;
+- (BOOL) openDocumentFromFileNames: (NSArray *)files;
 - (IBAction) openDiffusionWC: (id) sender;
 - (IBAction) closeOverlays: (id) sender;
-- (IBAction) addOverlay: (id) sender;
 - (IBAction) removeHaze: (id) sender;
 - (IBAction) doSharpen: (id) sender;
 
@@ -63,6 +65,7 @@
 -(void) setXYZmmWC: (float) x Y: (float) y Z: (float) z;
 - (IBAction) volumePrior: (id) sender;
 - (IBAction) volumeNext: (id) sender;
-
+- (IBAction) orientChange: (NSMenuItem *) sender;
+- (BOOL)validateMenuItem:(NSMenuItem *)item ;
 
 @end

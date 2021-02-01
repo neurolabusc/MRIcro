@@ -15,6 +15,22 @@
 #import <OpenGL/glext.h>
 #import <OpenGL/glu.h>
 
+@implementation NSAlert (Cat)
+
+-(NSInteger) runModalSheetForWindow:(NSWindow *)aWindow
+{
+    [self beginSheetModalForWindow:aWindow completionHandler:^(NSModalResponse returnCode)
+        { [NSApp stopModalWithCode:returnCode]; } ];
+    NSInteger modalCode = [NSApp runModalForWindow:[self window]];
+    return modalCode;
+}
+
+-(NSInteger) runModalSheet {
+    return [self runModalSheetForWindow:[NSApp mainWindow]];
+}
+
+@end
+
 @implementation nii_WindowController
 
 - (NSString *)inputDialog: (NSString *)prompt defaultValue: (NSString *)defaultValue {
@@ -74,10 +90,12 @@
 }
 
 -(void) updateThemeMode {
+    /*
 if ([[NSUserDefaults standardUserDefaults] boolForKey:@"darkMode"])
 theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
 else
 theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+     */
 }
 
 -(void) updatePrefs:(id)sender {
@@ -136,12 +154,20 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 }
 
 - (IBAction)infoClick:(id)sender { //
+    //[niiGL forceRecalc]; return; //Flicker test
     NSString *message = [niiGL getHeaderInfo];
-    NSBeginAlertSheet(@"Header Information", @"OK",NULL,NULL,theWindow, self,
-                      NULL, NULL, NULL,
-                      @"%@"
-                      , message
-                      );
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:@"Header Information"];
+    [alert setInformativeText:message];
+    [alert addButtonWithTitle:@"OK"];
+    //[alert addButtonWithTitle:@"Cancel"];
+    [alert setAlertStyle:NSWarningAlertStyle];
+    [alert beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse returnCode) {
+        /*if (returnCode == NSAlertSecondButtonReturn) {
+            NSLog(@"Cancelled!");
+            return;
+        }*/
+    }];
 }
 
 - (void) setTitle {
@@ -179,6 +205,17 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
     [darkEdit setDoubleValue: val.viewMin];
     [brightEdit setDoubleValue: val.viewMax];
     [colorDrop selectItemAtIndex: val.colorScheme];
+    
+    //[[[NSApp mainMenu] itemWithTag:4]  setEnabled:NO];
+    //NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
+    //retinaScaleFactorNSMenu  *viewMenu = [[mainMenu itemAtIndex:4] submenu];
+    //NSMenu  *atlasMenu = [[fileMenu itemAtIndex:4] submenu];
+    //[[viewMenu itemAtIndex:4]  setEnabled:NO];
+    //[[viewMenu itemWithTag:4]  setEnabled:NO];
+    //- (BOOL)validateMenuItem:(NSMenuItem *)item
+    //[[[NSApp mainMenu] itemWithTitle:@"File"]  setEnabled:NO];
+    //NSMenuItem *item1 = [[NSMenuItem alloc] initWith..];
+    
 }
 
 - (void)updateEverything { //on loading new image
@@ -201,33 +238,198 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 -(void) setXYZmmWC: (float) x Y: (float) y Z: (float) z {
    [niiGL setXYZmmGL: x Y: y Z: z]; //Yoke
 }
+
+NSArray * niiFileTypesW () {
+    NSArray *fileTypes = [NSArray arrayWithObjects:
+                          @"dcm", @"nii", @"MAT",@"NII",@"hdr", @"HDR",  @"GZ", @"gz",@"voi", @"MGH", @"mgh",  @"MGZ", @"mgz", @"MHA", @"mha",  @"MHD", @"mhd",@"HEAD", @"head", @"nrrd", @"nhdr", nil];
+    fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageFileTypes]];
+    return fileTypes;
+}
+
 -(IBAction) openDocument: (id) sender
 {
     //NSLog(@"winCon openDoc");
+    NSOpenPanel *openPanel  = [NSOpenPanel openPanel];
+    openPanel.title = @"Choose a background image";
+    /*NSArray *fileTypes = [NSArray arrayWithObjects:
+    @"dcm", @"nii", @"MAT",@"NII",@"hdr", @"HDR",  @"GZ", @"gz",@"voi", @"MGH", @"mgh",  @"MGZ", @"mgz", @"MHA", @"mha",  @"MHD", @"mhd",@"HEAD", @"head", @"nrrd", @"nhdr", nil];
+    fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageFileTypes]];
+    [openPanel setAllowedFileTypes:fileTypes];*/
+    [openPanel setAllowedFileTypes:niiFileTypesW()];
+    openPanel.allowsMultipleSelection = TRUE;
+    
+    //[openPanel allowsMultipleSelection: TRUE];
+    //[openPanel setAllowedFileTypes:[NSImage imageFileTypes]];
+    NSInteger result    = [openPanel runModal];
+    if(result != NSOKButton) return;
+    //if (![self checkSandAccess: [[openPanel URL] path]]) return;
+    //openPanel.filenames
+    [self openDocumentFromFileNames: openPanel.filenames ];
+    //NSLog(@"%@", openPanel.filenames);
+    //[self openDocumentFromFileNames: openPanel.URLs ];
+    //[self openDocumentFromFileName: [[openPanel URL] path]] ;
+
+    /*
+    
+    //openDocumentFromFileNames: (NSArray *)files
     [self stopEverything];
     [niiGL openDocumentGL:  sender];
     [self updateEverything];
+    */
 }
 
-
+- (IBAction) addOverlay: (id) sender {
+    [niiGL addOverlayGL:  sender];
+    [self updateToolbar];
+}
+/*
 - (IBAction)open:(id)sender 
 {
     //NSLog(@"winCon open");
     [self stopEverything];
     [niiGL openDocumentGL:  sender];
     [self updateEverything];
-}
+}*/
 
 - (BOOL) openDocumentFromFileName: (NSString *)file_name
 {
     //NSLog(@"winCon openDocumentFromFileName --> %@", file_name);
-    
     [self stopEverything];
     BOOL ret = [niiGL openDocumentFromFileNameGL:  file_name];
     [self updateEverything];
     return ret;
 }
 
+
+- (void)removeAllNiiFiles: (NSString *)path
+{
+    NSFileManager  *manager = [NSFileManager defaultManager];
+    // grab all the files in the dir
+    NSArray *allFiles = [manager contentsOfDirectoryAtPath:path error:nil];
+    // filter the array for only .nii files
+    NSPredicate *fltr = [NSPredicate predicateWithFormat:@"self ENDSWITH '.nii'"];
+    NSArray *niiFiles = [allFiles filteredArrayUsingPredicate:fltr];
+    // use fast enumeration to iterate the array and delete the files
+    for (NSString *niiFile in niiFiles) {
+       NSError *error = nil;
+       [manager removeItemAtPath:[path stringByAppendingPathComponent:niiFile] error:&error];
+       NSAssert(!error, @"Assertion: SQLite file deletion shall never throw an error.");
+    }
+}
+
+- (NSArray *)findAllNiiFiles: (NSString *)path
+{
+    NSFileManager  *manager = [NSFileManager defaultManager];
+    // grab all the files in the dir
+    NSArray *allFiles = [manager contentsOfDirectoryAtPath:path error:nil];
+    // filter the array for only .nii files
+    NSPredicate *fltr = [NSPredicate predicateWithFormat:@"self ENDSWITH '.nii'"];
+    return [allFiles filteredArrayUsingPredicate:fltr];
+}
+
+- (BOOL) openDocumentFromFileNames: (NSArray *)files
+{
+    //NSLog(@"winCon FromFilenames");
+    int numberOfFiles = (int)[files count];
+    if (numberOfFiles < 1) return FALSE;
+    int nDICOM = 0;
+    [self stopEverything];
+    bool OK = FALSE;
+    #ifndef STRIP_DCM2NII
+    BOOL *isDICOM = (BOOL*)malloc(files.count * sizeof(BOOL) );
+    #endif
+    for (int i = 0; i < files.count; i++){
+        NSString* fname = [files objectAtIndex:i];
+        isDICOM[i] = FALSE;
+        #ifndef STRIP_DCM2NII
+        char fnameC[1024] = {""};
+        strcat(fnameC,[fname cStringUsingEncoding:1]);
+        if (isDICOMfile(fnameC) > 0) {
+            nDICOM ++;
+            isDICOM[i] = TRUE;
+            continue;
+        }
+        #endif
+        OK = [niiGL openDocumentFromFileNameGL:fname];
+        if (OK) break;
+        NSLog(@"Unable to open dropped file: %@", fname);
+    }
+    #ifndef STRIP_DCM2NII
+    if ((!OK) &&  (nDICOM > 0)) {
+        //NSLog(@"%d DICOMs", nDICOM);
+        //https://nshipster.com/temporary-files/
+        NSURL *temporaryDirectoryURL = [NSURL fileURLWithPath: NSTemporaryDirectory() isDirectory: YES];
+        //NSString *temporaryFilename = [[[NSProcessInfo processInfo] globallyUniqueString] stringByAppendingString: @".txt"];
+        NSString *temporaryFilename = @"dcmstrs.txt";
+        NSURL *temporaryFileURL =[temporaryDirectoryURL URLByAppendingPathComponent:temporaryFilename];
+        //NSLog(@"TempFile %@", temporaryFileURL);
+        NSString *dcmStrs = @"";
+        for (int i = 0; i < files.count; i++){
+            if (!isDICOM[i]) continue;
+            NSString* fname = [files objectAtIndex:i];
+            //dcmStrs = [dcmStrs stringByAppendingString: fname];
+            dcmStrs = [dcmStrs stringByAppendingString: [NSString stringWithFormat: @"%@\n", fname]];
+            
+        }
+        //NSLog(@">>%@", dcmStrs);
+        NSError * error = NULL;
+        //BOOL ok = [string writeToURL:URL atomically:YESencoding:NSUnicodeStringEncoding error:&error];
+        BOOL ok = [dcmStrs writeToURL:temporaryFileURL atomically:YES encoding:NSUTF8StringEncoding error:&error];
+        if (!ok) NSLog(@"Unable to write file %@", temporaryFileURL);
+        [self removeAllNiiFiles: [temporaryDirectoryURL path]];
+        struct TDCMopts opts;
+        readIniFile(&opts, NULL); //set default preferences
+        opts.isOnlySingleFile = true;
+        opts.isCreateBIDS = false;
+        opts.isGz = false;
+        //NSString *myString = temporaryFileURL.absoluteString;
+        //NSString *urlString = [myURL absoluteString];
+        //temporaryFileURL
+        const char *cString = [[temporaryFileURL path ] UTF8String];
+        strcpy(opts.indir, cString);
+        strcpy(opts.filename, "%s_%p");
+        nii_loadDir(&opts);
+        NSArray * niis = [self findAllNiiFiles: [temporaryDirectoryURL path]];
+        //NSLog(@"DICOM series: %d", (int) niis.count );
+        //[_seriesSelectWin orderFront: sender];
+        if (niis.count > 0) {
+            int idx = 0;
+            if (niis.count > 1) {
+                NSAlert *alert = [[NSAlert alloc] init];
+                [alert setMessageText:@"Select DICOM image"];
+                //[alert setInformativeText:@"Series"];
+                //[alert addButtonWithTitle:@"A"];
+                //[alert addButtonWithTitle:@"B"];
+                //[alert addButtonWithTitle:@"C"];
+                for (int i = 0; i < niis.count; i++){
+                    NSString* nii= [niis objectAtIndex:i];
+                    [alert addButtonWithTitle: nii];
+                }
+                //[alert addButtonWithTitle:@"Cancel"];
+                [alert setAlertStyle:NSWarningAlertStyle];
+                NSInteger returnCode = [alert runModalSheetForWindow:theWindow];
+                idx = (int)(returnCode - NSAlertFirstButtonReturn);
+            }
+            NSString* nii= [niis objectAtIndex:idx];
+            nii = [[temporaryDirectoryURL path] stringByAppendingPathComponent:nii];
+            //NSLog(@">> %@", nii);
+            OK = [niiGL openDocumentFromFileNameGL:nii];
+            
+            /*for (int i = 0; i < niis.count; i++){
+                NSString* nii= [niis objectAtIndex:i];
+                nii = [[temporaryDirectoryURL path] stringByAppendingPathComponent:nii];
+                //NSLog(@">> %@", nii);
+                OK = [niiGL openDocumentFromFileNameGL:nii];
+                if (OK) break;
+            }*/
+        }
+        [self removeAllNiiFiles: [temporaryDirectoryURL path]];
+    }
+    #endif
+    free(isDICOM);
+    [self updateMostThings];
+    return OK;
+}
 - (IBAction) openDiffusionWC: (id) sender
 {
     
@@ -269,14 +471,12 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
     [self updateToolbar];
 }
 
-- (IBAction) addOverlay: (id) sender {
-    [niiGL addOverlayGL:  sender];
-    [self updateToolbar];
-}
-
 - (IBAction)modeChange:(id)sender {
     [niiGL resetClip];
-    [niiGL setDisplayMode: (int)[modeDrop indexOfSelectedItem]];
+    int mode = (int)[modeDrop indexOfSelectedItem];
+    [niiGL setDisplayMode: mode];
+    [[NSUserDefaults standardUserDefaults] setInteger: mode forKey:@"startupMode"];
+    //NSLog(@"startupMode: %d", mode);
 }
 
 - (IBAction)darkEditChange:(id)sender {
@@ -292,7 +492,34 @@ theWindow.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
 }
 
 - (IBAction)colorDropChange:(id)sender {
+    int idx = (int)[sender indexOfSelectedItem];
     [niiGL setColorSchemeForLayer: [sender indexOfSelectedItem]  Layer: (int)[layerDrop indexOfSelectedItem]];
+    if (idx < 16) return; //CT_color schemes
+    if (idx == 16) {//CT airways
+        darkEdit.doubleValue = -643;
+        brightEdit.doubleValue = -235;
+    }
+    if (idx == 17) {//CT bone
+        darkEdit.doubleValue = 180;
+        brightEdit.doubleValue = 600;
+    }
+    if (idx == 18) {//CT head
+        darkEdit.doubleValue = -590;
+        brightEdit.doubleValue = 600;
+    }
+    if (idx == 19) {//CT kidneys
+        darkEdit.doubleValue = 114;
+        brightEdit.doubleValue = 302;
+    }
+    if (idx == 20) {//CT soft tissue
+        darkEdit.doubleValue = -10;
+        brightEdit.doubleValue = 110;
+    }
+    if (idx == 21) {//CT surface
+        darkEdit.doubleValue = -600;
+        brightEdit.doubleValue = 100;
+    }
+    [self darkEditChange: sender];
     
 }
 
@@ -319,53 +546,12 @@ bool containsString (NSString *string, NSString *substring) {
 
 - (BOOL)performDragOperation:(id <NSDraggingInfo>)sender {
     NSPasteboard *pboard = [sender draggingPasteboard];
-   //UInt32 carbonModifiers = GetCurrentKeyModifiers();
-    //[NSEvent modifierFlags];
-    //NSEvent *theEvent =
-    /*NSUInteger iflags = [NSEvent modifierFlags] & NSDeviceIndependentModifierFlagsMask;
-    if( iflags == NSCommandKeyMask ){
-        NSLog(@"xxxxx");
-    }*/
-    
-    
-    //NSUInteger iflags = [NSEvent modifierFlags] & NSDeviceIndependentModifierFlagsMask;
-    //bool specialKeys = (iflags == NSControlKeyMask);
-    if ( [[pboard types] containsObject:NSFilenamesPboardType] ) {
-        NSArray *files = [pboard
-                          propertyListForType:NSFilenamesPboardType];
-        int numberOfFiles = (int)[files count];
-        if (numberOfFiles>0) {
-            
-            
-            /*NSString *ext = [[[files objectAtIndex:0] pathExtension] uppercaseString];
-            if (containsString(ext, @"NII") || containsString(ext, @"HDR")
-                || containsString(ext, @"MHA") || containsString(ext, @"MHD")
-                || containsString(ext, @"HEAD")
-                || containsString(ext, @"MGH") || containsString(ext, @"MGZ")
-                || containsString(ext, @"NRRD") || containsString(ext, @"NHDR")
-                || containsString(ext, @"IMG") || containsString(ext, @"GZ")
-                || containsString(ext, @"DCM")) {*/
-            [self stopEverything];
-            [niiGL openDocumentFromFileNameGL:  [files objectAtIndex:0]];
-            /*NSLog(@"MAT --->%@", ext);
-            NSString *ext = [[[files objectAtIndex:0] pathExtension] uppercaseString];
-            if (containsString(ext, @"MAT")) {
-                NSLog(@"MAT --->%d", specialKeys);
-                //[[NSUserDefaults standardUserDefaults] setObject:tagModality  forKey:@"matlabBackground"];
-                [[NSUserDefaults standardUserDefaults] setBool:specialKeys forKey:@"matlabBackground"];
-                [niiGL openDocumentFromFileNameGL:  [files objectAtIndex:0]];
-                [[NSUserDefaults standardUserDefaults] setBool:false forKey:@"matlabBackground"];
-                //if (specialKeys)
-                //        [niiGL openOverlayFromFileNameGL:  [files objectAtIndex:0]];
-            } else if (specialKeys)
-                    [niiGL openOverlayFromFileNameGL:  [files objectAtIndex:0]];
-            else
-                [niiGL openDocumentFromFileNameGL:  [files objectAtIndex:0]];*/
-            [self updateMostThings];
-            //}
-        }
-    }
-    return YES;
+    //NSLog(@"winCon Drag");
+    BOOL OK = FALSE;
+    if (! [[pboard types] containsObject:NSFilenamesPboardType] ) return FALSE;
+    NSArray *files = [pboard propertyListForType:NSFilenamesPboardType];
+    OK = [self openDocumentFromFileNames: files];
+    return OK;
 }
 
 - (id)initWithWindow:(NSWindow *)window {
@@ -379,16 +565,55 @@ bool containsString (NSString *string, NSString *substring) {
     return self;
 }
 
+- (void)handleScreenChanges:(NSNotification *) notification {
+    //NSLog(@"Screen changed %g", [[NSApp mainWindow] backingScaleFactor]); //e.g. move from retina display to non-retina display
+    //[niiGL setFontScale: [theWindow backingScaleFactor] ];
+    [niiGL reshape];
+    
+    NSArray<NSScreen *> * screens = [NSScreen screens];
+    NSScreen * screen = screens.firstObject;
+    [niiGL setFontScale: [screen backingScaleFactor]];
+    //NSLog(@"Screen change %g %g", [screen backingScaleFactor], [theWindow backingScaleFactor]);
+   
+}
 - (void)windowDidLoad {
+    //NSLog(@"WindowDidLoad");
+    //selector(handleDisplayChanges(notification:))
+    //NSWindowDidChangeScreenNotification
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleScreenChanges:)
+                                                 name:NSWindowDidChangeScreenNotification
+                                               object:nil];
+    //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(niiNotificationUpdateToolbar:) name:@"niiUpdate" object:nil];
+    //[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDisplayChanges:) name:@"niiMosaic" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(niiNotificationUpdateMosaic:) name:@"niiMosaic" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(niiNotificationUpdateToolbar:) name:@"niiUpdate" object:nil];
     [theWindow registerForDraggedTypes:[NSArray arrayWithObjects:NSFilenamesPboardType, nil]];
     if ([@"~" isEqualToString: [[NSUserDefaults standardUserDefaults] stringForKey:@"defaultFilename"]]) {
-        [niiGL openDocumentGL:  self];
+        [self openDocument: self];
+        //[niiGL openDocumentGL:  self];
     }
     //[theWindow setAutodisplay: YES];
     [super windowDidLoad];
+    //optional: set display mode
+    NSUserDefaults *defaults= [NSUserDefaults standardUserDefaults];
+    if([[[defaults dictionaryRepresentation] allKeys] containsObject:@"startupMode"]){
+        //int itm2 = [[NSUserDefaults standardUserDefaults] boolForKey:@"startupStandard"];
+        int mode = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@"startupMode"];
+        if ((mode >= 0) && (mode < modeDrop.numberOfItems)) {
+            [modeDrop selectItemAtIndex:mode];
+            [niiGL setDisplayMode: mode];
+            //NSLog(@"mode set %d", mode);
+        }
+    }
     //[theWindow setContentMinSize : NSMakeSize(10.0, 10.0)];
+    NSArray<NSScreen *> * screens = [NSScreen screens];
+    NSScreen * screen = screens.firstObject;
+    [niiGL setFontScale: [screen backingScaleFactor]];
+    //NSLog(@"Screen scale %g %g", [screen backingScaleFactor], [theWindow backingScaleFactor]);
+   
+    //NSLog(@"Screen scale %g", [theWindow backingScaleFactor]); //e.g. move from retina display to non-retina display
+    //[niiGL setFontScale: [theWindow backingScaleFactor] ];
 }
 
 - (void)windowWillClose:(NSNotification *)notification {
@@ -397,8 +622,9 @@ bool containsString (NSString *string, NSString *substring) {
     //NSLog(@"windowWillClose %d\n", (int)[ [[NSApp sharedApplication] window] count]);
     //[ [[NSApplication sharedApplication] delegate] ]
     //[windowArray removeObjectIdenticalTo: self  ];
-    MRIcroXAppDelegate *delegate = [NSApp delegate];
-    [delegate windowWillCloseX:self];
+    //MRIcroXAppDelegate *thedelegate = [NSApp delegate];
+    MRIcroXAppDelegate *thedelegate = (MRIcroXAppDelegate*)[NSApp delegate];
+    [thedelegate windowWillCloseX:self];
 }
 
 - (IBAction) changeBackgroundColor: (id) sender {
@@ -431,6 +657,7 @@ bool containsString (NSString *string, NSString *substring) {
     //[theWindow setAutodisplay: NO];
 }
 - (void)windowDidBecomeKey:(NSNotification *)notification {
+    //NSLog(@">>>>");
     [theWindow setAutodisplay: NO];
     [self updateMostThings];
     [theWindow setAutodisplay: YES];
@@ -442,6 +669,22 @@ bool containsString (NSString *string, NSString *substring) {
 
 - (IBAction) volumeNext: (id) sender {
     [niiGL skipNumberOfVolumesGL: 1];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)item {
+    int mode = (int)[modeDrop indexOfSelectedItem];
+    //NSLog(@"startupMode: %d", mode);
+    bool isMode3D = (mode == 1) || (mode == 2);
+    if ((item.tag > 0) && (item.tag < 7))
+        return isMode3D;
+    bool isImg4D = [niiGL getNumberOfVolumesGL] > 1;
+    if (item.tag > 6)
+        return isImg4D;
+    
+    return YES;
+}
+- (IBAction) orientChange: (NSMenuItem *) sender {
+    [niiGL setAzimElevOrient: (int) sender.tag];
 }
 
 - (void)keyDown:(NSEvent *)theEvent {

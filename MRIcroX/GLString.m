@@ -115,11 +115,7 @@
 #pragma mark -
 #pragma mark Initializers
 
-- (void) setScale:(float)scale // set retina scaling
-{
-    retinaScaleFactor = scale;
-    //NSLog(@"%g", retinaScaleFactor);
-}
+
 
 // designated initializer
 - (id) initWithAttributedString:(NSAttributedString *)attributedString withTextColor:(NSColor *)text withBoxColor:(NSColor *)box withBorderColor:(NSColor *)border
@@ -139,6 +135,8 @@
 	marginSize.height = 2.0f;
 	cRadius = 4.0f;
     retinaScaleFactor = 1.0f;
+    //isBPS16 = FALSE;
+    //retinaScaleFactor = 1.0f;
     /*if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)]) {
         NSArray *screens = [NSScreen screens];
         for (int i = 0; i < [screens count]; i++) {
@@ -183,74 +181,149 @@
 - (NSSize) frameSize
 {
     if ((NO == staticFrame) && (0.0f == frameSize.width) && (0.0f == frameSize.height)) { // find frame size if we have not already found it
-        //frameSize = [self setFrameSize ];
         frameSize = [string size]; // current string size
         frameSize.width += marginSize.width * 2.0f; // add padding
         frameSize.height += marginSize.height * 2.0f;
-        frameSizeScaled.x = frameSize.width * retinaScaleFactor;
-        frameSizeScaled.y = frameSize.height * retinaScaleFactor;
-        //NSLog(@"%g", retinaScaleFactor);
-        //frameSize.width *= retinaScaleFactor;
-        //frameSize.height *= retinaScaleFactor;
+        frameSizeScaled.x = frameSize.width;//2021 * retinaScaleFactor;
+        frameSizeScaled.y = frameSize.height;//2021 * retinaScaleFactor;
+        //NSLog(@">>retina %g ", retinaScaleFactor);
+        //if (isBPS16) {
+            frameSizeScaled.x *= retinaScaleFactor;
+            frameSizeScaled.y *= retinaScaleFactor;
+        //}
     }
     return frameSize;
 }
+
+//#define MY_GL_TEXTURE_2D //use "GL_TEXTURE_2D" or "GL_TEXTURE_RECTANGLE_EXT"
 
 - (void) genTexture; // generates the texture without drawing texture to current context
 {
 	NSImage * image;
 	NSBitmapImageRep * bitmap;
-	NSSize previousSize = texSize;
 	if ((NO == staticFrame) && (0.0f == frameSize.width) && (0.0f == frameSize.height)) { // find frame size if we have not already found it
         [self frameSize];
-        //frameSize = [self setFrameSize ];
-        //frameSize = [string size]; // current string size
-		//frameSize.width += marginSize.width * 2.0f; // add padding
-		//frameSize.height += marginSize.height * 2.0f;
 	}
     image = [[NSImage alloc] initWithSize:frameSize];
-    //retina
-    
-	[image lockFocus];
-	[[NSGraphicsContext currentContext] setShouldAntialias:antialias];
-	
-	if ([boxColor alphaComponent]) { // this should be == 0.0f but need to make sure
-		[boxColor set]; 
+    [image lockFocus];
+	[[NSGraphicsContext currentContext] setShouldAntialias:antialias ];
+    if ([boxColor alphaComponent]) { //background for text
+		[boxColor set];
 		NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(NSMakeRect (0.0f, 0.0f, frameSize.width, frameSize.height) , 0.5, 0.5)
 														cornerRadius:cRadius];
 		[path fill];
 	}
-
 	if ([borderColor alphaComponent]) {
-		[borderColor set]; 
+		[borderColor set];
 		NSBezierPath *path = [NSBezierPath bezierPathWithRoundedRect:NSInsetRect(NSMakeRect (0.0f, 0.0f, frameSize.width, frameSize.height), 0.5, 0.5) 
 														cornerRadius:cRadius];
 		[path setLineWidth:1.0f];
 		[path stroke];
 	}
-	
 	[textColor set];
 	[string drawAtPoint:NSMakePoint (marginSize.width, marginSize.height)]; // draw at offset position
-	bitmap = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect (0.0f, 0.0f, frameSize.width, frameSize.height)];
-	[image unlockFocus];
-	texSize.width = [bitmap pixelsWide];
+    bitmap = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect (0.0f, 0.0f, frameSize.width, frameSize.height)];
+    [image unlockFocus];
+    texSize.width =  [bitmap pixelsWide];
 	texSize.height = [bitmap pixelsHigh];
-	
-	if ((cgl_ctx = CGLGetCurrentContext ())) { // if we successfully retrieve a current context (required)
-		glPushAttrib(GL_TEXTURE_BIT);
-		if (0 == texName) glGenTextures (1, &texName);
-		glBindTexture (GL_TEXTURE_RECTANGLE_EXT, texName);
-		if (NSEqualSizes(previousSize, texSize)) {
-			glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,0,0,0,texSize.width,texSize.height,[bitmap hasAlpha] ? GL_RGBA : GL_RGB,GL_UNSIGNED_BYTE,[bitmap bitmapData]);
-		} else {
-			glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    int bps = (int)[bitmap bitsPerSample];
+    //isBPS16 = (bps > 8);
+    if (!(cgl_ctx = CGLGetCurrentContext ())) { // if we successfully retrieve a current context (required)
+        NSLog (@"StringTexture -genTexture: Failure to get current OpenGL context\n");
+        return;
+    }
+    
+    //glPushAttrib(GL_TEXTURE_BIT);
+    //Some monitors support more than RGBA32 (>8 bitsPerSample), in these cases we downsample to RGBA32 (8 bitsPerSample)
+    // https://developer.apple.com/library/archive/samplecode/DeepImageDisplayWithOpenGL/Introduction/Intro.html#//apple_ref/doc/uid/TP40016622
+    if (0 == texName) glGenTextures (1, &texName);
+    #ifdef MY_GL_TEXTURE_2D
+        // Set proper unpacking row length for bitmap.
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, (int)[bitmap pixelsWide]);
+        // Set byte aligned unpacking (needed for 3 byte per pixel bitmaps).
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture (GL_TEXTURE_2D, texName);
+        int samplesPerPixel = (int)[bitmap samplesPerPixel];
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // Nonplanar, RGB 24 bit bitmap, or RGBA 32 bit bitmap.
+        if(![bitmap isPlanar] &&
+            (samplesPerPixel == 3 || samplesPerPixel == 4))
+        {
+            if (bps == 8) {
+            glTexImage2D(GL_TEXTURE_2D, 0,
+                samplesPerPixel == 4 ? GL_RGBA8 : GL_RGB8,
+                         (int)[bitmap pixelsWide],
+                         (int)[bitmap pixelsHigh],
+                0,
+                samplesPerPixel == 4 ? GL_RGBA : GL_RGB,
+                GL_UNSIGNED_BYTE,
+                [bitmap bitmapData]);
+            } else {
+                NSBitmapImageRep *bitmap8 = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+                                                        pixelsWide:[bitmap pixelsWide]
+                                                        pixelsHigh:[bitmap pixelsHigh]
+                                                     bitsPerSample:8
+                                                   samplesPerPixel:4
+                                                          hasAlpha:YES
+                                                          isPlanar:NO
+                                                    colorSpaceName:NSCalibratedRGBColorSpace
+                                                       bytesPerRow:texSize.width*4
+                                                      bitsPerPixel:0 ];
+                // this new imagerep has (as default) a resolution of 72 dpi
+                [NSGraphicsContext saveGraphicsState];
+                NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap8];
+                [NSGraphicsContext setCurrentContext:context];
+                [bitmap drawInRect:NSMakeRect( 0, 0, [bitmap8 pixelsWide], [bitmap8 pixelsHigh] )];
+                [NSGraphicsContext restoreGraphicsState];
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (int)[bitmap pixelsWide], (int)[bitmap pixelsHigh], 0, GL_RGBA, GL_UNSIGNED_BYTE, [bitmap8 bitmapData]);
+
+            }
+        }
+        else
+        {
+            NSLog(@"GLString error");// Handle other bitmap formats.
+        }
+        glPixelStorei (GL_UNPACK_ALIGNMENT, 4);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glDisable(GL_TEXTURE_2D);
+        //glTexImage2D (target, level, internalformat, width, height, border, format, type, *pixels)
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texSize.width, texSize.height, 0, [bitmap hasAlpha] ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, [bitmap bitmapData]);
+        //}
+    #else
+        glBindTexture (GL_TEXTURE_RECTANGLE_EXT, texName);
+        //if (NSEqualSizes(previousSize, texSize)) {
+        //	glTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT,0,0,0,texSize.width,texSize.height,[bitmap hasAlpha] ? //GL_RGBA : GL_RGB,GL_UNSIGNED_BYTE,[bitmap bitmapData]);
+        //} else {
+            glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_RECTANGLE_EXT, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
             //glTexImage2D (target, level, internalformat, width, height, border, format, type, *pixels)
-            glTexImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, GL_RGBA, texSize.width, texSize.height, 0, [bitmap hasAlpha] ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, [bitmap bitmapData]);
-		}
-		glPopAttrib();
-	} else
-		NSLog (@"StringTexture -genTexture: Failure to get current OpenGL context\n");
+        if (bps == 16) {
+            NSBitmapImageRep *bitmap8 = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+                                                    pixelsWide:[bitmap pixelsWide]
+                                                    pixelsHigh:[bitmap pixelsHigh]
+                                                 bitsPerSample:8
+                                               samplesPerPixel:4
+                                                      hasAlpha:YES
+                                                      isPlanar:NO
+                                                colorSpaceName:NSCalibratedRGBColorSpace
+                                                   bytesPerRow:texSize.width*4
+                                                  bitsPerPixel:0 ];
+            // this new imagerep has (as default) a resolution of 72 dpi
+            [NSGraphicsContext saveGraphicsState];
+            NSGraphicsContext *context = [NSGraphicsContext graphicsContextWithBitmapImageRep:bitmap8];
+            [NSGraphicsContext setCurrentContext:context];
+            [bitmap drawInRect:NSMakeRect( 0, 0, [bitmap8 pixelsWide], [bitmap8 pixelsHigh] )];
+            [NSGraphicsContext restoreGraphicsState];
+            glTexImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, GL_RGBA, texSize.width, texSize.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, [bitmap8 bitmapData]);
+        } else
+                glTexImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, GL_RGBA, texSize.width, texSize.height, 0, [bitmap hasAlpha] ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, [bitmap bitmapData]);
+        //}
+    #endif
+    //glPopAttrib();
 	requiresUpdate = NO;
 }
 
@@ -265,6 +338,12 @@
 - (NSSize) texSize
 {
 	return texSize;
+}
+
+- (void) setScale:(float)scale // set retina scaling
+{
+    retinaScaleFactor = MAX(1.0, scale);
+    //NSLog(@"%g", retinaScaleFactor);
 }
 
 #pragma mark Text Color
@@ -339,18 +418,13 @@
 
 - (void) drawAtPoint:(NSPoint)point
 {
-    //float ht = texSize.height/retinaScaleFactor;
-#if __ARM_ARCH
-    return;
-#else
     if (requiresUpdate)
         [self genTexture]; // ensure size is calculated for bounds
-    if (texName) // if successful
-        //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)]; //RetinaX 2016
-        //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)];
-        [self drawWithBounds:NSMakeRect (point.x, point.y, frameSizeScaled.x, frameSizeScaled.y)];
+    if (!texName) return;
+            //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)]; //RetinaX 2016
+    [self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width, texSize.height)];
+        //[self drawWithBounds:NSMakeRect (point.x, point.y, frameSizeScaled.x, frameSizeScaled.y)];
         //[self drawWithBounds:NSMakeRect (point.x, point.y, texSize.width / retinaScaleFactor, texSize.height / retinaScaleFactor)];
-#endif
     //NSLog(@" %gx%g %gx%g %g",texSize.width, texSize.height, frameSize.width,frameSize.height, retinaScaleFactor);
 }
 
@@ -404,25 +478,51 @@
 {
 	if (requiresUpdate)
 		[self genTexture];
-	if (texName) {
-		glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT); // GL_COLOR_BUFFER_BIT for glBlendFunc, GL_ENABLE_BIT for glEnable / glDisable
-		glDisable (GL_DEPTH_TEST); // ensure text is not remove by depth buffer test.
-		glEnable (GL_BLEND); // for text fading
-		glBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // ditto
-		glEnable (GL_TEXTURE_RECTANGLE_EXT);
-		glBindTexture (GL_TEXTURE_RECTANGLE_EXT, texName);
-		glBegin (GL_QUADS);
-        glTexCoord2f (0.0f, 0.0f); // draw upper left in world coordinates
-        glVertex2f (bounds.origin.x, bounds.origin.y);
-        glTexCoord2f (0.0f, texSize.height); // draw lower left in world coordinates
-        glVertex2f (bounds.origin.x, bounds.origin.y - bounds.size.height);
-        glTexCoord2f (texSize.width, texSize.height); // draw upper right in world coordinates
-        glVertex2f (bounds.origin.x + bounds.size.width, bounds.origin.y - bounds.size.height);
-        glTexCoord2f (texSize.width, 0.0f); // draw lower right in world coordinates
-        glVertex2f (bounds.origin.x + bounds.size.width, bounds.origin.y);
-		glEnd ();
-		glPopAttrib();
-	}
+    
+    if (!texName) return;
+    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT); // GL_COLOR_BUFFER_BIT for glBlendFunc, GL_ENABLE_BIT for glEnable / glDisable
+    glUseProgram(0);
+    glDisable (GL_DEPTH_TEST); // ensure text is not remove by depth buffer test.
+    glEnable (GL_BLEND); // for text fading
+    glBlendFunc (GL_ONE, GL_ONE_MINUS_SRC_ALPHA); // ditto
+    #ifdef MY_GL_TEXTURE_2D
+            glEnable(GL_TEXTURE_2D);
+            //glDisable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, texName);
+            //glEnable (GL_TEXTURE_RECTANGLE_EXT);
+            //glBindTexture (GL_TEXTURE_RECTANGLE_EXT, texName);
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glBegin(GL_QUADS);
+            glTexCoord2f (0.0f, 0.0f); // draw upper left in world coordinates
+            glVertex3f (bounds.origin.x, bounds.origin.y, 0.0);
+            //glTexCoord2f (0.0f, texSize.height); // draw lower left in world coordinates
+            glTexCoord2f (0.0f, 1.0f); // draw lower left in world coordinates
+            glVertex3f (bounds.origin.x, bounds.origin.y - bounds.size.height, 0.0);
+            //glTexCoord2f (texSize.width, texSize.height); // draw upper right in world coordinates
+            glTexCoord2f (1.0f, 1.0f); // draw upper right in world coordinates
+            glVertex3f (bounds.origin.x + bounds.size.width, bounds.origin.y - bounds.size.height, 0.0);
+            //glTexCoord2f (texSize.width, 0.0f); // draw lower right in world coordinates
+            glTexCoord2f (1.0, 0.0f); // draw lower right in world coordinates
+            glVertex3f (bounds.origin.x + bounds.size.width, bounds.origin.y, 0.0);
+            glEnd();
+            glDisable(GL_TEXTURE_2D);
+    #else
+            glEnable (GL_TEXTURE_RECTANGLE_EXT);
+            glBindTexture (GL_TEXTURE_RECTANGLE_EXT, texName);
+            glBegin (GL_QUADS);
+            glTexCoord2f (0.0f, 0.0f); // draw upper left in world coordinates
+            glVertex2f (bounds.origin.x, bounds.origin.y);
+            glTexCoord2f (0.0f, texSize.height); // draw lower left in world coordinates
+            glVertex2f (bounds.origin.x, bounds.origin.y - bounds.size.height);
+            glTexCoord2f (texSize.width, texSize.height); // draw upper right in world coordinates
+            glVertex2f (bounds.origin.x + bounds.size.width, bounds.origin.y - bounds.size.height);
+            glTexCoord2f (texSize.width, 0.0f); // draw lower right in world coordinates
+            glVertex2f (bounds.origin.x + bounds.size.width, bounds.origin.y);
+            glEnd ();
+
+    #endif
+    glDisable (GL_BLEND);
+    glPopAttrib();
 }
 
 - (void) drawAboveLeftOfPoint:(NSPoint)point {
@@ -430,10 +530,11 @@
     [self drawAtPoint: NSMakePoint(point.x-(frameSizeScaled.x), point.y+ (frameSizeScaled.y))];
 }
 
-- (void) drawLeftOfPoint:(NSPoint)point
+- (float) drawLeftOfPoint:(NSPoint)point
 {
     [self frameSize];
     [self drawAtPoint: NSMakePoint(point.x-(frameSizeScaled.x), point.y+ (0.5 * frameSizeScaled.y))];
+    return frameSizeScaled.x;
 }
 
 - (void) drawRightOfPoint:(NSPoint)point
@@ -441,18 +542,11 @@
     [self frameSize];
     [self drawAtPoint: NSMakePoint(point.x, point.y+ (0.5 * frameSizeScaled.y))];
 }
-/*- (void) drawRightOfPoint:(NSPoint)point
-{
-    NSSize fs = [self frameSize];
-    NSPoint adj = point;
-    adj.x = adj.x;// -fs.width;
-    adj.y = adj.y + (fs.height / 2);
-    [self drawAtPoint: adj];
-}*/
 
-- (void) drawBelowPoint:(NSPoint)point
+- (float) drawBelowPoint:(NSPoint)point
 {
     [self frameSize];
     [self drawAtPoint: NSMakePoint(point.x-(0.5 *frameSizeScaled.x), point.y)];
+    return frameSizeScaled.y;
 }
 @end

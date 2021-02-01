@@ -7,16 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1D2281D825B5DCC900A0F24A /* standard in Resources */ = {isa = PBXBuildFile; fileRef = 1D2281D725B5DCC900A0F24A /* standard */; };
+		1D2281EB25B5DD4400A0F24A /* standard in Resources */ = {isa = PBXBuildFile; fileRef = 1D2281D725B5DCC900A0F24A /* standard */; };
+		1D51801E25B6084A00EF6FF8 /* nii_foreign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D51801C25B6084A00EF6FF8 /* nii_foreign.cpp */; };
+		1D51802525B6085B00EF6FF8 /* nii_dicom_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D51802225B6085B00EF6FF8 /* nii_dicom_batch.cpp */; };
+		1D51802625B6085B00EF6FF8 /* nii_dicom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D51802325B6085B00EF6FF8 /* nii_dicom.cpp */; };
+		1D8342CD25B7007C00DAAA3B /* atlas in Resources */ = {isa = PBXBuildFile; fileRef = 1D8342CC25B7007C00DAAA3B /* atlas */; };
+		1D8342D025B7008500DAAA3B /* atlas in Resources */ = {isa = PBXBuildFile; fileRef = 1D8342CC25B7007C00DAAA3B /* atlas */; };
 		4F07BCC816160EE7000216B2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F07BCC716160EE7000216B2 /* QuartzCore.framework */; };
 		4F0E59601B95F14A002BCD4A /* nii_ostu_ml.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F0E595F1B95F14A002BCD4A /* nii_ostu_ml.mm */; };
 		4F0E59611B95F1A5002BCD4A /* nii_ostu_ml.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F0E595F1B95F14A002BCD4A /* nii_ostu_ml.mm */; };
 		4F12CE5E1A195DB000408A12 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F9A58A31609E769008ECBE2 /* main.m */; };
 		4F12CE5F1A195DB000408A12 /* nii_mosaic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F7787F818AD5D360028CAE3 /* nii_mosaic.mm */; };
-		4F12CE601A195DB000408A12 /* nii_dicom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24919F46AD500D95B28 /* nii_dicom.cpp */; };
 		4F12CE611A195DB000408A12 /* GLString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD0B0E418BEE67F0061FAD2 /* GLString.m */; };
 		4F12CE621A195DB000408A12 /* nii_label.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E85FD18BD7E76003B3515 /* nii_label.mm */; };
 		4F12CE631A195DB000408A12 /* MRIcroAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F9A58A91609E769008ECBE2 /* MRIcroAppDelegate.m */; };
-		4F12CE641A195DB000408A12 /* nii_dicom_batch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24C19F46AE800D95B28 /* nii_dicom_batch.cpp */; };
 		4F12CE651A195DB000408A12 /* nii_WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F9A58B61609E7DC008ECBE2 /* nii_WindowController.m */; };
 		4F12CE661A195DB000408A12 /* nifti1_io_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E25019F46B3B00D95B28 /* nifti1_io_core.cpp */; };
 		4F12CE671A195DB000408A12 /* dcm2niiWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FE2EFC519E1C44900AA74C6 /* dcm2niiWindow.m */; };
@@ -41,8 +46,6 @@
 		4F3E85FE18BD7E76003B3515 /* nii_label.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E85FD18BD7E76003B3515 /* nii_label.mm */; };
 		4F56F8C11EBCEF750087AB46 /* nii_foreignx.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */; };
 		4F56F8C21EBCEF750087AB46 /* nii_foreignx.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */; };
-		4F56F8C31EBCEF750087AB46 /* nii_foreign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */; };
-		4F56F8C41EBCEF750087AB46 /* nii_foreign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */; };
 		4F6B23931609EC2B003D311C /* nii_colorbar.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23831609EC2B003D311C /* nii_colorbar.m */; };
 		4F6B23941609EC2B003D311C /* nii_GLView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23861609EC2B003D311C /* nii_GLView.mm */; };
 		4F6B23951609EC2B003D311C /* nii_img.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F6B23881609EC2B003D311C /* nii_img.mm */; };
@@ -52,7 +55,6 @@
 		4F70AC7716121AB90007FAB5 /* nii_timelineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 4F70AC7616121AB90007FAB5 /* nii_timelineView.m */; };
 		4F7787F918AD5D360028CAE3 /* nii_mosaic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F7787F818AD5D360028CAE3 /* nii_mosaic.mm */; };
 		4F84E24819F46AB900D95B28 /* nii_ortho.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24619F46AB900D95B28 /* nii_ortho.cpp */; };
-		4F84E24B19F46AD500D95B28 /* nii_dicom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E24919F46AD500D95B28 /* nii_dicom.cpp */; };
 		4F84E25119F46B3B00D95B28 /* nifti1_io_core.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F84E25019F46B3B00D95B28 /* nifti1_io_core.cpp */; };
 		4F90F9E41A6BFA3500E96843 /* ujpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F90F9E21A6BFA3500E96843 /* ujpeg.cpp */; };
 		4F9A58971609E769008ECBE2 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F9A58961609E769008ECBE2 /* Cocoa.framework */; };
@@ -75,6 +77,23 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1D22124225C0B8AD00184A2C /* MRIcroRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MRIcroRelease.entitlements; sourceTree = SOURCE_ROOT; };
+		1D2281C725B5DBA500A0F24A /* AICHA.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = AICHA.nii.gz; path = MRIcroX/atlas/AICHA.nii.gz; sourceTree = "<group>"; };
+		1D2281C825B5DBA500A0F24A /* natbrainlab.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = natbrainlab.nii.gz; path = MRIcroX/atlas/natbrainlab.nii.gz; sourceTree = "<group>"; };
+		1D2281C925B5DBA500A0F24A /* aal.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = aal.nii.gz; path = MRIcroX/atlas/aal.nii.gz; sourceTree = "<group>"; };
+		1D2281CF25B5DC1B00A0F24A /* natbrainlab.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = natbrainlab.nii.gz; path = MRIcroX/atlas/natbrainlab.nii.gz; sourceTree = "<group>"; };
+		1D2281D025B5DC1B00A0F24A /* aal.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = aal.nii.gz; path = MRIcroX/atlas/aal.nii.gz; sourceTree = "<group>"; };
+		1D2281D125B5DC1B00A0F24A /* AICHA.nii.gz */ = {isa = PBXFileReference; lastKnownFileType = archive.gzip; name = AICHA.nii.gz; path = MRIcroX/atlas/AICHA.nii.gz; sourceTree = "<group>"; };
+		1D2281D725B5DCC900A0F24A /* standard */ = {isa = PBXFileReference; lastKnownFileType = folder; name = standard; path = MRIcroX/standard; sourceTree = "<group>"; };
+		1D51801C25B6084A00EF6FF8 /* nii_foreign.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_foreign.cpp; sourceTree = "<group>"; };
+		1D51801D25B6084A00EF6FF8 /* nii_foreign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreign.h; sourceTree = "<group>"; };
+		1D51802125B6085B00EF6FF8 /* nii_dicom_batch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_dicom_batch.h; sourceTree = "<group>"; };
+		1D51802225B6085B00EF6FF8 /* nii_dicom_batch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_dicom_batch.cpp; sourceTree = "<group>"; };
+		1D51802325B6085B00EF6FF8 /* nii_dicom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_dicom.cpp; sourceTree = "<group>"; };
+		1D51802425B6085B00EF6FF8 /* nii_dicom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_dicom.h; sourceTree = "<group>"; };
+		1D8342CC25B7007C00DAAA3B /* atlas */ = {isa = PBXFileReference; lastKnownFileType = folder; name = atlas; path = MRIcroX/atlas; sourceTree = "<group>"; };
+		1DBA7B47259F8C9500D015D2 /* libiconv.2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libiconv.2.tbd; path = usr/lib/libiconv.2.tbd; sourceTree = SDKROOT; };
+		1DE093C025C4638E00050474 /* libbz2.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libbz2.tbd; path = usr/lib/libbz2.tbd; sourceTree = SDKROOT; };
 		4F07BCC716160EE7000216B2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		4F0E595E1B95F14A002BCD4A /* nii_ostu_ml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_ostu_ml.h; sourceTree = "<group>"; };
 		4F0E595F1B95F14A002BCD4A /* nii_ostu_ml.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = nii_ostu_ml.mm; sourceTree = "<group>"; };
@@ -86,8 +105,6 @@
 		4F3E85FD18BD7E76003B3515 /* nii_label.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = nii_label.mm; sourceTree = "<group>"; };
 		4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_foreignx.m; sourceTree = "<group>"; };
 		4F56F8BE1EBCEF750087AB46 /* nii_foreignx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreignx.h; sourceTree = "<group>"; };
-		4F56F8BF1EBCEF750087AB46 /* nii_foreign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_foreign.h; sourceTree = "<group>"; };
-		4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_foreign.cpp; sourceTree = "<group>"; };
 		4F6B23821609EC2B003D311C /* nii_colorbar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_colorbar.h; sourceTree = "<group>"; };
 		4F6B23831609EC2B003D311C /* nii_colorbar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = nii_colorbar.m; sourceTree = "<group>"; };
 		4F6B23841609EC2B003D311C /* nii_definetypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_definetypes.h; sourceTree = "<group>"; };
@@ -109,10 +126,6 @@
 		4F7BF1BF1A07069B006B4A3D /* MRIcro.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = MRIcro.entitlements; sourceTree = "<group>"; };
 		4F84E24619F46AB900D95B28 /* nii_ortho.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_ortho.cpp; sourceTree = "<group>"; };
 		4F84E24719F46AB900D95B28 /* nii_ortho.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_ortho.h; sourceTree = "<group>"; };
-		4F84E24919F46AD500D95B28 /* nii_dicom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nii_dicom.cpp; sourceTree = "<group>"; };
-		4F84E24A19F46AD500D95B28 /* nii_dicom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_dicom.h; sourceTree = "<group>"; };
-		4F84E24C19F46AE800D95B28 /* nii_dicom_batch.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = nii_dicom_batch.cpp; sourceTree = "<group>"; };
-		4F84E24D19F46AE800D95B28 /* nii_dicom_batch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nii_dicom_batch.h; sourceTree = "<group>"; };
 		4F84E24F19F46B3B00D95B28 /* nifti1_io_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nifti1_io_core.h; sourceTree = "<group>"; };
 		4F84E25019F46B3B00D95B28 /* nifti1_io_core.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nifti1_io_core.cpp; sourceTree = "<group>"; };
 		4F90F9E21A6BFA3500E96843 /* ujpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ujpeg.cpp; sourceTree = "<group>"; };
@@ -175,6 +188,14 @@
 		4F9A58871609E769008ECBE2 = {
 			isa = PBXGroup;
 			children = (
+				1D8342CC25B7007C00DAAA3B /* atlas */,
+				1D2281D725B5DCC900A0F24A /* standard */,
+				1D2281C925B5DBA500A0F24A /* aal.nii.gz */,
+				1D2281C725B5DBA500A0F24A /* AICHA.nii.gz */,
+				1D2281D025B5DC1B00A0F24A /* aal.nii.gz */,
+				1D2281D125B5DC1B00A0F24A /* AICHA.nii.gz */,
+				1D2281C825B5DBA500A0F24A /* natbrainlab.nii.gz */,
+				1D2281CF25B5DC1B00A0F24A /* natbrainlab.nii.gz */,
 				4F7BF1BF1A07069B006B4A3D /* MRIcro.entitlements */,
 				4FCDFAEB18BCFD4700FB2F28 /* mricro.icns */,
 				4F07BCC716160EE7000216B2 /* QuartzCore.framework */,
@@ -196,6 +217,8 @@
 		4F9A58951609E769008ECBE2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				1DE093C025C4638E00050474 /* libbz2.tbd */,
+				1DBA7B47259F8C9500D015D2 /* libiconv.2.tbd */,
 				83E45AB022F6EE030065DA40 /* libz.1.2.11.tbd */,
 				4FBD92E120165A5600A240B1 /* libz.1.2.5.tbd */,
 				4F9A58B81609E963008ECBE2 /* OpenGL.framework */,
@@ -218,11 +241,16 @@
 		4F9A589C1609E769008ECBE2 /* MRIcro */ = {
 			isa = PBXGroup;
 			children = (
+				1D22124225C0B8AD00184A2C /* MRIcroRelease.entitlements */,
 				4FE1562F1F38958600C33F3E /* print.h */,
+				1D51802225B6085B00EF6FF8 /* nii_dicom_batch.cpp */,
+				1D51802125B6085B00EF6FF8 /* nii_dicom_batch.h */,
+				1D51802325B6085B00EF6FF8 /* nii_dicom.cpp */,
+				1D51802425B6085B00EF6FF8 /* nii_dicom.h */,
 				4F56F8BD1EBCEF750087AB46 /* nii_foreignx.m */,
 				4F56F8BE1EBCEF750087AB46 /* nii_foreignx.h */,
-				4F56F8BF1EBCEF750087AB46 /* nii_foreign.h */,
-				4F56F8C01EBCEF750087AB46 /* nii_foreign.cpp */,
+				1D51801C25B6084A00EF6FF8 /* nii_foreign.cpp */,
+				1D51801D25B6084A00EF6FF8 /* nii_foreign.h */,
 				4F6B23891609EC2B003D311C /* nii_io.h */,
 				4F6B238A1609EC2B003D311C /* nii_io.mm */,
 				4FC7949E1A6ADE2E00B2BA49 /* jpg_0XC3.h */,
@@ -236,10 +264,6 @@
 				4F2D981119DEE86E00631700 /* tinydir.h */,
 				4F84E24F19F46B3B00D95B28 /* nifti1_io_core.h */,
 				4F84E25019F46B3B00D95B28 /* nifti1_io_core.cpp */,
-				4F84E24A19F46AD500D95B28 /* nii_dicom.h */,
-				4F84E24919F46AD500D95B28 /* nii_dicom.cpp */,
-				4F84E24D19F46AE800D95B28 /* nii_dicom_batch.h */,
-				4F84E24C19F46AE800D95B28 /* nii_dicom_batch.cpp */,
 				4F0E595E1B95F14A002BCD4A /* nii_ostu_ml.h */,
 				4F0E595F1B95F14A002BCD4A /* nii_ostu_ml.mm */,
 				4F6B239C1609EC53003D311C /* nifti1.h */,
@@ -379,6 +403,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D8342D025B7008500DAAA3B /* atlas in Resources */,
+				1D2281EB25B5DD4400A0F24A /* standard in Resources */,
 				4F12CE771A195DB000408A12 /* InfoPlist.strings in Resources */,
 				4F12CE781A195DB000408A12 /* Credits.rtf in Resources */,
 				4F12CE791A195DB000408A12 /* MainMenu.xib in Resources */,
@@ -391,6 +417,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1D8342CD25B7007C00DAAA3B /* atlas in Resources */,
+				1D2281D825B5DCC900A0F24A /* standard in Resources */,
 				4F9A58A11609E769008ECBE2 /* InfoPlist.strings in Resources */,
 				4F9A58A71609E769008ECBE2 /* Credits.rtf in Resources */,
 				4F9A58AD1609E769008ECBE2 /* MainMenu.xib in Resources */,
@@ -407,20 +435,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FC7949F1A6ADE2E00B2BA49 /* jpg_0XC3.cpp in Sources */,
-				4F56F8C41EBCEF750087AB46 /* nii_foreign.cpp in Sources */,
 				4F12CE5E1A195DB000408A12 /* main.m in Sources */,
 				4F12CE5F1A195DB000408A12 /* nii_mosaic.mm in Sources */,
-				4F12CE601A195DB000408A12 /* nii_dicom.cpp in Sources */,
 				4F90F9E41A6BFA3500E96843 /* ujpeg.cpp in Sources */,
 				4F12CE611A195DB000408A12 /* GLString.m in Sources */,
+				1D51801E25B6084A00EF6FF8 /* nii_foreign.cpp in Sources */,
 				4F12CE621A195DB000408A12 /* nii_label.mm in Sources */,
 				4F0E59611B95F1A5002BCD4A /* nii_ostu_ml.mm in Sources */,
 				4F12CE631A195DB000408A12 /* MRIcroAppDelegate.m in Sources */,
-				4F12CE641A195DB000408A12 /* nii_dicom_batch.cpp in Sources */,
+				1D51802625B6085B00EF6FF8 /* nii_dicom.cpp in Sources */,
 				4F12CE651A195DB000408A12 /* nii_WindowController.m in Sources */,
 				4F12CE661A195DB000408A12 /* nifti1_io_core.cpp in Sources */,
 				4F12CE671A195DB000408A12 /* dcm2niiWindow.m in Sources */,
 				4F12CE681A195DB000408A12 /* nii_colorbar.m in Sources */,
+				1D51802525B6085B00EF6FF8 /* nii_dicom_batch.cpp in Sources */,
 				4F12CE691A195DB000408A12 /* MySplitViewController.m in Sources */,
 				4F12CE6A1A195DB000408A12 /* nii_GLView.mm in Sources */,
 				4F12CE6B1A195DB000408A12 /* nii_ortho.cpp in Sources */,
@@ -439,9 +467,7 @@
 			files = (
 				4FB5AFD71A8A6556000196DD /* jpg_0XC3.cpp in Sources */,
 				4F9A58A41609E769008ECBE2 /* main.m in Sources */,
-				4F56F8C31EBCEF750087AB46 /* nii_foreign.cpp in Sources */,
 				4F7787F918AD5D360028CAE3 /* nii_mosaic.mm in Sources */,
-				4F84E24B19F46AD500D95B28 /* nii_dicom.cpp in Sources */,
 				4FD0B0E518BEE67F0061FAD2 /* GLString.m in Sources */,
 				4F3E85FE18BD7E76003B3515 /* nii_label.mm in Sources */,
 				4F9A58AA1609E769008ECBE2 /* MRIcroAppDelegate.m in Sources */,
@@ -518,6 +544,7 @@
 					myDisableOpenJPEG,
 					myDisableMiniZ,
 					"myErrorStdOut=1",
+					GL_SILENCE_DEPRECATION,
 				);
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
 					DEBUG,
@@ -572,6 +599,7 @@
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
 					myDisableMiniZ,
 					"myErrorStdOut=1",
+					GL_SILENCE_DEPRECATION,
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -581,7 +609,8 @@
 				);
 				INFOPLIST_FILE = MRIcroPro.plist;
 				LIBRARY_SEARCH_PATHS = (
-					/usr/local/include/jasper,
+					/usr/local/include,
+					/usr/local/include,
 					/opt/local/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
@@ -684,6 +713,7 @@
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 190;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 68BQDQS28R;
@@ -700,6 +730,7 @@
 					STRIP_DCM2NII,
 					myDisableJasper,
 					myDisableMiniZ,
+					GL_SILENCE_DEPRECATION,
 				);
 				"GCC_PREPROCESSOR_DEFINITIONS[arch=*]" = (
 					DEBUG,
@@ -712,9 +743,10 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/MRIcroX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MARKETING_VERSION = 1.9.0;
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = mricro;
+				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
@@ -727,10 +759,11 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_ENTITLEMENTS = MRIcro.entitlements;
+				CODE_SIGN_ENTITLEMENTS = MRIcroRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
+				CURRENT_PROJECT_VERSION = 190;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_POSTPROCESSING = YES;
@@ -745,15 +778,17 @@
 					myDisableJasper,
 					myDisableOpenJPEG,
 					myDisableMiniZ,
+					GL_SILENCE_DEPRECATION,
 				);
 				INFOPLIST_FILE = "MRIcroX/MRIcro-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/MRIcroX",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MARKETING_VERSION = 1.9.0;
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = mricro;
+				PRODUCT_BUNDLE_IDENTIFIER = www.mricro.com.MRIcro;
 				PRODUCT_NAME = MRIcro;
 				STRIP_INSTALLED_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;

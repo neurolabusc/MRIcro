@@ -10,7 +10,7 @@
 #import "nii_definetypes.h"
 #include "nii_io.h"
 #import "nifti1_io_core.h"
-
+/*
 float  deFuzz(float x)
 {
     if (fabs(x) < 1.0E-6) return 0.0;
@@ -28,7 +28,7 @@ mat44 transposeMat(mat44 lMat)
     }
     return lTemp;
 }
-
+*/
 vec3 coord(vec3 lV, mat44 lMat)
 //transform X Y Z by matrix
 {

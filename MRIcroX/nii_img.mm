@@ -779,17 +779,16 @@ int nii_findrange8ui (FSLIO* fslio, NII_PREFS* prefs)
         pos--;
     } while (samples < percentile);
     prefs->nearMax = ((pos+1)* fslio->niftiptr->scl_slope)+fslio->niftiptr->scl_inter;
-
     float histoScale = float(kBins8) / float(MAX_HISTO_BINS);
+    int kMax = kBins8-1;
     for (long j = 0; j < MAX_HISTO_BINS; j++) {
         pos =  round( (float)j * histoScale);
+        pos = MAX(0, pos);
+        pos = MIN(pos, kMax);
         prefs->histo[j] = bins[pos];
     }
-
     return EXIT_SUCCESS;
 }
-
-
 
 int nii_findrange16i (FSLIO* fslio, NII_PREFS* prefs)
 //find range for 16 bit signed integers
@@ -953,10 +952,11 @@ int createlutX(int colorscheme, uint32_t* lut) {
         createlutLabel(1, lut, 1.0);
         return EXIT_SUCCESS;
     }
-    struct RGBAnode nodes[5];
+    struct RGBAnode nodes[15];
     nodes[0] = makeRGBAnode(0,0,0,0,0); //assume minimum intensity is black
     nodes[1] = makeRGBAnode(255,255,255,128,256); //assume maximum intensity is white
     int numNodes = 2; //assume 2 nodes, e.g. [0]black [1]white
+    //NSLog(@"CreateLUT %d", colorscheme);
     switch (colorscheme) {
         case 1: //hot
             numNodes = 4;
@@ -1033,10 +1033,57 @@ int createlutX(int colorscheme, uint32_t* lut) {
         case 14: //14=blue
             nodes[1] = makeRGBAnode(0,0,255,128,256);
             break;
+        case 16: //CT_airways
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(0,154,179,0,0);
+            nodes[1] = makeRGBAnode(0,154,179,32,163);
+            nodes[2] = makeRGBAnode(0,154,101,0,254);
+            nodes[3] = makeRGBAnode(0,154,101,0,256);
+            break;
+        case 17: //CT_bone
+            numNodes = 3;
+            nodes[0] = makeRGBAnode(0,0,0,0,0);
+            nodes[1] = makeRGBAnode(113,109,109,64,128);
+            nodes[2] = makeRGBAnode(255,250,245,100,256);
+            break;
+        case 18: //CT_head
+            numNodes = 11;
+            nodes[0] = makeRGBAnode(0,0,0,0,0);
+            nodes[1] = makeRGBAnode(241,156,130,8,2);
+            nodes[2] = makeRGBAnode(241,156,130,0,3);
+            nodes[3] = makeRGBAnode(248,222,169,0,64);
+            nodes[4] = makeRGBAnode(248,222,169,0,122);
+            nodes[5] = makeRGBAnode(178,36,24,64,142);
+            nodes[6] = makeRGBAnode(178,36,24,64,172);
+            nodes[7] = makeRGBAnode(232,51,37,0,182);
+            nodes[8] = makeRGBAnode(255,255,255,0,252);
+            nodes[9] = makeRGBAnode(255,255,255,222,253);
+            nodes[10] = makeRGBAnode(255,255,255,222,256);
+            break;
+        case 19: //CT_kidneys
+            numNodes = 3;
+            //nodes[0] = makeRGBAnode(0,0,0,0,0);
+            nodes[1] = makeRGBAnode(255,129,0,88,103);
+            nodes[2] = makeRGBAnode(255,255,255,228,256);
+            break;
+        case 20: //CT_soft_tissue
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(0,0,0,0,0);
+            nodes[1] = makeRGBAnode(0,0,0,0,3);
+            nodes[2] = makeRGBAnode(199,127,127,48,124);
+            nodes[3] = makeRGBAnode(255,255,255,192,256);
+            break;
+        case 21: //CT_surface
+            numNodes = 3;
+            //nodes[0] = makeRGBAnode(0,0,0,0,0);
+            nodes[1] = makeRGBAnode(134,109,101,60,128);
+            nodes[2] = makeRGBAnode(255,250,245,148,256);
+            break;
     }
     for (int i = 1; i < numNodes; i++)
         filllut(nodes[i-1], nodes[i], lut);
     lut[0] = 0;
+    
     return EXIT_SUCCESS;
 }
 
@@ -1140,14 +1187,15 @@ int sectionNumber(int x, int y, bool adjustView, NII_PREFS* prefs)
         } else
             return -1; //blank region
     } else {
+        //NSLog(@"sector %d %d", y, prefs->scrnDim[2]);
         if (x < prefs->scrnDim[1]) {
             frac[1] =  float(x)/prefs->scrnDim[1];
             if (y < prefs->scrnDim[2]) {
                 frac[2] =  float(y)/prefs->scrnDim[2];
-                result = 2; //coronal slice (click somewhere in 2nd [anterior/posterior] dimension)
+                result = 3; //axial slice (click somewhere in 3rd [head/foot] dimension)
             } else if (y < (prefs->scrnDim[2]+prefs->scrnDim[3])) {
                 frac[3] =  float(y-prefs->scrnDim[2])/prefs->scrnDim[3];
-                result = 3; //axial slice (click somewhere in 3rd [head/foot] dimension)
+                result = 2; //coronal slice (click somewhere in 2nd [anterior/posterior] dimension)
             } else {
                 return -1; //blank region
             }
@@ -1383,30 +1431,40 @@ int isInSection (int x, int y, bool adjustView, NII_PREFS* prefs, FSLIO* fslio)
     [self magnifyRender : -delta];
 }
 
--(bool) setScrollWheel:  (float) x Y: (float) delta;
+-(bool) setScrollWheel:  (float) x Y: (float) delta locX: (float) mouseX locY: (float) mouseY;
 {
-    //NSLog(@" scroll %d",  delta);
     if ((x == 0) && (delta == 0)) return false; //nothing to do
     int deltaDx = 1;
     if (delta < 0) deltaDx = -1;
     switch (prefs->displayModeGL) {
         case   GL_2D_AXIAL:
-            if (delta == 0) return false;
             [self  changeXYZvoxel:0 Y: 0 Z: deltaDx];
             return true;
         case  GL_2D_CORONAL:
-            if (delta == 0) return false;
             [self  changeXYZvoxel:0 Y: deltaDx Z: 0];
             return true;
         case   GL_2D_SAGITTAL:
-            if (delta == 0) return false;
             [self  changeXYZvoxel:deltaDx Y: 0 Z: 0];
             return true;
     }
     int numOverlay = 0;
     for (int i = 0; i < MAX_OVERLAY; i++)
         if (prefs->overlays[i].datatype != DT_NONE) numOverlay++; //filled slot
-    int sect = sectionNumber(prefs->mouseX, prefs->mouseY, FALSE, prefs);
+    int sect = sectionNumber(mouseX, mouseY, FALSE, prefs);
+    //int sect = sectionNumber(prefs->mouseX, prefs->mouseY, FALSE, prefs);
+    //NSLog(@"Sector %d", sect);
+    switch (sect) { //0=rendering, 1=sagittal, 2= coronal, 3=axial
+        case   3: //GL_2D_AXIAL:
+            [self  changeXYZvoxel:0 Y: 0 Z: deltaDx];
+            return true;
+        case  2: //GL_2D_CORONAL:
+            [self  changeXYZvoxel:0 Y: deltaDx Z: 0];
+            return true;
+        case  1: // GL_2D_SAGITTAL:
+            [self  changeXYZvoxel:deltaDx Y: 0 Z: 0];
+            return true;
+    }
+    
     if ((sect <1) || (sect >3) || ((prefs->numVolumes < 2) == (numOverlay == 0))) //not on one of the canonical slices - adjust rendering
     {
         [self changeClipPlane: x Y: delta];
@@ -1769,13 +1827,14 @@ void blendOverlays(NII_PREFS* prefs, uint32_t *data)
         }
     }
     computeBlend(data, overdata, nvox, prefs->overlayFrac);
-    if (prefs->advancedRender) {
+    
         prefs->intensityOverlay3D = bindSubGL(prefs, overdata, prefs->intensityOverlay3D);
         //THIS_UINT8 *img8bit = (THIS_UINT8 *) malloc(nvox);
         //for (size_t v = 0; v < nvox; v++)
         //    img8bit[v] = overdata[v] & 0xFF; // (data[v] >> 24) & 0xFF
         //computeGradients ( prefs, img8bit, overdata, true);
         //free(img8bit);
+    if (prefs->advancedRender) {
         computeGradients ( prefs, overdata,  true);
     }
     delete[] overdata;//2014 free(overdata);
@@ -1808,8 +1867,8 @@ void recalcSubGL(NII_PREFS* prefs, THIS_UINT8 *img8bit, tRGBAlut lut)
         prefs->gradientTexture3D = 0;
         if (prefs->gradientOverlay3D != 0) glDeleteTextures(1,&prefs->gradientOverlay3D);
         prefs->gradientOverlay3D = 0;
-        if (prefs->intensityOverlay3D != 0) glDeleteTextures(1,&prefs->intensityOverlay3D);
-        prefs->intensityOverlay3D = 0;
+        //if (prefs->intensityOverlay3D != 0) glDeleteTextures(1,&prefs->intensityOverlay3D);
+        //prefs->intensityOverlay3D = 0;
     }
     delete[] data;
     //check this worked...
@@ -1892,10 +1951,9 @@ GLuint recalcSubRGBA(NII_PREFS* prefs, uint32_t *data, GLuint oldHandle)
     glBindTexture(GL_TEXTURE_3D, handle);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);//?
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);//?
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);//?
-
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);//21 GL_CLAMP_TO_BORDER);//?
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);//21 GL_CLAMP_TO_BORDER);//?
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);//21 GL_CLAMP_TO_BORDER);//?
     if ((fabs(prefs->viewMin- 0.0) < 0.01) && (fabs(prefs->viewMax-255)<0.01 ) ) //no need to rescale image brightness/contrast
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, prefs->voxelDim[1], prefs->voxelDim[2], prefs->voxelDim[3], 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     else
@@ -1924,7 +1982,9 @@ int recalcGL(FSLIO* fslio, NII_PREFS* prefs)
         } else
             createlutLabel(prefs->colorScheme, prefs->lut,fabs(prefs->viewMax-prefs->viewMin)/100 );
         THIS_UINT8 *raw8 = (THIS_UINT8 *) fslio->niftiptr->data;
-        prefs->lut[0] = makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
+        //prefs->lut[0] = makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
+        //if ( (prefs->lut[255] >> 24) == 0)
+        //     prefs->lut[255] = prefs->lut[0];
          recalcSubGL(prefs,raw8, prefs->lut);
         return EXIT_SUCCESS;
     }
@@ -1945,7 +2005,12 @@ int recalcGL(FSLIO* fslio, NII_PREFS* prefs)
         return EXIT_SUCCESS;
     }
     createlut(prefs->colorScheme, prefs->lut, prefs->lut_bias);
-    prefs->lut[0] = makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
+    //prefs->lut[0] =  makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
+    //if ( (prefs->lut[255] >> 24) == 0)
+    //    prefs->lut[255] = prefs->lut[0];
+    //NSLog(@"Alpha %d", (prefs->lut[255] >> 24));
+    //lut[255] = (0 << 0)+ (255 << 8) + (0 << 16) + (0 << 24);
+    //prefs->lut[255] = makeRGBA(255*prefs->backColor[0],255* prefs->backColor[1],255*prefs->backColor[2],0);
     #ifdef MY_DEBUG //from nii_io.h
     printf("makergb: volume size %dx%dx%d\n",prefs->voxelDim[1],prefs->voxelDim[2],prefs->voxelDim[3]);
     #endif
@@ -2162,6 +2227,8 @@ void drawSag (int lX, int lY, int lW, int lH, double lSlice[4], long Xgap, CGFlo
 //Display a SAGITTAL slice at X pixels from left, Y pixels from bottom, W wide, H high, lSlice is 0..1 - fractional slice
 //  assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.01);
     glEnable (GL_TEXTURE_3D);
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
@@ -2174,6 +2241,7 @@ void drawSag (int lX, int lY, int lW, int lH, double lSlice[4], long Xgap, CGFlo
     glTexCoord3d (lSlice[1],1, 1);
     glVertex2f(lX+lW,lY+lH);
     glEnd();
+    glDisable(GL_ALPHA_TEST);
     if (Xgap > 0)
         drawXBar (lX, lY, lW, lH, lSlice[2], lSlice[3], Xgap, XColor);
 }
@@ -2182,6 +2250,8 @@ void drawAx (int lX,int lY, int lW, int lH, double lSlice[4], long Xgap, CGFloat
 //Display an Axial slice at X pixels from left, Y pixels from bottom, W wide, H high, lSlice is 0..1 - fractional slice
 //  assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.01);
     glEnable (GL_TEXTURE_3D);
     glColor3f(1.0f, 1.0f, 1.0f);
     float flip = 0;
@@ -2196,6 +2266,7 @@ void drawAx (int lX,int lY, int lW, int lH, double lSlice[4], long Xgap, CGFloat
     glTexCoord3d (1-flip,1, lSlice[3]);
     glVertex2f(lX+lW,lY+lH);
     glEnd();
+    glDisable(GL_ALPHA_TEST);
     if ((Xgap > 0) && flipLR)
         drawXBar (lX, lY, lW, lH, 1.0 - lSlice[1], lSlice[2], Xgap, XColor);//Xgap
     else if (Xgap > 0)
@@ -2206,6 +2277,8 @@ void drawCoro (int lX, int lY, int lW,int lH, double lSlice[4], long Xgap, CGFlo
 //Display a CORONAL slice at X pixels from left, Y pixels from bottom, W wide, H high, lSlice is 0..1 - fractional slice
 //  assumes texture bound to OpenGL: glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
 {
+    glEnable(GL_ALPHA_TEST);
+    glAlphaFunc(GL_GREATER, 0.01);
     glEnable (GL_TEXTURE_3D);
     glColor3f(1.0f, 1.0f, 1.0f);
     float flip = 0;
@@ -2220,6 +2293,7 @@ void drawCoro (int lX, int lY, int lW,int lH, double lSlice[4], long Xgap, CGFlo
     glTexCoord3d (1-flip,lSlice[2], 1);
     glVertex2f(lX+lW,lY+lH);
     glEnd();
+    glDisable(GL_ALPHA_TEST);
     if ((Xgap > 0) && flipLR)
         drawXBar (lX, lY, lW, lH, 1.0-lSlice[1], lSlice[3], Xgap, XColor);
     else if (Xgap > 0)
@@ -2261,6 +2335,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
             prefs->scrnDim[2] = round(prefs->fieldOfViewMM[2]*mmPerPix);
             imgSz->x = prefs->scrnDim[1]; //axial slice X is horizontal
             imgSz->y = prefs->scrnDim[2]; //axial slice Y is vertical
+            prefs->mmPerPix = mmPerPix;
             return;
         case  GL_2D_CORONAL:
             mmPerPix = prefs->scrnWid/prefs->fieldOfViewMM[1];
@@ -2270,6 +2345,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
             prefs->scrnDim[3] = round(prefs->fieldOfViewMM[3]*mmPerPix);
             imgSz->x = prefs->scrnDim[1]; //coronal slice X is horizontal
             imgSz->y = prefs->scrnDim[3]; //coronal slice Z is vertical
+            prefs->mmPerPix = mmPerPix;
             return;
         case   GL_2D_SAGITTAL:
             mmPerPix = prefs->scrnWid/prefs->fieldOfViewMM[2];
@@ -2279,6 +2355,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
             prefs->scrnDim[3] = round(prefs->fieldOfViewMM[3]*mmPerPix);
             imgSz->x = prefs->scrnDim[2]; //sagittal slice Y is horizontal
             imgSz->y = prefs->scrnDim[3]; //sagittal slice Z is vertical
+            prefs->mmPerPix = mmPerPix;
             return;
             //break;
     }
@@ -2301,6 +2378,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
     prefs->scrnDim[1] = round(prefs->fieldOfViewMM[1]*mmPerPix);
     prefs->scrnDim[2] = round(prefs->fieldOfViewMM[2]*mmPerPix);
     prefs->scrnDim[3] = round(prefs->fieldOfViewMM[3]*mmPerPix);
+    prefs->mmPerPix = mmPerPix;
     #ifdef NII_IMG_RENDER //defined in nii_definetypes.h
     prefs->renderBottom = 0;
     if (prefs->displayModeGL == GL_3D_ONLY) {
@@ -2335,7 +2413,7 @@ void scrnSizeX (NII_PREFS* prefs, CGPoint * imgSz)
         }
     }
     #endif
-    //NSLog(@"%gx%gx%g -> %dx%dx%d", prefs->fieldOfViewMM[1], prefs->fieldOfViewMM[2], prefs->fieldOfViewMM[3], prefs->scrnDim[1], prefs->scrnDim[2], prefs->scrnDim[3]);
+    //NSLog(@"%gx%gx%g -> %dx%dx%d %gmm/pix", prefs->fieldOfViewMM[1], prefs->fieldOfViewMM[2], prefs->fieldOfViewMM[3], prefs->scrnDim[1], prefs->scrnDim[2], prefs->scrnDim[3], mmPerPix);
 
 }
 
@@ -2522,6 +2600,43 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
 
 }
 
+/*
+void drawRuler (double mmPerPix, CGFloat XColor[4])
+//draws 10cm ruler
+{
+    if (mmPerPix <= 0) return;
+    double pix10cm = 100.0 * mmPerPix;
+    NSLog(@" %g mm/px 10cm = %g px", mmPerPix, pix10cm);
+    int lineWidth = pix10cm / 100;
+    lineWidth = MAX(lineWidth, 1);
+    lineWidth = MIN(lineWidth, 5);
+    float margin = pix10cm / 10;
+    margin = MAX(margin, 2);
+    if ((lineWidth % 2) == 0)
+        margin += 0.5;
+    int tickHeight = lineWidth * 2;
+    glDisable (GL_TEXTURE_3D);
+    glDisable (GL_BLEND);
+    glLineWidth(lineWidth);
+    glColor4f(XColor[0],XColor[1],XColor[2],1.0f);
+    glBegin(GL_LINES); //draw crosshairs...
+    glVertex3f(margin, margin, 0.0);
+    glVertex3f(margin+round(pix10cm), margin, 0.0);
+    for (int i = 0; i < 11; i++) {
+        float x = margin + round(double(i)/10.0 * pix10cm);
+        float yLine = margin;
+        float y = margin + tickHeight;
+        if ((i % 5) == 0) {
+            yLine -= tickHeight;
+            y += tickHeight;
+        }
+        glVertex3f(x, yLine, 0.0);
+        glVertex3f(x, y, 0.0);
+        
+    }
+    glEnd();
+}*/
+
 -(void) redraw2D {//to do: radiological orientation
     enter2D(prefs->scrnWid,prefs->scrnHt, prefs->scrnOffsetX, prefs->scrnOffsetY);
     glDisable (GL_BLEND); //ignore Alpha for 2D slices...
@@ -2535,6 +2650,10 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
     glBindTexture(GL_TEXTURE_3D, prefs->intensityTexture3D);
     #endif
     //glBindTexture(GL_TEXTURE_RECTANGLE_EXT, prefs->intensityTexture3D);
+    if (!prefs->isSmooth2D) {
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
     glColor3f(1.0f, 1.0f, 1.0f);
     switch (prefs->displayModeGL) {
         case   GL_2D_AXIAL:
@@ -2561,6 +2680,20 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
             }
 
     }
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    //double fieldOfViewMM[4]; //Field of View in mm for X(1), Y(2) and Z (3) dimensions - FOV[0] unused
+    //int scrnDim[4];//size of X,Y,Z in pixels
+    /*int fovDim = 1; //dimension with largest FOV 1,2,3 X,Y,Z
+    if (prefs->fieldOfViewMM[2] > prefs->fieldOfViewMM[fovDim]) fovDim = 2;
+    if (prefs->fieldOfViewMM[3] > prefs->fieldOfViewMM[fovDim]) fovDim = 3;
+    //float vox10cm = ;
+    NSLog(@"Screen %d vox = %g mm", prefs->scrnDim[fovDim], prefs->fieldOfViewMM[fovDim]);
+    */
+
+    
+    
     if (prefs->numDtiV >= prefs->currentVolume) {
         CGFloat color[4] = {0.9, 0.9,0.1,0.9};
         CGFloat v[3] = {prefs->dtiV[prefs->currentVolume-1][0],prefs->dtiV[prefs->currentVolume-1][1],prefs->dtiV[prefs->currentVolume-1][2]};
@@ -2569,14 +2702,13 @@ void drawVectors (int dimX, int dimY, int dimZ, CGFloat Vec[3], CGFloat XColor[4
     //drawVector(33,33,44,44, prefs->xBarColor);
     //if ((prefs->showInfo) && (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) )
     if (prefs->showInfo) {
-        if (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) drawColorBarTex(prefs, glStringTex, stanStringAttrib);
+        if (fslio->niftiptr->intent_code != NIFTI_INTENT_LABEL) drawColorBarTex(prefs, glStringTex, stanStringAttrib, !(GL_2D_AND_3D == prefs->displayModeGL));
         [self drawVolumeLabelTex];
+        //drawRuler(prefs->mmPerPix, prefs->xBarColor);
     }
 
     if (prefs->showOrient)
         [self drawOrientLabelTex];
-    //glDisable (GL_TEXTURE_3D);
-    //glColor4f(0.3f, 0.3f, 0.4f, 0.5f);
 }
 
 double Slicemm2frac (double mm, int orient, NII_PREFS* prefs) {
@@ -2958,40 +3090,67 @@ double  defuzzz(double x) {
 } //makeMosaic
 
 - (bool) doRedraw {
+    GLenum stat = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (stat != GL_FRAMEBUFFER_COMPLETE) return false;
     if (! prefs->force_refreshGL) return false;
     if (prefs->busyGL) return false;
     if ((prefs->scrnHt < 1) || (prefs->scrnWid < 1)) return false;
+    glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2], 0.0);
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    
     prefs->busyGL = true;
+    GLenum error = glGetError();
+    if (error) NSLog(@"doRedraw init error %d\n", error);
     if (prefs->force_recalcGL) {
         //clock_t start = clock();
         prefs->force_recalcGL = false;
         #ifdef NII_IMG_RENDER
         createRender(prefs);
         #endif
+        error = glGetError();
+        if (error) NSLog(@"createRender exit error %d\n", error);
         recalcGL(fslio, prefs);
+        error = glGetError();
+        if (error) NSLog(@"recalcGL exit error %d\n", error);
         scrnSize(prefs); //666 <- redundant???
         #ifdef NII_IMG_RENDER
         recalcRender (prefs);
         #endif
+        error = glGetError();
+        if (error) NSLog(@"recalcRender exit error %d\n", error);
         //printf("recalcGL required %fms\n", ((double)(clock()-start))/1000);
     }
     //glClearColor(1.0, 0.0, 0.0,1.0);
+    error = glGetError();
+    if (error) NSLog(@"clear enter error %d\n", error);
+    //glUseProgram(0);
+    //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT,0);
+    error = glGetError();
+    if (error) NSLog(@"bind enter error %d\n", error);
     glClearColor(prefs->backColor[0],prefs->backColor[1],prefs->backColor[2],1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    error = glGetError();
+    if (error) NSLog(@"clearcolor  error %d\n", error);
+    //glClear(GL_COLOR_BUFFER_BIT); //generates an error!
+    error = glGetError();
+    if (error) NSLog(@"clear exit error %d\n", error);
     #ifdef NII_IMG_RENDER
         //if ((prefs->displayModeGL == GL_2D_ONLY) || (prefs->displayModeGL == GL_2D_AXIAL)
         //    || (prefs->displayModeGL == GL_2D_CORONAL)  || (prefs->displayModeGL == GL_2D_SAGITTAL) )
         if (self.is2D)
             [self redraw2D]; //only draw 2D sections
         else {
+            error = glGetError();
+            if (error) NSLog(@"redrawRender enter error %d\n", error);
             redrawRender(prefs); //draw 3D rendering
+            error = glGetError();
+            if (error) NSLog(@"redrawRender exit error %d\n", error);
             if (prefs->displayModeGL == GL_2D_AND_3D) [self redraw2D]; //also draw 2D sections
         }
     #else
         [self redraw2D]; //if compiling without rendering: only draw 2D sections
     #endif
     GLenum err = glGetError();
-    if (GL_NO_ERROR != err)   printf("glGetError = 0x%x\n", err);
+    if (GL_NO_ERROR != err)   printf("nii_img glGetError = 0x%x\n", err);
     glFinish();
     //glFlush();     // Flush all OpenGL calls - we will have the NSOpenGLView do this
     prefs->force_refreshGL = false;
@@ -3238,6 +3397,7 @@ double  defuzzz(double x) {
     prefs->force_refreshGL = true;
     #endif
 }
+
 
 -(void) setAzimElevInc: (int) azim Elev: (int) elev; {
     #ifdef NII_IMG_RENDER //from nii_definetypes.h
@@ -3618,11 +3778,14 @@ void closeOverlays (NII_PREFS* prefs)
     //strcpy( prefs->nii_prefs_fname, "" );//called in nii_setup
     //prefs->nii_prefs_fname ="";
     //if ([file_name isEqualToString:@""]) return setLoadDummy(fslio, prefs);
-    if (([file_name length] < 1) || ([@"~" isEqualToString: file_name]) )
-        return setLoadDummy(fslio, prefs);
+    if (([file_name length] < 1) || ([@"~" isEqualToString: file_name]) ) {
+        setLoadDummy(fslio, prefs);
+        return EXIT_FAILURE;
+    }
     if (![[NSFileManager defaultManager] fileExistsAtPath:file_name]) {
         NSLog(@"Unable to find file : %@",file_name);
-        return setLoadDummy(fslio, prefs);
+        setLoadDummy(fslio, prefs);
+        return EXIT_FAILURE;
     }
     char fname[ [file_name length]+1];
     [file_name getCString:fname maxLength:sizeof(fname)/sizeof(*fname) encoding:NSUTF8StringEncoding];
@@ -3634,7 +3797,8 @@ void closeOverlays (NII_PREFS* prefs)
     if (buffer == NULL) {
         fprintf(stderr, "Error opening and reading %s.\n",fname);
         [self notifyOpenFailed];
-        return setLoadDummy(fslio, prefs);
+        setLoadDummy(fslio, prefs);
+        return EXIT_FAILURE;
     }
     #define kMaxDim 1536
     if ((fslio->niftiptr->dim[1]> kMaxDim) || (fslio->niftiptr->dim[2]> kMaxDim) || (fslio->niftiptr->dim[3]> kMaxDim))
@@ -3831,6 +3995,7 @@ void closeOverlays (NII_PREFS* prefs)
         prefs->advancedRender = false;
         prefs->loadFewVolumes = true;
         prefs->viewRadiological = false;
+        prefs->isSmooth2D = false;
 
         for (int i = 0; i < MAX_OVERLAY; i++) prefs->overlays[i].datatype = DT_NONE; //all slots empty
         #ifdef NII_IMG_RENDER
@@ -3842,6 +4007,8 @@ void closeOverlays (NII_PREFS* prefs)
         [stanStringAttrib setObject:font forKey:NSFontAttributeName];
         [stanStringAttrib setObject:[NSColor whiteColor] forKey:NSForegroundColorAttributeName];
         NSString * string = [NSString stringWithFormat:@""];
+        //aloc
+        //NSLog(@"nii_img FontCreate");
         glStringTex = [[GLString alloc] initWithString:string withAttributes:stanStringAttrib withTextColor:[NSColor colorWithDeviceRed:0.7f green:0.7f blue:0.7f alpha:1.0f] withBoxColor:[NSColor colorWithDeviceRed:0.5f green:0.5f blue:0.5f alpha:0.5f] withBorderColor:[NSColor colorWithDeviceRed:0.5f green:0.7f blue:0.5f alpha:0.0f]];
     }
     return self;
@@ -3872,7 +4039,8 @@ void closeOverlays (NII_PREFS* prefs)
     if (prefs->intensityOverlay3D != 0) glDeleteTextures(1,&prefs->intensityOverlay3D); //release texture memory
     if (prefs->gradientOverlay3D != 0) glDeleteTextures(1,&prefs->gradientOverlay3D); //release texture memory
     //if (prefs->glslprogram != NULL) glDeleteObjectARB(prefs->glslprogram); //release GLSL rendering program
-    glDeleteProgram(prefs->glslprogramInt);
+    glDeleteProgram(prefs->glslprogramMR);
+    glDeleteProgram(prefs->glslprogramCT);
     glDeleteProgram(prefs->glslprogramIntSobel);
     glDeleteProgram(prefs->glslprogramIntBlur);
     //free(prefs);

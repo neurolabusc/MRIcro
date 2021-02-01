@@ -77,7 +77,7 @@
 -(void) updatePrefs
 {
     NII_PREFS *prefs =[gNiiImg getPREFS];
-    prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
+    //prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     prefs->scrnOffsetX = 0;
     prefs->scrnOffsetY = 0;
     prefs->showCube = [[NSUserDefaults standardUserDefaults] boolForKey:@"showCube"];
@@ -88,10 +88,11 @@
     prefs->orthoOrient = [[NSUserDefaults standardUserDefaults] boolForKey:@"orthoOrient"];
     prefs->loadFewVolumes = [[NSUserDefaults standardUserDefaults] boolForKey:@"loadFewVolumes"];
     prefs->viewRadiological  = [[NSUserDefaults standardUserDefaults] boolForKey:@"viewRadiological"];
+    prefs->isSmooth2D = [[NSUserDefaults standardUserDefaults] boolForKey:@"isSmooth2D"];
     bool prev = prefs->advancedRender;
     prefs->advancedRender = [[NSUserDefaults standardUserDefaults] boolForKey:@"advancedRender"];
     prefs->dicomWarn = [[NSUserDefaults standardUserDefaults] boolForKey:@"dicomWarn"];
-    prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
+    //prefs->retinaResolution = [[NSUserDefaults standardUserDefaults] boolForKey:@"retinaResolution"];
     
     //NSLog(@"%d ---", prefs->dicomWarn);
     NSColor * aColor =nil;
@@ -111,16 +112,13 @@
         //prefs->backColor
         [gNiiImg updateFont: aColor] ;
     }
+    
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"blackBackground"]) {
-        //prefs->backColor[0] = 0.0;
-        //prefs->backColor[1] = 0.0;
-        //prefs->backColor[2] = 0.0;
-        [self setBackgroundColor: 0 Green: 0 Blue: 0];
+        if ((prefs->backColor[0] + prefs->backColor[1] + prefs->backColor[2]) > 0.0001)
+            [self setBackgroundColor: 0 Green: 0 Blue: 0];
     } else {
-        //prefs->backColor[0] = 1.0;
-        //prefs->backColor[1] = 1.0;
-        //prefs->backColor[2] = 1.0;
-        [self setBackgroundColor: 1 Green: 1 Blue: 1];
+        if ((prefs->backColor[0] + prefs->backColor[1] + prefs->backColor[2]) < 2.9999)
+            [self setBackgroundColor: 1 Green: 1 Blue: 1];
     }
     theData=[[NSUserDefaults standardUserDefaults] dataForKey:@"colorBarTextColor"];
     if (theData != nil) {
@@ -130,7 +128,6 @@
         prefs->colorBarTextColor[2] = aColor.blueComponent;
     }
     if (prev != prefs->advancedRender) {
-        //initShaderWithFile(prefs);
         prefs->force_recalcGL = true;
     }
     prefs->force_refreshGL = true;
@@ -156,6 +153,10 @@
     return ret;
 }
 
+-(void) setFontScale: (float) scale;
+{
+    [gNiiImg updateFontScale: scale];
+}
 -(void) setViewGamma: (float) gamma;
 {
     NII_PREFS *prefs =[gNiiImg getPREFS];
@@ -165,6 +166,13 @@
     [self drawFrame];
 }
 
+/*-(void) forceRecalc; //flicker test
+{
+    NII_PREFS *prefs =[gNiiImg getPREFS];
+    prefs->force_refreshGL = true;
+    prefs->force_recalcGL = true;
+    [self drawFrame];
+}*/
 
 -(void) setViewMinMaxForLayer: (double) min Max: (double) max Layer: (int) layer;
 {
@@ -251,30 +259,33 @@ NSArray * niiFileTypes () {
 
 - (BOOL) openOverlayFromFileNameGL: (NSString *)file_name
 {
+    //NSLog(@"nii_GLView openOverlayFromFileNameGL %@", file_name);
     int overlaySlot = [gNiiImg addOverlay: file_name];
     if (overlaySlot < 0) return FALSE;
     [self drawFrame];
     return TRUE;
 }
 
+/*
 -(IBAction) openDocumentGL: (id) sender
 {
     NSOpenPanel *openPanel  = [NSOpenPanel openPanel];
     openPanel.title = @"Choose a background image";
-    /*NSArray *fileTypes = [NSArray arrayWithObjects:
-    @"dcm", @"nii", @"MAT",@"NII",@"hdr", @"HDR",  @"GZ", @"gz",@"voi", @"MGH", @"mgh",  @"MGZ", @"mgz", @"MHA", @"mha",  @"MHD", @"mhd",@"HEAD", @"head", @"nrrd", @"nhdr", nil];
-    fileTypes = [fileTypes arrayByAddingObjectsFromArray:[NSImage imageFileTypes]];
-    [openPanel setAllowedFileTypes:fileTypes];*/
     [openPanel setAllowedFileTypes:niiFileTypes()];
+    openPanel.allowsMultipleSelection = TRUE;
+    
+    //[openPanel allowsMultipleSelection: TRUE];
     //[openPanel setAllowedFileTypes:[NSImage imageFileTypes]];
     NSInteger result    = [openPanel runModal];
     if(result != NSOKButton) return;
     //if (![self checkSandAccess: [[openPanel URL] path]]) return;
+        
     [self openDocumentFromFileNameGL: [[openPanel URL] path]] ;
     [self drawFrame];
-    // [self setTitle:@"Empty (Choose File/Open)"];
-    //[self openDocumentFromFileName:[openPanel filename]];  // <- works, deprecated
-}
+    
+    //https://stackoverflow.com/questions/7693896/nsopenpanel-everything-deprecated
+
+}*/
 
 
 /*- (void)saveScreenshotFromFileName:(NSString *) file_name //save PNG screenshot, or capture to clipboard
@@ -328,17 +339,17 @@ NSArray * niiFileTypes () {
     int w = NSWidth(backRect) / screenShotScaleFactor;
     int h = NSHeight(backRect) / screenShotScaleFactor;
     //[gNiiImg updateFontScale: 1];
-    int zoom = 3;
+    int zoom = 1;
     int wz = zoom * w;
     NII_PREFS *prefs =[gNiiImg getPREFS];
-    int q =prefs->rayCastQuality1to10;
-    prefs->rayCastQuality1to10 = 10;
+    int q =prefs->rayCastQuality1to4;
+    prefs->rayCastQuality1to4 = 4;
     int hz = zoom * h;
     // Create image. Note no alpha channel. I don't copy that.
     NSBitmapImageRep *repz = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes: NULL
      pixelsWide: wz pixelsHigh: hz bitsPerSample: 8 samplesPerPixel: 4 hasAlpha: YES
        isPlanar: NO colorSpaceName: NSCalibratedRGBColorSpace bytesPerRow: 4*wz bitsPerPixel: 0];
-    [gNiiImg updateFontScale: zoom * retinaScaleFactor];
+   // [gNiiImg updateFontScale: zoom]; //2021
    for (int tile = 0; tile < (zoom * zoom); tile++){
         int tilex = (tile % zoom) * w;
         int tiley = (tile / zoom) * h;
@@ -385,10 +396,10 @@ NSArray * niiFileTypes () {
         [data writeToFile: file_name atomically: NO];
     }
     //[gNiiImg setScreenWidHt: w Height: h]; //return to base resolution
-    prefs->rayCastQuality1to10 = q;
+    prefs->rayCastQuality1to4 = q;
     //[gNiiImg updateFontScale: screenShotScaleFactor];
-    [gNiiImg updateFontScale: retinaScaleFactor];
-    [gNiiImg setScreenWidHtOffset: (w * retinaScaleFactor) Height: (h * retinaScaleFactor) OffsetX: 0 OffsetY: 0];
+    //[gNiiImg updateFontScale: retinaScaleFactor];
+    [gNiiImg setScreenWidHtOffset: (w ) Height: (h ) OffsetX: 0 OffsetY: 0];
     [self reshape];
     [self drawFrame];
 }
@@ -458,7 +469,6 @@ NSArray * niiFileTypes () {
     [self drawFrame];
 }*/
 
-
 -(IBAction) saveDocumentAs: (id) sender //Request filename and save PNG screenshout
 {
     NSSavePanel *savePanel = [NSSavePanel savePanel]; 
@@ -480,19 +490,18 @@ NSArray * niiFileTypes () {
     [self saveScreenshotFromFileName: @""];
 }
 
-- (void) setLoadImageX:(NSString *) file_name newWindow: (bool) isNew {
+- (BOOL) setLoadImageX:(NSString *) file_name newWindow: (bool) isNew {
     NSUInteger iflags = [NSEvent modifierFlags] & NSDeviceIndependentModifierFlagsMask;
     bool specialKeys = (iflags == NSControlKeyMask);
     if ((specialKeys) && (!isNew))
-        [self openOverlayFromFileNameGL:  file_name];
-    else
-        [gNiiImg setLoadImage:file_name];
-    
+        return [self openOverlayFromFileNameGL:  file_name];
+    int err = [gNiiImg setLoadImage:file_name];
+    return (err == 0);
 }
 
 - (BOOL)openDocumentFromFileNameGL:(NSString *) file_name
 {
-    [self setLoadImageX: file_name newWindow: false];
+    BOOL OK = [self setLoadImageX: file_name newWindow: false];
     //[gNiiImg setLoadImage:file_name];
     //NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
     //[prefs setObject:file_name forKey:@"defaultFilename"];
@@ -501,10 +510,8 @@ NSArray * niiFileTypes () {
     //[[NSUserDefaults standardUserDefaults]synchronize ];
     [self drawFrame];
      [[NSNotificationCenter defaultCenter] postNotificationName:@"niiUpdate" object:self userInfo:nil]; //notify window if document drag-dropped directly on view
-    return TRUE;
+    return OK;
 }
-
-
 
 - (void) setDisplayMode:(NSInteger)mode
 {
@@ -544,21 +551,47 @@ NSArray * niiFileTypes () {
 
 -(void) changeXYZvoxelGL: (int) x Y: (int) y Z: (int) z {
     if ([gNiiImg changeXYZvoxel: x Y: y Z: z]) [self drawFrame]; //ssss
+    //[gNiiImg setAzimElevOrient: 1];
+    
+}
+
+-(void) setAzimElevOrient: (int) orient; {
+    NSLog(@"setAzimElevOrient %d", orient);
+    //LRPAIS = 012345
+    switch(orient) {
+        case 1: [gNiiImg setAzimElev: 90 Elev: 0]; break;
+        case 2: [gNiiImg setAzimElev: 270 Elev: 0]; break;
+        case 3: [gNiiImg setAzimElev: 0 Elev: 0]; break;
+        case 4: [gNiiImg setAzimElev: 180 Elev: 0]; break;
+        case 5: [gNiiImg setAzimElev: -180 Elev: -90]; break;
+        case 6: [gNiiImg setAzimElev: 0 Elev: 90]; break;
+    }
+    [self drawFrame];
 }
 
 - (NSPoint)convertPointX:(NSPoint)aPoint fromView:(NSView *)aView;
 {
+    //2021 convertPointToBacking convertPointFromBacking
+    //NSPoint pt = [self convertPoint: aPoint fromView: aView];
+    //NSPoint event_location = [theEvent locationInWindow];
+    NSPoint pt = [self convertPoint:aPoint fromView:nil];
+     
+    //NSPoint pt = aPoint;
+    //pt.y -= 10;
     
-    NSPoint pt = [self convertPoint: aPoint fromView: aView];
+    pt = [self convertPointToBacking: pt];
+    
+    //NSPoint pt = [self convertPoint: aPoint fromView: aView];
+    /*
     if (self->retinaScaleFactor > 1.0) {
         pt.x *= self->retinaScaleFactor;
-        pt.y *= self->retinaScaleFactor;
-        
-    }
+        pt.y *= self->retinaScaleFactor;        
+    }*/
     return pt;
 }
 
 - (NSPoint)convertPointXR:(NSPoint)aPoint fromView:(NSView *)aView {
+    //This is in native screen space, not impacted by Retina mode
     return [self convertPoint: aPoint fromView: aView];
 }
 
@@ -588,7 +621,9 @@ NSArray * niiFileTypes () {
 
 - (void)mouseDown:(NSEvent *)event {
     //NSPoint location = [self convertPoint:[event locationInWindow] fromView:nil];
+    
     NSPoint location = [self convertPointX:[event locationInWindow] fromView: nil]; //RetinaX 2016
+    //NSLog(@"mouseDown %gx%g", location.x, location.y);
     [gNiiImg setMouseDown:location.x Y:location.y];
     [self drawFrame];
     
@@ -693,8 +728,13 @@ NSArray * niiFileTypes () {
 
 - (void)scrollWheel:(NSEvent *)event
 {
+    //NSLog(@"Scroll Event: %@", event);
+    //NSLog(@"%g %g", event.locationInWindow.x, event.locationInWindow.y);
+    
     if ((event.deltaY == 0) && (event.deltaX == 0)) return;
-    if ([gNiiImg setScrollWheel: event.deltaX Y: event.deltaY]) [self drawFrame];
+    //NSLog(@"scroll %g %g", event.deltaX, event.deltaY);
+    if ([gNiiImg setScrollWheel: event.deltaX Y: event.deltaY locX: event.locationInWindow.x locY: event.locationInWindow.y])
+        [self drawFrame];
 }
 
 - (void) rotateWithEvent:(NSEvent *)event;
@@ -822,8 +862,13 @@ NSArray * niiFileTypes () {
 }
 
 - (void) reshape { //resize
-    
+    NSRect backingBounds = [self convertRectToBacking:[self bounds]];
+    GLsizei backingPixelWidth  = (GLsizei)(backingBounds.size.width);
+    GLsizei backingPixelHeight = (GLsizei)(backingBounds.size.height);
+    [gNiiImg setScreenWidHt: backingPixelWidth Height: backingPixelHeight];//2021
+    /*
     [gNiiImg setScreenWidHt: [self bounds].size.width * self->retinaScaleFactor Height: [self bounds].size.height * self->retinaScaleFactor];//RetinaX 2016
+   */
     //[gNiiImg setScreenWidHt: [self bounds].size.width Height: [self bounds].size.height];//2014
     NSOpenGLContext    *currentContext = [self openGLContext];
     [currentContext makeCurrentContext];
@@ -834,7 +879,7 @@ NSArray * niiFileTypes () {
     CGLUnlockContext((CGLContextObj)[currentContext CGLContextObj]);
     //NSLog(@"GLView->Reshape %f %f", [self bounds].size.width , [self bounds].size.height);//66666666
     //self.view.frame.size.width
-    //[super reshape];
+    [super reshape];
     //[gNiiImg setScreenWidHt: [self bounds].size.width Height: [self bounds].size.height];
     //[self drawFrame]; //do this immediately - don't wait for timer!
 }
@@ -1139,8 +1184,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
     gNiiImg = [gNiiImg init];
     [self updatePrefs];
     screenShotScaleFactor = 1.0f;
-    retinaScaleFactor = 1.0f;
-    float supportRetina = 1.0;
+    //retinaScaleFactor = 1.0f;
+    /*float supportRetina = 1.0;
     if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)]) {
         NSArray *screens = [NSScreen screens];
         for (int i = 0; i < [screens count]; i++) {
@@ -1148,12 +1193,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
             if (s > supportRetina)
                 supportRetina = s;
         }
-    }
-    NII_PREFS *prefs =[gNiiImg getPREFS]; //RetinaXX
-    [gNiiImg updateFontScale: retinaScaleFactor];
+    }*/
+    //NII_PREFS *prefs =[gNiiImg getPREFS]; //RetinaXX
+    //[gNiiImg updateFontScale: retinaScaleFactor];
     screenShotScaleFactor = 1.0;
+    /*
+    [self setWantsBestResolutionOpenGLSurface:NO];//RetinaX 2016  - (void)
     if ((supportRetina > 1.0) && (prefs->retinaResolution)) {
-        [self setWantsBestResolutionOpenGLSurface:YES];//RetinaX 2016  - (void) prepareOpenGL
+        //[self setWantsBestResolutionOpenGLSurface:YES];//RetinaX 2016  - (void) prepareOpenGL
         //[self convertRectToBacking:[self bounds]];
         //NSRect backingBounds = self.;
         
@@ -1174,6 +1221,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
         retinaScaleFactor = 1;
         [gNiiImg updateFontScale: retinaScaleFactor];
     }
+     */
         //RetinaX 2016
 
     
@@ -1190,8 +1238,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTime
     [self setLoadImageX: [[NSUserDefaults standardUserDefaults] stringForKey:@"defaultFilename"] newWindow: true];
     //[gNiiImg setLoadImage:[[NSUserDefaults standardUserDefaults] stringForKey:@"defaultFilename"] ];
     [gNiiImg setScreenWidHt: [self bounds].size.width Height: [self bounds].size.height];
-    //CVDisplayLinkStart(displayLink);
-    //[self logVideoMemoryCurrentRendererX];
+    
+    /*
+    NSString *over = [[[NSUserDefaults standardUserDefaults] stringForKey:@"defaultFilename"] stringByDeletingLastPathComponent];
+    over = [over stringByAppendingString: @"/spmMotor.nii.gz"];
+    NSLog(@"overlay loading>>%@", over);
+    [self openOverlayFromFileNameGL:  over];
+    */
 }
 
 - (void)deallocGL

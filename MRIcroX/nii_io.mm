@@ -5,7 +5,9 @@
 #include <stdio.h>
 #import <Foundation/Foundation.h>
 #import "zlib.h"
-#import "nii_dicom.h"
+#ifndef STRIP_DCM2NII
+    #import "nii_dicom.h"
+#endif
 
 #include <stdlib.h>  // for memory alloc/free
 
@@ -111,44 +113,6 @@ void swap_nifti2_header( struct nifti_2_header *h ){
     nifti_swap_4bytes(1, &h->slice_code);
     nifti_swap_4bytes(1, &h->xyzt_units);
     nifti_swap_4bytes(1, &h->intent_code);
-    return ;
-}
-
-void swap_nifti_header( struct nifti_1_header *h )
-{
-    nifti_swap_4bytes(1, &h->sizeof_hdr);
-    nifti_swap_4bytes(1, &h->extents);
-    nifti_swap_2bytes(1, &h->session_error);
-    nifti_swap_2bytes(8, h->dim);
-    nifti_swap_4bytes(1, &h->intent_p1);
-    nifti_swap_4bytes(1, &h->intent_p2);
-    nifti_swap_4bytes(1, &h->intent_p3);
-    nifti_swap_2bytes(1, &h->intent_code);
-    nifti_swap_2bytes(1, &h->datatype);
-    nifti_swap_2bytes(1, &h->bitpix);
-    nifti_swap_2bytes(1, &h->slice_start);
-    nifti_swap_4bytes(8, h->pixdim);
-    nifti_swap_4bytes(1, &h->vox_offset);
-    nifti_swap_4bytes(1, &h->scl_slope);
-    nifti_swap_4bytes(1, &h->scl_inter);
-    nifti_swap_2bytes(1, &h->slice_end);
-    nifti_swap_4bytes(1, &h->cal_max);
-    nifti_swap_4bytes(1, &h->cal_min);
-    nifti_swap_4bytes(1, &h->slice_duration);
-    nifti_swap_4bytes(1, &h->toffset);
-    nifti_swap_4bytes(1, &h->glmax);
-    nifti_swap_4bytes(1, &h->glmin);
-    nifti_swap_2bytes(1, &h->qform_code);
-    nifti_swap_2bytes(1, &h->sform_code);
-    nifti_swap_4bytes(1, &h->quatern_b);
-    nifti_swap_4bytes(1, &h->quatern_c);
-    nifti_swap_4bytes(1, &h->quatern_d);
-    nifti_swap_4bytes(1, &h->qoffset_x);
-    nifti_swap_4bytes(1, &h->qoffset_y);
-    nifti_swap_4bytes(1, &h->qoffset_z);
-    nifti_swap_4bytes(4, h->srow_x);
-    nifti_swap_4bytes(4, h->srow_y);
-    nifti_swap_4bytes(4, h->srow_z);
     return ;
 }
 
@@ -785,10 +749,12 @@ void nii_zeroHdr(struct nifti_1_header *nhdr)
     return bImg;
 } //nii_rgb2Planar()*/
 
+#ifndef STRIP_DCM2NII
 struct TDICOMdata nii_readParRecV(char * fname) {
     TDTI4D unused;
     return nii_readParRec(fname, false, &unused, false);
 } // readParRec()
+#endif
 
 int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
 //returns volumes loaded, 0 when unable to load images
@@ -798,7 +764,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
 // FslReadVolumes(fslio,"~/img.nii",0,INT_MAX) loads all volumes (returns number of volumes in image)
 {
     //char lastchar = upperlastchar(filename); //detect file name .nii -> I, .hdr -> R, .gz -> Z, .img -> G
-    bool isDICOM = false;
+    //bool isDICOM = false;
     NSString* basename = [NSString stringWithFormat:@"%s" , filename];
     if (![[NSFileManager defaultManager] fileExistsAtPath:basename]) {
         NSLog(@"Unable to find a file named %@", basename);
@@ -841,10 +807,10 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
     else if (([ext rangeOfString:@"NHDR" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([ext rangeOfString:@"NRRD" options:NSCaseInsensitiveSearch].location != NSNotFound))
         OK = nii_readnrrd(fname, &imgname, &niiHdr, &gzBytes, &swapEndian);
     else if (([ext rangeOfString:@"MGH" options:NSCaseInsensitiveSearch].location != NSNotFound) || ([ext rangeOfString:@"MGZ" options:NSCaseInsensitiveSearch].location != NSNotFound))
-        OK = nii_readmgh(fname,  &niiHdr, &gzBytes, &swapEndian);
+        OK = nii_readmgh(fname,  &niiHdr, &gzBytes, &swapEndian);*/
     //else if ([ext rangeOfString:@"DF3" options:NSCaseInsensitiveSearch].location != NSNotFound)
     //         OK = nii_readDf3(fname,  &niiHdr, &gzBytes, &swapEndian);
-    else*/
+    
     //|| ([ext rangeOfString:@"GZ" options:NSCaseInsensitiveSearch].location != NSNotFound) // <- MGZ
     //([ext rangeOfString:@"HDR" options:NSCaseInsensitiveSearch].location != NSNotFound)||  //<- NHDR
     if ( [ext caseInsensitiveCompare:@"GZ"] == NSOrderedSame ) {
@@ -862,12 +828,15 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
              || ([ext rangeOfString:@"NII.GZ" options:NSCaseInsensitiveSearch].location != NSNotFound)) {
         OK = nii_readhdr(fname, &niiHdr, &gzBytes);
     } else if (true) {//([[NSImage alloc] initWithContentsOfFile:basename] != NULL) //use OS to import image - method of (almost) last resort!
+        //NSLog(@"foreign");
         dicomImg = nii_readForeignx(fname,  &niiHdr, skipVol, loadVol);
         if (dicomImg != NULL) OK = EXIT_SUCCESS;
+        //NSLog(@"foreign end");
         gzBytes = K_gzBytes_skipRead;
         //dicomImg = nii_readTIFF(fname,  &niiHdr, &gzBytes, &swapEndian);
     }
-
+    /*
+    #ifndef STRIP_DCM2NII
     if (OK == EXIT_FAILURE) { //if all else fails, assume DICOM
         char fnameC[1024] = {""};
         strcat(fnameC,[fname cStringUsingEncoding:1]);
@@ -884,9 +853,9 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             if (isDICOMfile(fnameC) > 0)
                 d =readDICOM(fnameC);
             if (!d.isValid) NSLog(@"DICOM failed: %@", imgname);
-
+            bool isDICOM = false;
             if (d.isValid)
-                isDICOM = TRUE;
+                isDICOM = TRUE;*/
             /*if (dicomWarn) {
                 NSAlert *alert = [[NSAlert alloc] init];
                 #ifndef STRIP_DCM2NII // /BuildSettings/PreprocessorMacros/STRIP_DCM2NII
@@ -902,7 +871,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
                 [alert runModal];
 
             }*/
-
+/*
         }
         if (d.isValid) {
             dicomImg = nii_loadImgXL(fnameC, &niiHdr,d, false, kCompressNone, 0, NULL);
@@ -913,6 +882,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
         //OK = nii_readDICOM(fnameC,&niiHdr, &gzBytes, &swapEndian, &isPlanarRGB);
         //convertForeignToNifti(&niiHdr);
     }
+    #endif*/
     if (OK == EXIT_FAILURE) {
         NSLog(@"Error loading file %@",fname);
         return 0;
@@ -1004,6 +974,9 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
             }
             num = fread( outbuf, imgsz, 1, pFile);
            fclose(pFile);
+        } else if (gzBytes == K_bz2Bytes_headeruncompressed) {
+            NSLog(@"NIfTI does not use BZ2");
+            return 0;
         } else {
             fclose(pFile);
             if ((gzBytes > 0) && (fsz < (skipBytes+gzBytes)) ) {
@@ -1027,6 +1000,7 @@ int FslReadVolumes(FSLIO* fslio, char* filename, int skipVol, int loadVol)
                 data = ungz(data, imgsz+skipBytes);
                 [data getBytes:outbuf range:NSMakeRange(skipBytes,imgsz)];
             }
+            
         } //if image data gz compressed
     free(fslio->niftiptr->data);
     fslio->niftiptr->data = outbuf;

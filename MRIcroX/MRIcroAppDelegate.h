@@ -60,23 +60,21 @@
 - (void) processDicomFile: (NSString*) fname;
 - (NSColor *)colorForKey:(NSString *)key;
 -(void) showExampleFilename;
-//@property (assign) IBOutlet NSWindow *window;
+
+
+
 @property (unsafe_unretained) IBOutlet NSButton *pref3dOrientCheck;
 @property (unsafe_unretained) IBOutlet NSButton *prefCoordinateCheck;
 @property (unsafe_unretained) IBOutlet NSButton *prefCrosshairCheck;
 @property (unsafe_unretained) IBOutlet NSTextView *theTextView;
-
-
 @property (unsafe_unretained) IBOutlet NSWindow *prefWindow;
 @property (weak) IBOutlet NSButton *prefOrientCheck;
 @property (weak) IBOutlet NSButton *prefLoadFewVolumesCheck;
 @property (weak) IBOutlet NSButton *prefRetinaCheck;
 @property (weak) IBOutlet NSButton *prefDarkModeCheck;
-
-
 @property (weak) IBOutlet NSButton *prefRadiologicalCheck;
-
 @property (weak) IBOutlet NSButton *prefDicomCheck;
+@property (weak) IBOutlet NSButton *pref2dSmoothCheck;
 
 @property (weak) IBOutlet NSButtonCell *prefAdvancedRenderCheck;
 
