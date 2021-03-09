@@ -20,6 +20,8 @@
 			<string>NIfTI</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
 			<key>NSDocumentClass</key>
 			<string>NIfTI Image</string>
 			<key>NSIsRelatedItemType</key>
@@ -35,6 +37,8 @@
 			<string>MetaIO</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
 			<key>NSDocumentClass</key>
 			<string>MetaIO</string>
 		</dict>
@@ -52,6 +56,8 @@
 			<string>AFNI</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
 			<key>NSDocumentClass</key>
 			<string>AFNI Image</string>
 			<key>NSIsRelatedItemType</key>
@@ -67,6 +73,8 @@
 			<string>NRRD</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
 			<key>NSDocumentClass</key>
 			<string>NRRD Image</string>
 		</dict>
@@ -80,6 +88,8 @@
 			<string>MGH</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
 			<key>NSDocumentClass</key>
 			<string>MGH Image</string>
 		</dict>
@@ -93,6 +103,8 @@
 			<string>DICOM</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
 			<key>NSDocumentClass</key>
 			<string>DICOM Image</string>
 		</dict>
