@@ -119,6 +119,9 @@
                             </menuItem>
                             <menuItem title="Save Bitmap..." id="543">
                                 <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="saveDocumentAs:" target="-1" id="A5c-Ow-56h"/>
+                                </connections>
                             </menuItem>
                             <menuItem title="Save Timeline..." keyEquivalent="p" id="545">
                                 <connections>

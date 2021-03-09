@@ -14,6 +14,7 @@
 				<string>img</string>
 				<string>hdr</string>
 				<string>voi</string>
+				<string>txt</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>NIfTI</string>

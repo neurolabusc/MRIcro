@@ -267,13 +267,13 @@
                     </toolbarItem>
                 </allowedToolbarItems>
                 <defaultToolbarItems>
+                    <toolbarItem reference="47"/>
+                    <toolbarItem reference="79"/>
                     <toolbarItem reference="29"/>
                     <toolbarItem reference="38"/>
                     <toolbarItem reference="14"/>
                     <toolbarItem reference="20"/>
-                    <toolbarItem reference="79"/>
                     <toolbarItem reference="6"/>
-                    <toolbarItem reference="47"/>
                 </defaultToolbarItems>
             </toolbar>
             <connections>
