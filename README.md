@@ -9,18 +9,20 @@ MRIcro is a 3D viewer and volume renderer for medical images. It is designed for
  - 1.8.2 (build 182, 6-April-2016) Initial GitHub release
  - 1.8.6 (build 186, 6-June-2016) Updated to XCode 7.3, updated dcm2niix
  - 1.8.7 (build 187, 21-September-2016) Updated dcm2niix
- - 1.9.0 (build 190, 29-January-2020) Apple Silicon support
+ - 1.9.0 (build 190, 29-January-2021) Apple Silicon support
+ - 1.9.1 (build 191, 9-March-2021) XCode 12.4
 
 #### Requirements, Downloading and Installation
 
-This software is a universal binary that runs natively on both Intel (x86-64) and Apple Silicon (arm64) CPUs. Users of other operating systems should consider the more powerful [MRIcroGL](https://www.mccauslandcenter.sc.edu/mricrogl/). Users with older versions of macOS should consider [MRIcron](https://www.nitrc.org/plugins/mwiki/index.php/mricron:MainPage). The software uses the computers graphics card, so computers with better cards and drivers will be able to view higher resolution images as described in the troubleshooting section.
+This software is a universal binary that runs natively on both Intel (x86-64) and Apple Silicon (arm64) CPUs. Users of other operating systems should consider the more powerful [MRIcroGL](https://www.nitrc.org/plugins/mwiki/index.php/mricrogl:MainPage). Users with older versions of macOS should consider [MRIcron](https://www.nitrc.org/plugins/mwiki/index.php/mricron:MainPage). The software uses the computers graphics card, so computers with better cards and drivers will be able to view higher resolution images as described in the troubleshooting section.
 
  - [Click here to get a compiled copy](/releases/latest). 
- - [Also available in the AppStore](https://itunes.apple.com/us/app/mricro/id942363246?mt=12) (beware: not the latest version).
+ - [Click here for NITRC page](https://www.nitrc.org/projects/mricro)
+ - [Also available in the AppStore](https://apps.apple.com/app/id1557491371).
 
 #### Supported Formats
 
-This software can display the following formats: [NIfTI](https://nifti.nimh.nih.gov/) (.nii, .nii.gz, .hdr/.img),Bio-Rad Pic (.pic), [NRRD](http://teem.sourceforge.net/nrrd/format.html) (.nhdr, .nrrd), Philips (.par/.rec), [ITK MetaImage](https://itk.org/Wiki/ITK/File_Formats) (.mhd, .mha), [AFNI](https://afni.nimh.nih.gov/pub/dist/doc/program_help/README.attributes.html) (.head/.brik), [Freesurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/MghFormat) (.mgh, .mgz), and DICOM (extensions vary).
+This software can display the following formats: [NIfTI](https://nifti.nimh.nih.gov/) (.nii, .nii.gz, .hdr/.img), Bio-Rad Pic (.pic), [NRRD](http://teem.sourceforge.net/nrrd/format.html) (.nhdr, .nrrd), Philips (.par/.rec), [ITK MetaImage](https://itk.org/Wiki/ITK/File_Formats) (.mhd, .mha), ECAT (.v), DeltaVision (.dv), [AFNI](https://afni.nimh.nih.gov/pub/dist/doc/program_help/README.attributes.html) (.head/.brik), [Freesurfer](https://surfer.nmr.mgh.harvard.edu/fswiki/FsTutorial/MghFormat) (.mgh, .mgz), and DICOM (extensions vary).
 
 #### Getting Started
 
