@@ -748,6 +748,7 @@
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+
     //[[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:[[NSApplication sharedApplication] delegate]] ;
     /*
     //Detect High-Definition Screen
@@ -836,6 +837,14 @@
     
     //NSInvocationOperation* op = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(openNewDocumentIfNeeded) object:nil];
     //[[NSOperationQueue mainQueue] addOperation: op];
+    
+    //TODO:
+    // open -a MRIcro /Users/chrisrorden/Desktop/a/brik/a.HEAD
+    //Does not behave at expected if App is not already running:
+    // application:openFileis called before applicationDidFinishLaunching:
+    //We need something like
+    // if (img != NULL) return; //image loaded prior to applicationDidFinishLaunching
+    if ((int)[windowArray count] > 0) return;
     NSMenu  *mainMenu = [[NSApplication sharedApplication] mainMenu];
     NSMenu  *fileMenu = [[mainMenu itemAtIndex:1] submenu];
     NSMenu  *atlasMenu = [[fileMenu itemAtIndex:4] submenu];

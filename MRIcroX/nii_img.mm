@@ -451,42 +451,31 @@ int convertRGB2RGBA(FSLIO* fslio)
     //NSLog(@"isPlanar %d", isPlanarImg(fslio));
     //bool isPlanar  = ([[NSApp currentEvent] modifierFlags] & NSAlternateKeyMask);
     bool isPlanar  = isPlanarImg(fslio);
-    //isPlanar = false;
-    if (!isPlanar) {//(fslio->niftiptr->intent_code != 0) {  //Assume triplets style RGBRGBRGB
-        int i = 0; //output
-        int nxyz = nx*ny*nz;
-        for (int vol= 0; vol < nvol; vol++) {
-            for (int vx= 0; vx < nxyz; vx++) {
-                outbuf[o++] = rawRGB[i++]; //red
-                outbuf[o++] = rawRGB[i++]; //gree
-                outbuf[o++] = rawRGB[i++]; //blue
-                outbuf[o++] = rawRGB[i-2] /2;//green best estimate for alpha
-            }
-        }
-    } else { //Assume planar style RGBRGBRGB
+    if (!isPlanar) { //input is packed triplets RGBRGB... output RGBARGBA...
+        int i = 0; //input
+        int nxyzv = nx*ny*nz*nvol; //number of voxels in total
+        for (int xyzv = 0; xyzv < nxyzv; xyzv++) { //for all voxels
+            outbuf[o++] = rawRGB[i++]; //red
+            outbuf[o++] = rawRGB[i++]; //gree
+            outbuf[o++] = rawRGB[i++]; //blue
+            outbuf[o++] = rawRGB[i-2] /2;//green best estimate for alpha
+        } //xyzv: all voxels
+    } else { //input is planar RRR...GGG...BBBB... output RGBARGBA...
         int nxy = nx*ny; //number of voxels in a plane
-        int nxy3 = nxy*3; //size for group of RGB planes
-        int sliceR =0;
-        int sliceG =nxy;
-        int sliceB = nxy+nxy;
-        int row = 0;
-        for (int vol= 0; vol < nvol; vol++) {
-            for (int z = 0; z < nz; z++) { //for each slice
-                row = 0; //start of row
-                for (int y = 0; y < ny; y++) { //for each row
-                    for (int x = 0; x < nx; x++) { //for each column
-                        outbuf[o++] = rawRGB[sliceR+row+x];
-                        outbuf[o++] = rawRGB[sliceG+row+x];
-                        outbuf[o++] = rawRGB[sliceB+row+x];
-                        outbuf[o++] = rawRGB[sliceG+row+x] /2; //green best estimate for alpha   666 2016
-                    } //for each x
-                    row = row + nx;
-                } //for each y
-                sliceR = sliceR + nxy3; //start of red plane
-                sliceG = sliceG + nxy3; //start of green plane
-                sliceB = sliceB + nxy3; //start of blue plane
-            } //for each z
-        }
+        int nxy2 = nxy * 2;
+        int iR = 0; //index Red
+        int nzv = nz * nvol; //number of volumes times slices per volume
+        for (int zv= 0; zv < nzv; zv++) { //for each 2D slice
+            int iG = iR + nxy; //index Green
+            int iB = iR + nxy2; //index Blue
+            for (int xy = 0; xy < nxy; xy++) { //for each voxel in slice (all columns*rows)
+                outbuf[o++] = rawRGB[iR++]; //red
+                outbuf[o++] = rawRGB[iG++]; //green
+                outbuf[o++] = rawRGB[iB++]; //blue
+                outbuf[o++] = rawRGB[iG - 1] /2;//green best estimate for alpha
+            } //xy: each voxel in slice
+            iR += nxy2; //done reading red plane, skip green and blue planes for start of next red plane
+        } //zv: total number of 2D slices
     }
     //free(fslio->niftiptr->data);
     //fslio->niftiptr->data = outbuf;
@@ -948,7 +937,7 @@ void filllut(struct RGBAnode loNode, struct RGBAnode hiNode, uint32_t* lut) {
 }
 
 int createlutX(int colorscheme, uint32_t* lut) {
-    if (colorscheme == 15) { //15=random
+    if (colorscheme == 19) { //19=random
         createlutLabel(1, lut, 1.0);
         return EXIT_SUCCESS;
     }
@@ -1031,22 +1020,50 @@ int createlutX(int colorscheme, uint32_t* lut) {
             nodes[1] = makeRGBAnode(0,255,0,128,256);
             break;
         case 14: //14=blue
-            nodes[1] = makeRGBAnode(0,0,255,128,256);
+            nodes[1] = makeRGBAnode(0,0,255,128,256); 
+        case 15: //15=cividis
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(0,32,76,0,0);
+            nodes[1] = makeRGBAnode(86,92,108,56,64);
+            nodes[2] = makeRGBAnode(166,156,117,88,192);
+            nodes[3] = makeRGBAnode(255,233,69,88,256);
             break;
-        case 16: //CT_airways
+        case 16: //inferno
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(0,0,4,0,0);
+            nodes[1] = makeRGBAnode(120,28,109,56,64);
+            nodes[2] = makeRGBAnode(237,105,37,80,192);
+            nodes[3] = makeRGBAnode(240,249,33,88,256);
+            break;
+        case 17: //plasma
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(13,8,135,0,0);
+            nodes[1] = makeRGBAnode(156,23,158,56,64);
+            nodes[2] = makeRGBAnode(237,121,83,80,192);
+            nodes[3] = makeRGBAnode(240,249,33,88,256);
+            break;
+        case 18: //viridis
+            numNodes = 4;
+            nodes[0] = makeRGBAnode(68,1,84,0,0);
+            nodes[1] = makeRGBAnode(49,104,142,56,64);
+            nodes[2] = makeRGBAnode(53,183,121,80,192);
+            nodes[3] = makeRGBAnode(253,231,37,88,256);
+            break;
+        //19 = random
+        case 20: //CT_airways
             numNodes = 4;
             nodes[0] = makeRGBAnode(0,154,179,0,0);
             nodes[1] = makeRGBAnode(0,154,179,32,163);
             nodes[2] = makeRGBAnode(0,154,101,0,254);
             nodes[3] = makeRGBAnode(0,154,101,0,256);
             break;
-        case 17: //CT_bone
+        case 21: //CT_bone
             numNodes = 3;
             nodes[0] = makeRGBAnode(0,0,0,0,0);
             nodes[1] = makeRGBAnode(113,109,109,64,128);
             nodes[2] = makeRGBAnode(255,250,245,100,256);
             break;
-        case 18: //CT_head
+        case 22: //CT_head
             numNodes = 11;
             nodes[0] = makeRGBAnode(0,0,0,0,0);
             nodes[1] = makeRGBAnode(241,156,130,8,2);
@@ -1060,20 +1077,20 @@ int createlutX(int colorscheme, uint32_t* lut) {
             nodes[9] = makeRGBAnode(255,255,255,222,253);
             nodes[10] = makeRGBAnode(255,255,255,222,256);
             break;
-        case 19: //CT_kidneys
+        case 23: //CT_kidneys
             numNodes = 3;
             //nodes[0] = makeRGBAnode(0,0,0,0,0);
             nodes[1] = makeRGBAnode(255,129,0,88,103);
             nodes[2] = makeRGBAnode(255,255,255,228,256);
             break;
-        case 20: //CT_soft_tissue
+        case 24: //CT_soft_tissue
             numNodes = 4;
             nodes[0] = makeRGBAnode(0,0,0,0,0);
             nodes[1] = makeRGBAnode(0,0,0,0,3);
             nodes[2] = makeRGBAnode(199,127,127,48,124);
             nodes[3] = makeRGBAnode(255,255,255,192,256);
             break;
-        case 21: //CT_surface
+        case 25: //CT_surface
             numNodes = 3;
             //nodes[0] = makeRGBAnode(0,0,0,0,0);
             nodes[1] = makeRGBAnode(134,109,101,60,128);

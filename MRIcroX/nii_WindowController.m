@@ -494,28 +494,28 @@ NSArray * niiFileTypesW () {
 - (IBAction)colorDropChange:(id)sender {
     int idx = (int)[sender indexOfSelectedItem];
     [niiGL setColorSchemeForLayer: [sender indexOfSelectedItem]  Layer: (int)[layerDrop indexOfSelectedItem]];
-    if (idx < 16) return; //CT_color schemes
-    if (idx == 16) {//CT airways
+    if (idx < 20) return; //CT_color schemes
+    if (idx == 20) {//CT_airways
         darkEdit.doubleValue = -643;
         brightEdit.doubleValue = -235;
     }
-    if (idx == 17) {//CT bone
+    if (idx == 21) {//CT_bone
         darkEdit.doubleValue = 180;
         brightEdit.doubleValue = 600;
     }
-    if (idx == 18) {//CT head
+    if (idx == 22) {//CT_head
         darkEdit.doubleValue = -590;
         brightEdit.doubleValue = 600;
     }
-    if (idx == 19) {//CT kidneys
+    if (idx == 23) {//CT_kidneys
         darkEdit.doubleValue = 114;
         brightEdit.doubleValue = 302;
     }
-    if (idx == 20) {//CT soft tissue
+    if (idx == 24) {//CT_soft_tissue
         darkEdit.doubleValue = -10;
         brightEdit.doubleValue = 110;
     }
-    if (idx == 21) {//CT surface
+    if (idx == 25) {//CT_surface
         darkEdit.doubleValue = -600;
         brightEdit.doubleValue = 100;
     }

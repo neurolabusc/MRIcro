@@ -1800,7 +1800,7 @@ void drawBox(NII_PREFS* prefs) {
     //glCullFace(GL_FRONT);
     glCullFace(GL_BACK);
     glEnable (GL_TEXTURE_3D);
-    if (prefs->colorScheme >= 16)
+    if (prefs->colorScheme >= 20)
         prefs->glslprogramCur = prefs->glslprogramCT;
     else
         prefs->glslprogramCur = prefs->glslprogramMR;

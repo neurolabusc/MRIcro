@@ -187,6 +187,18 @@
                                         <menuItem title="Blue" id="lxR-eJ-xqA">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                         </menuItem>
+                                        <menuItem title="Cividis" id="AdF-t0-EiJ">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="Inferno" id="Gcy-W4-Pco">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="Plasma" id="PMx-oi-MLA">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
+                                        <menuItem title="Viridis" id="AyN-3n-LY4">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                        </menuItem>
                                         <menuItem title="Random" id="dux-Pz-wPb">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                         </menuItem>
