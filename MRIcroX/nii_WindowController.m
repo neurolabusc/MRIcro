@@ -340,8 +340,9 @@ NSArray * niiFileTypesW () {
     #endif
     for (int i = 0; i < files.count; i++){
         NSString* fname = [files objectAtIndex:i];
-        isDICOM[i] = FALSE;
+        
         #ifndef STRIP_DCM2NII
+        isDICOM[i] = FALSE;
         char fnameC[1024] = {""};
         strcat(fnameC,[fname cStringUsingEncoding:1]);
         if (isDICOMfile(fnameC) > 0) {
@@ -425,8 +426,9 @@ NSArray * niiFileTypesW () {
         }
         [self removeAllNiiFiles: [temporaryDirectoryURL path]];
     }
-    #endif
     free(isDICOM);
+    #endif
+
     [self updateMostThings];
     return OK;
 }
